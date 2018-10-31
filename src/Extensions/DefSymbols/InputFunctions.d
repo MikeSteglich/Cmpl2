@@ -1,0 +1,41 @@
+InputFunctions.o InputFunctions.d : InputFunctions.cc InputFunctions.hh \
+  ../../Control/ExtensionBase.hh ../../Control/ModuleBase.hh \
+  ../../Control/CmdLineOptList.hh ../../Control/LocationInfo.hh \
+  ../../Control/MainData.hh ../../Control/StringStore.hh \
+  ../../Control/ErrorHandler.hh ../../CommonData/ExtensionSteps.hh \
+  ../../Modules/Interpreter/ValFunction.hh \
+  ../../Modules/Interpreter/../../CommonData/CmplVal.hh \
+  ../../Modules/Interpreter/../../Control/ThreadHandler.hh \
+  ../../Modules/Interpreter/ExecContext.hh \
+  ../../Modules/Interpreter/../../CommonData/IntCode.hh \
+  ../../CommonData/../Control/MainData.hh ../../CommonData/CmplVal.hh \
+  ../../Modules/Interpreter/../../Control/ErrorHandler.hh \
+  ../../Modules/Interpreter/ValueStore.hh \
+  ../../Modules/Interpreter/../../CommonData/CmplArray.hh \
+  ../../CommonData/SetBase.hh ../../CommonData/Tuple.hh \
+  ../../CommonData/SetIterator.hh \
+  ../../Modules/Interpreter/../../CommonData/SyntaxElements.hh \
+  ../../Modules/Interpreter/StackValue.hh \
+  ../../Modules/Interpreter/CodeBlockContext.hh \
+  ../../Modules/Compiler/CompilerContext.hh \
+  ../../Modules/Compiler/Compiler.hh \
+  ../../Modules/Compiler/../../Control/ModuleBase.hh \
+  ../../Modules/Compiler/../../Control/FileBase.hh \
+  ../../Modules/Compiler/CompilerUtil.hh \
+  ../../Modules/Compiler/../../Control/LocationInfo.hh \
+  ../../Modules/Compiler/../../Control/StringStore.hh \
+  ../../Modules/Compiler/../../Control/MainControl.hh \
+  ../../Control/ThreadHandler.hh ../../Control/FileBase.hh \
+  ../../Modules/Compiler/../../CommonData/ExtensionSteps.hh \
+  ../../Modules/Compiler/../../CommonData/CmplSourceInput.hh \
+  ../../Modules/Compiler/../../CommonData/SyntaxElements.hh \
+  ../../Modules/Compiler/../../CommonData/IntCode.hh \
+  ../../Modules/Compiler/_CMPL_Parser.hh ../../Modules/Compiler/stack.hh \
+  ../../Modules/Compiler/location.hh \
+  ../../Modules/Interpreter/Interpreter.hh \
+  ../../Modules/Interpreter/../../Control/ModuleBase.hh \
+  ../../Modules/Interpreter/../../CommonData/OptModel.hh \
+  ../../CommonData/ValueTree.hh ../../CommonData/CmplArray.hh \
+  ../../CommonData/../Control/StringStore.hh \
+  ../../Modules/Interpreter/../../CommonData/ExternDataInfo.hh \
+  ../../Modules/Interpreter/ValContainer.hh

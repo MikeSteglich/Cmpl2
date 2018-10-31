@@ -1,0 +1,4 @@
+error (module compile: parser): symbol 'Ziel' is not defined; at 07_Mehrkriteriell.cmpl:17.2-5, called from: command line:$1
+error (module compile: parser): syntax error, unexpected ":", expecting ";"; at 07_Mehrkriteriell.cmpl:17.6, called from: command line:$1
+error (module compile: parser): symbol 'Restr' is not defined; at 07_Mehrkriteriell.cmpl:20.2-6, called from: command line:$1
+error (module compile: parser): syntax error, unexpected ":", expecting ";"; at 07_Mehrkriteriell.cmpl:20.7, called from: command line:$1

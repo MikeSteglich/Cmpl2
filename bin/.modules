@@ -1,0 +1,107 @@
+#***************************************************
+# configuration file for module aggregations
+#***************************************************
+
+# standard modules if no modules are specified on command line
+<default>		run cmpl with default modules (used if no modules are specified on command line)
+	default
+
+default			run cmpl with default modules
+	compatSymbols
+	mathFunctions
+	inputFunctions
+	classFunctions
+	externDataFile
+	boundRow
+	linearSos -warn-invalid-sos
+	linearVarProd
+	linearConstantRow
+	linearLogCon
+	precompile
+	transferToServer
+	compile -no-warn-insert-eos -compat-linenamepref -compat-cbsymbols -compat-cbh-assign
+    interpret
+    writeMps
+    writeMatrix
+    solverCbc
+    solverGlpk
+    solverCplex
+    solverGurobi
+    solverScip
+    solutionReportAscii -solStdOut
+    solutionReportCsv
+
+script			run cmpl in script mode without writing and solving the instance 	
+	compatSymbols 
+	mathFunctions
+	inputFunctions
+	classFunctions
+	externDataFile
+	boundRow
+	linearSos -warn-invalid-sos
+	linearVarProd
+	linearConstantRow
+	linearLogCon
+	precompile
+	transferToServer
+	compile -no-warn-insert-eos -compat-linenamepref -compat-cbsymbols -compat-cbh-assign
+    	interpret
+    
+
+
+
+# start as client-only cmpl
+client			use only modules of a client cmpl and force transfer of execution to the server
+	compatSymbols
+	externDataFile
+	precompile
+	transferToServer -client-only
+
+# run server cmpl
+server			run server cmpl, only for use by the server control
+	transferFromClient
+	transferToClient
+
+
+# checks the syntax of cmpl input, but don't execute it
+check-only		check only syntax of the cmpl input file
+	compatSymbols
+	externDataFile
+	precompile
+	compile -no-warn-insert-eos -compat-linenamepref -compat-cbsymbols -compat-cbh-assign -check-only
+
+
+
+# runs only the compiler and outputs the generated code
+code			runs only the compiler and outputs the generated code
+	compatSymbols
+	mathFunctions
+	inputFunctions
+	classFunctions
+	externDataFile
+	linearSos
+	precompile
+	compile -no-warn-insert-eos -compat-linenamepref -compat-cbsymbols -compat-cbh-assign -o-code
+
+# runs only the precompiler and outputs the generated file
+precomp			runs only the precompiler and outputs the generated file
+	compatSymbols
+	externDataFile
+	precompile -o-pre 1
+
+
+
+# use module test with option "b" set to default 1
+#test1			use module test with option "b" set to default 1
+#	test -a -b 1
+
+# use module test two times, first with option "a" set, second with option "a" not set, even if option "a" is specified on command line
+#test2			use module test two times, first with option "a" set, second with option "a" not set
+#	test=t1 -a!
+#	test=t2 -no-a!
+
+# use module test three times, over module aggregations test1 and test2, test2 with option "b" set to default 2
+#test3			use module test three times, over module aggregations test1 and test2
+#	test1
+#	test2 -b 2
+

@@ -1,0 +1,3 @@
+error (module interpret: execution): assigment with indexed destination not implemented '<symbol_value>', at 's'; at 27_transportation_B.cmpl:9.2
+error (module interpret: execution): assigment with indexed destination not implemented '<symbol_value>', at 'd'; at 27_transportation_B.cmpl:10.2
+error (module interpret: execution): assigment with indexed destination not implemented '<symbol_value>', at 'c'; at 27_transportation_B.cmpl:12.2

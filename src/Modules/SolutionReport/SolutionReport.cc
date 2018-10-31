@@ -1,0 +1,118 @@
+#include "SolutionReport.hh"
+#include "../../Control/MainControl.hh"
+#include "../../CommonData/Solution.hh"
+
+#include <iomanip>
+
+namespace cmpl
+{
+
+
+/*********** initialization **********/
+
+/**
+     * initialize modul, to call immediately after the constructor.
+     * @param ctrl			main object
+     * @param data			data object
+     * @param name			module name (or alias)
+     */
+void SolutionReport::init(MainControl *ctrl, MainData *data, const char *name)
+{
+    ModuleBase::init(ctrl, data, name);
+
+    _ignoreZeros=false;
+    _ignoreVars=false;
+    _ignoreCons=false;
+}
+
+
+/*********** handling of command line options **********/
+
+#define OPTION_SOLREPORT_DISPLAY            30
+
+
+
+
+/**
+     * register command line options options for delivery to this module
+     * @param modOptReg		vector to register in
+     */
+void SolutionReport::regModOptions(vector<CmdLineOptList::RegOption> &modOptReg)
+{
+    ModuleBase::regModOptions(modOptReg);
+
+    REG_CMDL_OPTION( OPTION_SOLREPORT_DISPLAY, "display", 1, 200, CMDL_OPTION_NEG_NO_ARG, false );
+
+
+}
+
+/**
+     * parse single option from command line options, this function is called for every delivered option
+     * @param ref			reference number of option registration, should be used for discriminate the options
+     * @param prio			priority value of option
+     * @param opt			option
+     * @return				true if option is used by the module
+     */
+bool SolutionReport::parseOption(int ref, int prio, CmdLineOptList::SingleOption *opt)
+{
+    if (ModuleBase::parseOption(ref, prio, opt))
+        return true;
+
+    switch (ref) {
+
+
+    case  OPTION_SOLREPORT_DISPLAY:
+
+        for (size_t i=0; i<opt->size();i++) {
+
+            string option = (*opt)[i];
+            string dispOpt = StringStore::lrTrim(StringStore::upperCase(option));
+
+            if (dispOpt=="IGNOREZEROS" || dispOpt=="NONZEROS" )
+                _ignoreZeros=true;
+            if (dispOpt=="IGNOREVARS")
+                _ignoreVars=true;
+            if (dispOpt=="IGNORECONS")
+                _ignoreCons=true;
+
+
+            if ( StringStore::startsWith(dispOpt, "VAR") || StringStore::startsWith(dispOpt, "CON")  ) {
+
+                string option=(*opt)[i];
+                vector <string> optList;
+                StringStore::split(option,optList,"=");
+                if (optList.size()>1)
+                    if ( StringStore::startsWith(dispOpt, "VAR") )
+                        _displayVarList.push_back(optList[1]);
+                    else
+                        _displayConList.push_back(optList[1]);
+                else
+                    _ctrl->errHandler().error(ERROR_LVL_WARN, _ctrl->printBuffer("Wrong display option %s", option.c_str() )  , opt->loc(true) );
+
+            }
+        }
+        return true;
+
+
+    }
+
+
+    return false;
+}
+
+/**
+     * writes usage info for the module to stream
+     * @param s				stream to write to
+     */
+void SolutionReport::usage(ostream& s)
+{
+    ModuleBase::usage(s);
+    //toDO
+}
+
+}
+
+
+
+
+

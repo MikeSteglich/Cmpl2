@@ -1,0 +1,541 @@
+
+/***********************************************************************
+ *  This code is part of CMPL
+ *
+ *  Copyright (C) 2007, 2008, 2009, 2010, 2011
+ *  Mike Steglich - Technical University of Applied Sciences
+ *  Wildau, Germany and Thomas Schleiff - Halle(Saale),
+ *  Germany
+ *
+ *  Coliop3 and CMPL are projects of the Technical University of
+ *  Applied Sciences Wildau and the Institute for Operations Research
+ *  and Business Management at the Martin Luther University
+ *  Halle-Wittenberg.
+ *  Please visit the project homepage <www.coliop.org>
+ *
+ *  CMPL is free software; you can redistribute it and/or modify it
+ *  under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  CMPL is distributed in the hope that it will be useful, but WITHOUT
+ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ *  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, see <http://www.gnu.org/licenses/>.
+ *
+ ***********************************************************************/
+
+
+#ifndef EXECCONTEXT_HH
+#define EXECCONTEXT_HH
+
+#include "../../CommonData/CmplVal.hh"
+#include "../../CommonData/IntCode.hh"
+#include "../../Control/ErrorHandler.hh"
+#include "ValueStore.hh"
+#include "StackValue.hh"
+#include "CodeBlockContext.hh"
+
+
+using namespace std;
+
+
+
+namespace cmpl
+{
+	class Interpreter;
+	class ModuleBase;
+	class ValContainer;
+
+
+    /**
+	 * the <code>ExecContext</code> class constitutes an execution context for the intermediary code.
+	 * it contains the main loop for this execution.
+	 */
+	class ExecContext
+	{
+	private:
+		Interpreter *_modp;							///< interpreter module
+		ExecContext *_parent;						///< parent execution context / NULL: this is the root execution context
+
+		unsigned _level;							///< level of execution context
+		bool _fctContext;							///< execution context is a function context
+        bool _needLock;                             ///< lock needed for access to global symbols
+
+        IntCode::IcElem *_curCommand;				///< current command in intermediary code (only set in run())
+
+		SymbolValue *_localSymbols;					///< array for values of local symbols, indexed by local symbol index
+		unsigned _localSymbolCap;					///< size of <code>_localSymbols</code>
+        unsigned _localSymbolCreateTo;              ///< count of initialized local symbols in <code>_localSymbols</code> at creation time of this execution context
+
+		StackValue *_stack;							///< array for computation stack
+		unsigned long _stackCap;					///< size of <code>_stack</code>
+		unsigned long _stackTop;					///< stack pointer
+
+        StackValue *_fctArg;                        ///< only for function context: pointer to function argument
+        ValContainer *_fctThis;                     ///< only for function context: pointer to "$this" container if existing
+        ValContainer *_callThis;                    ///< only within start of function call: pointer to "$this" container of called function
+
+        CodeBlockContext **_cbContext;              ///< array for stack of code block contexts
+        unsigned _cbContextCap;                     ///< size of <code>_cbContext</code>
+        unsigned _cbContextTop;                     ///< current code block context pointer
+        unsigned _cbContextCreateTop;               ///< code block context pointer at creation time of this execution context object
+            //TODO: mit dem Codeblockstackpointer zur Erstellungszeit zu initialisieren
+
+		CmplVal _opRes;								///< store for operation result
+
+        StackValue *_assRhs;						///< current assign: right hand side or NULL
+        intType _assObjType;						///< current assign: object type or -1 when no one
+        ValType *_assDataType;						///< current assign: data type or NULL
+        unsigned _assSyntaxElem;					///< current assign: id of syntax element
+        unsigned _assStartVolaRhs;					///< current assign: start position of code for the value of the right hand side, if another execution of this code may compute a changed value, else 0
+        bool _assNextRhs;							///< current assign: next right hand side value needed
+
+        volatile bool _cancel;                      ///< cancel flag
+        volatile bool _cancelCont;                  ///< control command for cancel is "continue"
+        volatile unsigned _cancelCbLvl;             ///< nesting codeblock level for cancel
+        recursive_mutex _cancelMtx;                 ///< mutex for setting cancel flag
+
+
+    public:
+		/**
+		 * constructor
+         * @param mod			interpreter module
+         * @param prv			parent execution context / NULL: this is the root execution context
+         * @param fct           execution context is a function context
+         * @param fctArg		only for function context: pointer to function argument
+         */
+        ExecContext(Interpreter *mod, ExecContext *prv, bool fct, StackValue *fctArg = NULL);
+
+		/**
+		 * destructor
+		 */
+		~ExecContext();
+
+
+        /**
+         * creates new execution context object for iteration execution within own thread
+         * @param lsdt          count of initialized local symbols in <code>prv</code>
+         * @return              new execution context
+         */
+        ExecContext *newAsIterCopy(unsigned lsdt);
+
+        /**
+         * reinitialize execution context object for reuse in another thread for iteration execution
+         */
+        void reinitIterCopy();
+
+        /**
+         * release execution context object created for iteration execution within own thread
+         */
+        void disposeIterCopy();
+
+
+		/**
+		 * main function, runs the main loop for execution of the intermediary code
+         * @param startPos      start position within the intermediary code
+         * @param userFct       execution of a user defined function
+         * @param res           pointer for storing result (NULL if not used)
+         */
+        void run(unsigned startPos, bool userFct, CmplVal *res);
+
+
+		/**
+		 * get interpreter module
+		 */
+        inline Interpreter *modp() const    					{ return _modp; }
+
+        /**
+         * get start of the array with intermediary code
+         */
+        IntCode::IcElem *codeBase() const;
+		
+		/**
+		 * get reference to store for operation result
+		 */
+        inline CmplVal& opResult()                              { return _opRes; }
+
+        /**
+         * get whether lock needed for access to global symbols
+         */
+        inline bool needLock()                                  { return _needLock; }
+
+        /**
+         * get pointer to function argument (only for function context)
+         */
+        inline StackValue *getFctArg() const                    { return _fctArg; }
+
+        /**
+         * pointer to "$this" container if existing (only for function context)
+         */
+        inline ValContainer *getFctThis() const                 { return _fctThis; }
+
+        /**
+         * pointer to "$this" container of called function (only within start of function call)
+         */
+        inline ValContainer *getCallThis() const                { return _callThis; }
+
+        /**
+         * set container for called function (directly before function call)
+         * @return      previous value of "$this" container of called function
+         */
+        inline ValContainer *setCallThis(ValContainer *c)       { ValContainer *pt = _callThis; _callThis = c; return pt; }
+
+
+		/****** execution of intermediary code commands ****/
+
+	private:
+		/**
+		 * executes intermediary code command for literal value
+		 * @param cd		intermediary code command
+		 * @return			next intermediary code position / NULL if you have to leave this execution context after the command
+		 */
+		IntCode::IcElem* execCodeLitVal(IntCode::IcElem *cd);
+
+		/**
+		 * executes intermediary code command for fetch a value
+		 * @param cd		intermediary code command
+		 * @return			next intermediary code position / NULL if you have to leave this execution context after the command
+		 */
+		IntCode::IcElem* execCodeFetch(IntCode::IcElem *cd);
+
+        /**
+         * executes intermediary code command for fetch of a pseudo symbol
+         * @param cd		intermediary code command
+         * @return			next intermediary code position / NULL if you have to leave this execution context after the command
+         */
+        IntCode::IcElem* execCodeFetchSpecial(IntCode::IcElem *cd);
+
+        /**
+		 * executes intermediary code command for assign a value
+		 * @param cd		intermediary code command
+		 * @return			next intermediary code position / NULL if you have to leave this execution context after the command
+		 */
+		IntCode::IcElem* execCodeAssign(IntCode::IcElem *cd);
+
+		/**
+		 * executes intermediary code command for execution of an operation
+		 * @param cd		intermediary code command
+		 * @return			next intermediary code position / NULL if you have to leave this execution context after the command
+		 */
+		IntCode::IcElem* execCodeOperation(IntCode::IcElem *cd);
+
+		/**
+		 * executes intermediary code command for execution of a value construction
+		 * @param cd		intermediary code command
+		 * @return			next intermediary code position / NULL if you have to leave this execution context after the command
+		 */
+		IntCode::IcElem* execCodeConstruct(IntCode::IcElem *cd);
+
+		/**
+		 * executes intermediary code command for functions and jumps
+		 * @param cd		intermediary code command
+		 * @return			next intermediary code position / NULL if you have to leave this execution context after the command
+		 */
+		IntCode::IcElem* execCodeFunction(IntCode::IcElem *cd);
+
+        /**
+         * executes intermediary code command for code blocks
+         * @param cd		intermediary code command
+         * @param cbBody    execution for a single codeblock body
+         * @param cbLvl     level of nested codeblocks
+         * @param cbCancel  cancelling codeblock at level _cancelCbLvl; skip new codeblock if new one starts
+         * @param endCtx    return whether execution in this execution context is ended
+         * @return			next intermediary code position / NULL if you have to leave this execution context after the command
+         */
+        IntCode::IcElem* execCodeCodeblock(IntCode::IcElem *cd, bool cbBody, unsigned &cbLvl, bool& cbCancel, bool& endCtx);
+
+        /**
+         * executes intermediary code command for code block headers
+         * @param cd		intermediary code command
+         * @param cbHeader  execution for a single codeblock header
+         * @return			next intermediary code position / NULL if you have to leave this execution context after the command
+         */
+        IntCode::IcElem* execCodeCBHeader(IntCode::IcElem *cd, bool cbHeader);
+
+        /**
+         * executes intermediary code command for code blocks
+         * @param cd		intermediary code command
+         * @param cbHB      execution for a single codeblock header or body
+         * @param cbLvl     current level of nested codeblocks
+         * @param cbTS      start level of nested codeblocks
+         * @return			next intermediary code position / NULL if you have to leave this execution context after the command
+         */
+        IntCode::IcElem* execCodeCBControl(IntCode::IcElem *cd, bool cbHB, unsigned cbLvl, unsigned cbTS);
+
+
+		/****** stack handling ****/
+
+    public:
+        /**
+		 * prepare stack to push a value
+		 * @param se		id of syntax element in the cmpl text creating this stack value
+		 * @return			stack element to take up the value to push
+		 */
+		StackValue *pushPre(unsigned se);
+
+		/**
+		 * pointer to current element on the stack
+		 */
+		inline StackValue *stackCur()						{ return (_stack + (_stackTop-1)); }
+
+		/**
+		 * pointer to previous element on the stack relative to a given element
+		 * @param sv		given base element
+		 * @param err		true: if sv is already the first element then error / false: then return NULL
+		 * @return			element before sv
+		 */
+		StackValue *stackPrev(StackValue *sv, bool err = true);
+
+		/**
+		 * pointer to previous element on the stack relative to a given element (static version, no check for underflow possible)
+		 * @param sv		given base element
+		 * @return			element before sv
+		 */
+		static StackValue* stackPrevStatic(StackValue *sv);
+
+        /**
+         * get total count of stack values for a list
+         * @param sv		list header element
+         * @return			total count of elements on the stack for the list
+         */
+        static unsigned long stackListTotalCnt(StackValue *sv);
+
+		/**
+		 * push a literal int value to the stack
+		 * @param i			value to push
+		 * @param se		id of syntax element in the cmpl text creating this stack value
+		 */
+		inline void pushInt(intType i, unsigned se)			{ StackValue *sv = pushPre(se); sv->_val.set(TP_INT, i); }
+
+		/**
+		 * push a literal real value to the stack
+		 * @param r			value to push
+		 * @param se		id of syntax element in the cmpl text creating this stack value
+		 */
+		inline void pushReal(realType r, unsigned se)		{ StackValue *sv = pushPre(se); sv->_val.set(TP_REAL, r); }
+
+		/**
+		 * push a literal string value to the stack
+		 * @param i			value to push (index in string store)
+		 * @param se		id of syntax element in the cmpl text creating this stack value
+		 */
+		inline void pushString(intType i, unsigned se)		{ StackValue *sv = pushPre(se); sv->_val.set(TP_STR, i); }
+
+		/**
+		 * push a literal blank value to the stack
+		 */
+		inline void pushBlank(unsigned se)					{ StackValue *sv = pushPre(se); sv->_val.set(TP_BLANK); }
+
+        /**
+         * push a null value to the stack
+         */
+        inline void pushNull(unsigned se)					{ StackValue *sv = pushPre(se); sv->_val.set(TP_NULL); }
+
+		/**
+		 * push a empty value to the stack
+         */
+		inline void pushEmpty(unsigned se)					{ pushPre(se); }
+
+        /**
+         * push a value to the stack
+         * @param v			value to push
+         * @param se		id of syntax element in the cmpl text creating this stack value
+         * @param disp		dispose value v
+         */
+        inline void pushVal(CmplVal& v, unsigned se, bool disp = false)		{ StackValue *sv = pushPre(se); if (disp) { sv->_val.moveFrom(v, false); } else { sv->_val.copyFrom(v, true, false); } }
+
+        /**
+		 * push value stored in _opRes
+		 */
+		inline void pushOpResult(unsigned se)				{ StackValue *sv = pushPre(se); sv->_val.moveFrom(_opRes); /*TODO: nur verwendbar wenn _addVal und _transpose nicht zu setzen*/ }
+
+		/**
+		 * discards the value on top of stack
+		 */
+		void pop();
+
+		/**
+		 * discards value on the stack up to given element
+		 * @param sv		given base element
+		 * @param incl		discard also element sv
+		 */
+		void stackPopTo(StackValue *sv, bool incl = true);
+
+        /**
+         * replace a list value on the stack by an array or tuple
+         * @param sv		list header
+         * @return 			result value
+         */
+        StackValue *replaceListOnStack(StackValue *sv);
+
+        /**
+         * get from stack value (which can be array or list) the first scalar values
+         * @param sv            source stack value
+         * @param maxCnt        max count of scalar values to fetch
+         * @param args          array for returning fetched scalar values
+         * @param se            array for returning syntax element numbers of fetched scalar values
+         * @return              count of found values (can be greater than maxCnt if more values are found) / 0: found values are not scalar
+         */
+        unsigned getFirstSimpleValues(StackValue *sv, unsigned maxCnt, CmplVal *args, unsigned *se);
+
+
+        /****** code block handling ****/
+
+        /**
+         * push an object to the code block context start
+         * @param cb        code block context object or NULL if no context is needed
+         * @param se		syntax element in the cmpl text creating this code block context object
+         */
+        void pushCBContext(CodeBlockContext *cb, unsigned se);
+
+        /**
+         * get code block context object
+         * @param offset    offset to current context
+         * @return          code block context object or NULL if no context is needed (or invalid offset)
+         */
+        inline CodeBlockContext *getCBContext(unsigned offset = 0)              { return (offset < _cbContextTop ? _cbContext[_cbContextTop - offset - 1] : NULL); }
+
+        /**
+         * get next upper existing code block context object on the code block stack
+         * @param lvl       start position in the code block stack
+         * @return          code block context object or NULL if no such context object exists
+         */
+        CodeBlockContext *getNextUpperCBContext(unsigned lvl);
+
+        /**
+         * pop and discard code block context objects
+         * @param se		syntax element in the cmpl text creating this code block context object
+         * @param cnt       count of code block context objects to discard
+         */
+        void popCBContext(unsigned se, unsigned cnt = 1);
+
+        /**
+         * get current codeblock nesting level
+         */
+        inline unsigned curCBLevel() const                                      { return _cbContextTop; }
+
+        /**
+         * set value for codeblock symbol
+         * @param n         number of codeblock symbol within array _localSymbols
+         * @param va        value as CmplVal
+         * @param vb        value as StackValue (only used if no <code>va</code>)
+         */
+        void setCBSymbolVal(unsigned n, const CmplVal *va, StackValue *vb = NULL);
+
+        /**
+         * uninitialize local symbols
+         * @param n         number of first symbol within array _localSymbols
+         * @param to        max number of symbol + 1
+         * @param delId		unset also SymbolValue::_defId
+         */
+        void uninitCBSymbols(unsigned n, unsigned to, bool delId);
+
+        /**
+         * set and propagate cancel flag
+         * @param cmd		control command (one of ICS_CBC_BREAK, ICS_CBC_CONTINUE, ICS_CBC_REPEAT)
+         * @param dstLvl	nesting codeblock level of destination codeblock of the control command
+         */
+        void setCancel(int cmd, unsigned dstLvl);
+
+
+        /****** assignment ****/
+
+    public:
+        /**
+         * get right hand side value for the current assignment
+         * @param se		id of syntax element for use as default
+         * @return 			right hand side value on the stack
+         */
+        StackValue *getCurAssignRhs(unsigned se);
+
+
+        /****** utility functions ****/
+
+    public:
+        /**
+         * check if source value is a container with a defined special convert function, and call this function
+         * @param dst       store for result value of the called function
+         * @param src       source value
+         * @param tp        type of convert
+         * @return          true if special convert function is found and called
+         */
+        bool checkContainerConvSpecial(CmplVal& dst, const CmplVal& src, tp_e tp);
+
+
+		/****** error handling ****/
+
+    public:
+		/**
+		 * internal error
+		 * @param msg		error message
+		 */		
+		void internalError(const char *msg);
+
+        /**
+         * other execution error
+         * @param msg		error message
+         * @param se		syntax element id of source value
+         * @param level		one of ERROR_LVL_*
+         */
+        void execError(const char *msg, unsigned se, int level = ERROR_LVL_NORMAL);
+
+		/**
+         * value is not suited for the current intermediary code command
+		 * @param msg		error message
+         * @param val		value
+         * @param se		syntax element id of source value
+         * @param level		one of ERROR_LVL_*
+		 */
+        void valueError(const char *msg, CmplVal& val, unsigned se, int level = ERROR_LVL_NORMAL);
+
+        /**
+         * value on the stack is not suited for the current intermediary code command
+         * @param msg		error message
+         * @param sv		value on the stack
+         * @param level		one of ERROR_LVL_*
+         */
+        void valueError(const char *msg, StackValue *sv, int level = ERROR_LVL_NORMAL)		{ valueError(msg, sv->val(), sv->syntaxElem(), level); }
+
+        /**
+         * assertion failed
+         * @param tp		type of failing assertion
+         * @param ase		syntax element id of assert command
+         * @param vse       syntax element id of failing value / 0: in assert command itself
+         * @param level		one of ERROR_LVL_*
+         */
+        void assertionError(const char *tp, unsigned ase, unsigned vse, int level = ERROR_LVL_NORMAL);
+    };
+
+
+#if 0
+    /**
+     * exception while using a cmpl value, e.g. in evaluation of a cmpl expression
+     */
+    class CmplValueException : public std::runtime_error
+            // von irgendeiner anderen CMPL-exception ableiten / oder von std::runtime_error (würde what(), destructor, und Konstruktor mit what-Argument schon definieren; vielleicht andere CMPL-exceptions schon davon ableiten)
+    {
+    private:
+        int _valueNo;                     ///< number of inappropriate value (-1: whole evaluated expression / 0: no specific value / >=1: number of argument value)
+
+    public:
+        /**
+         * constructor
+         * @param txt       error message
+         * @param valNo     number of inappropriate value (-1: whole evaluated expression / 0: no specific value / >=1: number of argument value)
+         */
+        CmplValueException(const string& txt, int valNo) noexcept : std::runtime_error(txt), _valueNo(valNo)    { }
+
+        /**
+         * get number of inappropriate value
+         */
+        int valueNo() const noexcept            { return _valueNo; }
+    };
+#endif
+}
+
+#endif // EXECCONTEXT_HH
+

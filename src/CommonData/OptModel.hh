@@ -1,0 +1,541 @@
+
+/***********************************************************************
+ *  This code is part of CMPL
+ *
+ *  Copyright (C) 2007, 2008, 2009, 2010, 2011
+ *  Mike Steglich - Technical University of Applied Sciences
+ *  Wildau, Germany and Thomas Schleiff - Halle(Saale),
+ *  Germany
+ *
+ *  Coliop3 and CMPL are projects of the Technical University of
+ *  Applied Sciences Wildau and the Institute for Operations Research
+ *  and Business Management at the Martin Luther University
+ *  Halle-Wittenberg.
+ *  Please visit the project homepage <www.coliop.org>
+ *
+ *  CMPL is free software; you can redistribute it and/or modify it
+ *  under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  CMPL is distributed in the hope that it will be useful, but WITHOUT
+ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ *  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, see <http://www.gnu.org/licenses/>.
+ *
+ ***********************************************************************/
+
+
+#ifndef OPTMATRIX_HH
+#define OPTMATRIX_HH
+
+#include <unordered_map>
+
+#include "../Control/MainData.hh"
+#include "CmplVal.hh"
+#include "ValueTree.hh"
+
+
+using namespace std;
+
+
+
+namespace cmpl
+{
+    class OptModel;
+    class ValFormula;
+
+
+	/**
+	 * base class for optimization matrix elements
+	 */
+	class OptVarConBase : public CmplObjBase, public ValueTreeElem
+	{
+	protected:
+        unsigned _syntaxElem;		///< id of syntax element in the cmpl text creating this matrix element
+        CmplValAuto _names;         ///< if set then TP_ARRAY of additional names usable for linearisation
+        //TODO
+
+    public:
+        /**
+         * get id of syntax element in the cmpl text creating this matrix element
+         */
+        unsigned syntaxElem() const             { return _syntaxElem; }
+
+        /**
+         * get TP_ARRAY of additional names usable for linearisation
+         */
+        CmplVal& names()                        { return _names; }
+
+        //TODO
+	};
+
+
+	/**
+	 * class for one optimization variable (column in the optimization matrix)
+	 */
+	class OptVar : public OptVarConBase
+	{
+	protected:
+		CmplVal _dataType;								///< data type
+        bool _hasDataType;								///< data type is fixed (when false, then _dataType is the default data type for variables)
+
+        bool _intVar;									///< integer optimization variable
+        CmplVal _lowBound;								///< lower bound (can only be TP_EMPTY, TP_INT, TP_REAL)
+        CmplVal _uppBound;								///< upper bound (can only be TP_EMPTY, TP_INT, TP_REAL)
+
+
+    public:
+        /**
+         * constructor
+         * @param om		result matrix
+         * @param tp		data type
+         * @param defTp		data type tp is default type
+         * @param se		id of syntax element in the cmpl text creating this matrix element
+         */
+        OptVar(OptModel *om, CmplVal& tp, bool defTp, unsigned se);
+
+        /**
+         * destructor
+         */
+        virtual ~OptVar()                       { _dataType.dispose(); _lowBound.dispose(); _uppBound.dispose(); }
+
+        /**
+         * write contents of the object to a stream
+         * @param modp			calling module
+         * @param mode			mode for output: 0=direct; 1=part of other value
+         */
+        virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const     { ostr << "<var#" << _id; if (mode == 0) { ostr << ": " << (_hasDataType ? "" : "(def.type) "); _dataType.write(ostr, modp, 1); } ostr << '>'; }
+
+        /**
+         * set data type as fixed
+         */
+        inline void fixDataType()					{ _hasDataType = true; }
+
+        /**
+         * get data type
+         */
+        inline CmplVal& dataType()					{ return _dataType; }
+
+        /**
+         * get whether this is an integer optimization variable
+         */
+        inline bool intVar()						{ return _intVar; }
+
+        /**
+         * get whether this is a binary optimization variable
+         */
+        inline bool binVar()                        { return (_intVar && _uppBound.t == TP_INT && _uppBound.v.i == 1 && _lowBound.t == TP_INT && _lowBound.v.i == 0); }
+
+        /**
+         * set whether this is an integer optimization variable
+         */
+        inline void setIntVar(bool iv)				{ _intVar = iv; }
+
+        /**
+         * get lower bound (can only be TP_EMPTY, TP_INT or TP_REAL)
+         */
+        inline CmplVal& lowBound()					{ return _lowBound; }
+
+        /**
+         * set lower bound (must be TP_EMPTY, TP_INT or TP_REAL)
+         */
+        inline void setLowBound(CmplVal& lb)		{ _lowBound.copyFrom(lb); }
+
+        /**
+         * get upper bound (can only be TP_EMPTY, TP_INT or TP_REAL)
+         */
+        inline CmplVal& uppBound()					{ return _uppBound; }
+
+        /**
+         * set upper bound (must be TP_EMPTY, TP_INT or TP_REAL)
+         */
+        inline void setUppBound(CmplVal& lb)		{ _uppBound.copyFrom(lb); }
+
+        //TODO
+	};
+
+
+	/**
+	 * class for one optimization constraint or objective (row in the optimization matrix)
+	 */
+	class OptCon : public OptVarConBase
+	{
+	protected:
+        CmplVal _formula;								///< formula for constraint or objective, should be TP_FORMULA
+        bool _objective;								///< objective or constraint
+		
+	public:
+        /**
+         * constructor
+         * @param om		result matrix
+         * @param f			formula for constraint or objective
+         * @param obj		true: objective / false: constraint
+         * @param se		id of syntax element in the cmpl text creating this matrix element
+         */
+        OptCon(OptModel *om, CmplVal& f, bool obj, unsigned se);
+
+        /**
+         * destructor
+         */
+        virtual ~OptCon()                       { _formula.dispose(); }
+
+        /**
+         * write contents of the object to a stream
+         * @param modp			calling module
+         * @param mode			mode for output: 0=direct; 1=part of other value
+         */
+        virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const     { ostr << (_objective ? "<obj#" : "<con#") << _id << ": "; _formula.write(ostr, modp, 1); ostr << '>'; }
+
+        /**
+		 * get whether this is a linear constraint or objective
+		 */
+        bool linearConstraint();
+		
+        /**
+         * get formula for constraint or objective
+         */
+        ValFormula *formula()							{ return (_formula.t == TP_FORMULA ? _formula.valFormula() : NULL); }
+
+        /**
+         * get value of the constraint or objective
+         */
+        CmplVal& value()                                { return _formula; }
+
+        /**
+         * get whether objective or constraint
+         */
+        bool objective()                                { return _objective; }
+
+		//TODO
+	};
+
+
+
+    /**
+     * class for linear model by columns or by rows, filled from <code>OptModel</code> object before output
+     */
+    class LinearModel
+    {
+        friend class OptModel;
+
+    public:
+        struct Coefficient {
+            unsigned long idRC;							///< identy number of row or column
+            intType iCoeff;								///< integer coefficient / 0: if real number coefficient is used
+            realType rCoeff;							///< real number coefficient
+
+            /**
+             * constructor
+             */
+            inline Coefficient()													{ idRC = 0; iCoeff = 0; rCoeff = 0.0; }
+
+            /**
+             * constructor
+             */
+            inline Coefficient(unsigned long id)									{ idRC = id; iCoeff = 0; rCoeff = 0.0; }
+
+            /**
+             * constructor
+             */
+            inline Coefficient(unsigned long id, intType i, bool neg = false)		{ idRC = id; iCoeff = (neg ? -i : i); rCoeff = 0.0; }
+
+            /**
+             * constructor
+             */
+            inline Coefficient(unsigned long id, realType r, bool neg = false)		{ idRC = id; iCoeff = 0; rCoeff = (neg ? -r : r); }
+
+            /**
+             * constructor
+             */
+            inline Coefficient(unsigned long id, CmplVal& v, bool neg = false)		{ idRC = id; iCoeff = (!v ? (neg ? -1 : 1) : (v.t == TP_INT || v.t == TP_BIN ? (neg ? -v.v.i : v.v.i) : 0)); rCoeff = (v.t == TP_REAL ? (neg ? -v.v.r : v.v.r) : 0.0); }
+
+            /**
+             * initialize coefficient
+             * @param id	identy number of row or column
+             */
+            inline void init(unsigned long id)										{ idRC = id; iCoeff = 0; rCoeff = 0.0; }
+
+            /**
+             * negate this coefficient
+             */
+            inline void negate()													{ iCoeff = -iCoeff; rCoeff = -rCoeff; }
+
+            /**
+             * add another value to the coefficient
+             * @param v			other value
+             * @param neg		negate value v
+             */
+            void add(CmplVal& v, bool neg = false);
+
+            /**
+             * check if this coefficient is a numeric 0
+             * @return			true if numberic 0
+             */
+            inline bool isNumNull() const											{ return (iCoeff == 0 && rCoeff == 0); }
+
+            /**
+             * get coefficient value as string suitable for output
+             * @param rf		format spezifier for real number output or NULL for standard format
+             * @param ms		max length of output string
+             * @return 			coefficient value as string
+             */
+            string outString(const char *rf, unsigned ms) const;
+        };
+
+    private:
+        OptModel *_om;									///< sourve optimization model for this linear model
+        bool _byCol;									///< linear model is filled by column (as needed for instance for MPS format) / false: filled by row
+
+        vector<Coefficient> *_coeffs;					///< array of vectors with the coefficients (size of array is number of columns (if _byCol) or number of rows (if !_byCol))
+        Coefficient *_rhs;								///< array of right hand sides
+        char *_mode;									///< array of mode per row (size of array is number of rows) (valid are: 'N', 'L', 'G', 'E': like in MPS; or '+': maximize, or '-': minimize)
+
+        /**
+         * fill _coeffs, _rhs and _mode from sourve optimization model _om
+         */
+        void fill();
+
+        /**
+         * constructor
+         */
+        LinearModel(OptModel *om, bool byCol): _om(om), _byCol(byCol), _coeffs(NULL), _rhs(NULL), _mode(NULL)		{ fill(); }
+
+    public:
+        /**
+         * destructor
+         */
+        ~LinearModel()		{ if (_coeffs) delete[] _coeffs; if (_rhs) delete[] _rhs; if (_mode) delete[] _mode; }
+
+
+        /**
+         * get whether linear model is filled by column (as needed for instance for MPS format) / false: filled by row
+         */
+        bool byCol() const										{ return _byCol; }
+
+        /**
+         * get array of vectors with the coefficients (size of array is number of columns (if _byCol) or number of rows (if !_byCol))
+         */
+        const vector<Coefficient> *coeffs() const				{ return _coeffs; }
+
+        /**
+         * get array of right hand sides (size of array is number of rows)
+         */
+        const Coefficient *rhs() const							{ return _rhs; }
+
+        /**
+         * get array of mode per row (size of array is number of rows) (valid are: 'N', 'L', 'G', 'E': like in MPS; or '+': maximize, or '-': minimize)
+         */
+        const char *mode() const								{ return _mode; }
+    };
+
+    /**
+     * <code>NonLinearModelException</code> is thrown if tried to fill <code>LinearModel</code> for an <code>OptModel</code> object containing non linear constraints
+     */
+    class NonLinearModelException : public exception        //TODO: besser von runtime_error ableiten?
+    {
+    private:
+        unsigned long _idRow;							///< identy number of non linear row
+
+    public:
+        /**
+         * constructor
+         * @param r					identy number of non linear row
+         */
+        NonLinearModelException(unsigned long r): _idRow(r)		{ }
+
+        /**
+         * destructor
+         */
+        virtual ~NonLinearModelException() noexcept				{ }
+
+        /**
+         * get exception info
+         */
+        virtual const char *what() const noexcept				{ return "non-linear constraint in the model"; }
+
+        /**
+         * get identy number of non linear row
+         */
+        unsigned long idRow() noexcept							{ return _idRow; }
+    };
+
+
+
+	/**
+     * The <code>OptModel</code> class holds the columns (variables) and rows (constraints and objectives) for the optimization. It is generated by the Interpreter module.
+     */
+    class OptModel : public MainData::DataBase
+	{
+	private:
+		ValueTreeRoot _cols;							///< optimization variables (elements are OptVar)
+		ValueTreeRoot _rows;							///< optimization constraints and objectives (elements are OptCon)
+
+        LinearModel *_modCol;							///< linear model per column; only filled from _cols and _rows if needed for output
+        LinearModel *_modRow;							///< linear model per row; only filled from _cols and _rows if needed for output
+
+        bool _linearModelChecked;                       ///< to prevent to repeat the test for linearity
+        bool _isLinearModel;                            ///< indicator whether the model is linear
+
+        bool _isInteger;                                ///< indicator whether the model is integer
+
+        bool _exportOnly;                               ///< indicator for export mode (true) or solving mode (false)
+
+        //TODO
+
+	public:
+		/**
+		 * constructor
+         * @param m         module name
+         * @param data      main data object
+         */
+        OptModel(const char *m, MainData *data): MainData::DataBase(m, data), _cols(TP_OPT_VAR), _rows(TP_OPT_CON), _modCol(NULL), _modRow(NULL)
+              { _linearModelChecked=false; _isLinearModel=true; _isInteger=false;
+                _exportOnly=false;}
+
+        /**
+         * destructor
+         */
+        inline ~OptModel()										{ cleanUp(); }
+
+
+        /************** get model **********/
+    public:
+        /**
+         * get optimization variables
+         */
+        ValueTreeRoot& cols()									{ return _cols; }
+
+        /**
+         * get optimization constraints and objectives
+         */
+        ValueTreeRoot& rows()									{ return _rows; }
+
+        /**
+         * get linear model per column
+         */
+        LinearModel *getColModel()								{ if (!_modCol) { _modCol = new LinearModel(this, true); } return _modCol; }
+
+        /**
+         * get linear model per row
+         */
+        LinearModel *getRowModel()								{ if (!_modRow) { _modRow = new LinearModel(this, false); } return _modRow; }
+
+
+        /**
+         * gets indicator whether the model is linear
+         * * @return        true if model is linear
+         */
+        bool isLinearModel();
+
+        /**
+         * sets  whether the model is integer or not
+         * @param isInt				true for integer
+         */
+        inline void setIsInteger(bool isInt) {_isInteger=isInt;}
+
+        /**
+         * gets indicator whether the model is integer
+         * * @return        true if model is integer
+         */
+        inline bool isInteger() {return _isInteger;}
+
+        /**
+         * sets whether the model runs in export or solving mode
+         * @param exp		true for export mode
+         */
+        inline void setExportOnly(bool exp) { _exportOnly=exp;}
+
+        /**
+         * gets indicator whether the model runs in export or solving mode
+         * * @return        true for export mode
+         */
+        inline bool exportOnly() { return _exportOnly; }
+
+
+    private:
+        /**
+         * get array of names for usage on formatted outputs of the columns or rows of the model
+         * @param col				true for column names or false for row names
+         * @param sstore			stored string values
+         * @param prefStd			prefix for standard name if the element have no name in the value tree / NULL if no standard name
+         * @param prefSubs			prefix for substitute name, used if a regular name not exists or is not unique
+         * @param quote				quote char for strings, 0 if no one
+         * @param rplSp				replacement char for space, 0 for removing spaces, space char for leaving spaces unchanged
+         * @param mLen				max length for result name
+         * @return					array of the names
+         */
+        string *outNamesArray(bool col, StringStore *sstore, const char *prefStd, const char *prefSubs, char quote, char rplSp, unsigned mLen);
+
+    public:
+        /**
+         * get array of column names for usage on formatted outputs
+         * @param sstore			stored string values
+         * @param quote				quote char for strings, 0 if no one
+         * @param rplSp				replacement char for space, 0 for removing spaces, space char for leaving spaces unchanged
+         * @param mLen				max length for result name
+         * @return					array of the names
+         */
+        string *colNames(StringStore *sstore, char quote, char rplSp, unsigned mLen)		{ return outNamesArray(true, sstore, NULL, "_c", quote, rplSp, mLen); }
+
+        /**
+         * get array of column names for usage on formatted outputs
+         * @param sstore			stored string values
+         * @param quote				quote char for strings, 0 if no one
+         * @param rplSp				replacement char for space, 0 for removing spaces, space char for leaving spaces unchanged
+         * @param mLen				max length for result name
+         * @return					array of the names
+         */
+        string *rowNames(StringStore *sstore, char quote, char rplSp, unsigned mLen)		{ return outNamesArray(false, sstore, "line_", "_r", quote, rplSp, mLen); }
+
+
+        /************** implementation for MainData::DataBase methods **********/
+    public:
+        /**
+         * delete all data
+         */
+        virtual void cleanUp();
+
+        /**
+         * get count of sub data objects
+         */
+        virtual int subCnt()																		{ return _cols.size() + _rows.size(); }
+
+        /**
+         * if sub data is splitted up to different parts for serialization then get count of these parts, otherwise 0
+         */
+        virtual int subPartCount()																	{ return 2; }
+
+        /**
+         * check if serialization to or from stream should be done for the data object
+         * @param si		serialization info
+         * @param data		main data object
+         * @return			true if serialization should be done
+         */
+        virtual bool checkSerialize(MainData::SerializeInfo& si, const MainData *data);
+
+        /**
+         * write data object to output stream
+         * @param si		serialization info
+         * @param data		main data object
+         */
+        virtual void serializeTo(MainData::SerializeInfo& si, const MainData *data);
+
+        /**
+         * fill data object from input stream
+         * @param si		serialization info
+         * @param data		main data object
+         * @param pos		position of input string, returns iterated position
+         * @param subCnt	count of sub data objects
+         * @param lc		line count per element or 0 if elements are len coded
+         * @param rline		remaining section start line
+         */
+        virtual void deserializeFrom(MainData::SerializeInfo& si, const MainData *data, int subCnt, int lc, string &rline);
+	};
+}
+
+#endif // OPTMATRIX_HH
+

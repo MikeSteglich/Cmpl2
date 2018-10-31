@@ -1,0 +1,3 @@
+error (module compile: parser): unknown pseudo symbol '$2'; at 22_diet.cmpl:26.2-3, called from: command line:$1
+error (module compile: parser): unknown pseudo symbol '$'; at 22_diet.cmpl:26.4, called from: command line:$1
+warning (module compile: parser): multiple modificator of same type, only first is considered; at 22_diet.cmpl:26.4, called from: command line:$1
