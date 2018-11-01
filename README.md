@@ -5,7 +5,7 @@ The CMPL syntax is similar in formulation to the original mathematical model but
 includes syntactic elements from modern programming languages. CMPL is intended to combine 
 the clarity of mathematical models with the flexibility of programming languages. 
 
-CMPL executes the COIN-OR OSSolverService, GLPK, Gurobi, SCIP and CPLEX directly to solve the generated model 
+CMPL executes CBC, GLPK, SCIP, Gurobi and CPLEX directly to solve the generated model 
 instance. Since it is also possible to transform the mathematical problem into MPS, 
 Free-MPS or OSiL files, alternative solvers can be used. 
 
