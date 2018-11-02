@@ -162,7 +162,7 @@ namespace cmpl
 	{
 		try {
 			if (_errOut)
-				return _errOut->open();
+                return _errOut->open(ios_base::app);
 		}
 		catch (FileException& e) {
 			cerr << e.what() << ": error output file '" << e.filename() << "': using stderr instead";

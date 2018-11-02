@@ -301,7 +301,8 @@ namespace cmpl
          * opens the output file
 		 * @return		stream for writing to the file
          */
-        ostream* open();
+        //ostream* open();
+        ostream* open(ios_base::openmode mode = ios_base::out);
 
         /**
          * flush the output

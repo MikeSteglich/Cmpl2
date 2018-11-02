@@ -317,8 +317,13 @@ namespace cmpl
 		switch (ref) {
 			// error handling
 			case OPTION_ERROR_HANDLE:
-				_errorFile.setFile(_data, (opt->size() == 1 ? IO_MODE_FILE : IO_MODE_STD_CERR), (opt->size() == 1 ? &((*opt)[0]) : NULL), IO_FILE_STANDARD_ERROR, true);
-				_errHandler.setErrOut(&_errorFile);
+
+                _errorFile.setFile(_data, IO_MODE_FILE, (opt->size() >0 ? &((*opt)[0]) : NULL), IO_FILE_STANDARD_ERROR, true);
+
+                if (FileBase::exists(_errorFile.fileNameReplaced()))
+                    remove(_errorFile.fileNameReplaced().c_str());
+
+                _errHandler.setErrOut(&_errorFile);
 				return true;
 		}
 

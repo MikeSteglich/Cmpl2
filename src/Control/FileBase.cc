@@ -292,7 +292,7 @@ namespace cmpl
 	 * opens the output file
 	 * @return		stream for writing to the file
 	 */
-    ostream* FileOutput::open()
+    ostream* FileOutput::open(ios_base::openmode mode )
 	{
 		// if already open, just return stream
 		if (_oOut)
@@ -310,7 +310,7 @@ namespace cmpl
 					_oOut = new ostringstream();
 				}
 				else {
-					_oOut = new ofstream(filename.c_str());
+                    _oOut = new ofstream(filename.c_str(), mode);
 				}
 			}
 			catch (exception& e) {
