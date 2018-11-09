@@ -229,10 +229,19 @@ namespace cmpl
          */
         bool execExtOptionSimple(int extStep, map<int, int>& extRef, int prio, CmdLineOptList::SingleOption *opt);
 
-        inline void CmplOutput(ostream& s, string str) { if (!_isSilent) s << "CMPL: " << str << endl;}
+
+
 		/*********** other functions **********/
 
 	public:
+        /**
+         * writes a Cmpl message
+         * @param s         an outstream
+         * @param str       the message
+         */
+        inline void CmplOutput(ostream& s, string str) { if (!_isSilent) s << "CMPL: " << str << endl;}
+
+
 		/**
 		 * flag wether to write a protocol file
 		 */

@@ -382,6 +382,7 @@ namespace cmpl
         // result formula: sum of all generated binary variables must be lesser than their count
         CmplVal cnt(TP_INT, (intType)(parts.size() - 1));
         res.set(TP_FORMULA, new ValFormulaCompareOp(oc->syntaxElem(), &resf, &cnt, false, true, false));
+        //res.set(TP_FORMULA, new ValFormulaCompareOp(oc->syntaxElem(), &resf, &cnt, true, true, false));
 
         return true;
     }

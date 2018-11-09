@@ -273,6 +273,12 @@ namespace cmpl
 
         static void  cleanDoubleQuotes(string &str);
 
+        /**
+         * encodes xml expressions in a string
+         * @return			encoded string
+         */
+        static  string encodeXml(string &str) ;
+
 
 		/**
 		 * iterates over words in a string, on each call the next word is given back

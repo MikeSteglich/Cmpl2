@@ -237,6 +237,7 @@ public:
 
     inline string problemName() {return _probName;}
     inline void setProblemName(string name) {_probName=name;}
+
     inline string objSense() { return _objSense;}
     inline string objName() { return _objName;}
     inline unsigned long nrOfVariables() {return _nrOfVariables;}

@@ -348,8 +348,8 @@ void SolutionAscii::writeSolReport(Solution *sol, ostream& ostr) {
                 }
             }
 
-            //ostr << setw(105) << setfill('-') << "" <<endl;
-            ostr << setw(105) << setfill('-') << "";
+            ostr << setw(105) << setfill('-') << "" <<endl;
+            //ostr << setw(105) << setfill('-') << "";
 
         }
 

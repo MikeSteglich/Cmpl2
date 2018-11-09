@@ -111,7 +111,9 @@ namespace cmpl
 		string _instanceName;						///< name of this cmpl instance
 
 		FileOutput _errorFile;						///< output error file
-		ErrorHandler _errHandler;						///< error handler
+        ErrorHandler _errHandler;					///< error handler
+
+        FileOutput _cmplMsgFile;					///< cmplMsg error file
 
 #if PROTO
 		StringStore _protoFileNames;				///< string store for names of protocol files
