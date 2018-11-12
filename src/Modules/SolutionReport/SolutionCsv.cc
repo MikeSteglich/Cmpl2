@@ -33,7 +33,7 @@ void SolutionCsv::init(MainControl *ctrl, MainData *data, const char *name)
 /*********** handling of command line options **********/
 
 
-#define OPTION_SOLCSV_CSV       		10
+#define OPTION_SOLCSV_CSV       		100
 
 
 

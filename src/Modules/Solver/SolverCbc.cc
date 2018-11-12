@@ -112,7 +112,7 @@ namespace cmpl
             readSolFile(sol);
 
 
-            deleteTmpFiles();
+            //deleteTmpFiles();
             PROTO_OUTL("End SolverCbc module " << moduleName());
         }
 
@@ -263,15 +263,11 @@ namespace cmpl
                     solElem.setMarginal(marginal);
 
                     if (conSection) {
-                        conIdx++;
-
                         solElem.setModelElement(sol->modelConstraint(conIdx));
                         solution.setConstraint(solElem);
-
+                        conIdx++;
                     } else {
-
                         solElem.setModelElement(sol->modelVariable(varIdx));
-
                         solution.setVariable(solElem);
                         varIdx++;
                     }
@@ -288,8 +284,8 @@ namespace cmpl
 
             sol->setSolution(solution);
 
-            if (FileBase::exists(_instanceSolName))
-                remove(_instanceSolName.c_str());
+//            if (FileBase::exists(_instanceSolName))
+//                remove(_instanceSolName.c_str());
 
 
         }

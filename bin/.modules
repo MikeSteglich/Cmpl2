@@ -30,6 +30,7 @@ default			run cmpl with default modules
     solverScip
     solutionReportAscii -solStdOut
     solutionReportCsv
+	solutionReportXml
 
 script			run cmpl in script mode without writing and solving the instance 	
 	compatSymbols 

@@ -268,6 +268,9 @@ public:
     inline unsigned long varMpsIdxByName(string& name) { return _colNameMap[name];}
     inline unsigned long varMpsIdxByIdx(unsigned long idx) { return _colIdxMap[idx];}
 
+    inline unsigned long conMpsIdxByName(string& name) { return _rowNameMap[name];}
+    inline unsigned long conMpsIdxByIdx(unsigned long idx) { return _rowIdxMap[idx];}
+
     inline bool hasMarginal() { return _hasMarginal;}
     inline void setHasMarginal(bool marginal) {_hasMarginal=marginal;}
 

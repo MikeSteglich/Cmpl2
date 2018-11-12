@@ -60,6 +60,8 @@ namespace cmpl
 	private:
         FileOutput *_outMatrix;				///< write model as standard MPS to this file / NULL: no standard MPS output
         bool _exportOnly;
+        string _objName;
+
 
 
 	public:

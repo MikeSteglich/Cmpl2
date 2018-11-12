@@ -119,6 +119,8 @@ void Solution::prepareSolutionData(string probName, string solver, MainData *md,
     LinearModel *lm = om->getColModel();
     const char *mode;
 
+    unsigned long conIdx=0;
+
     StringStore *sstore = mb->modp()->data()->globStrings();
     string *colNames = om->colNames(sstore, 0, '_', 100);
     string *rowNames = om->rowNames(sstore, 0, '_', 100);
@@ -128,34 +130,22 @@ void Solution::prepareSolutionData(string probName, string solver, MainData *md,
     const LinearModel::Coefficient *rhs;
     rhs = lm->rhs();
 
-    bool objectiveFuncFound;
 
     _nrOfVariables=colCnt;
     _nrOfIntegerVariables=0;
-
-    unsigned long nrOfCons=0;
 
     mode = lm->mode();
 
     double inf = std::numeric_limits<double>::infinity();
 
+    _objName=om->objName();
+    _objSense=om->objSense();
+
     for (unsigned long i = 0; i < rowCnt; i++, mode++, rhs++) {
         char m = *mode;
         if (m) {
-            ModelElement modElem;
-            if (!objectiveFuncFound) {
-                if (m == '+')
-                    _objSense="max";
-
-                if (m == '-')
-                    _objSense="min";
-
-                if (m == '+' || m == '-') {
-                    _objName=rowNames[i] ;
-                    objectiveFuncFound=true;
-                    m='N';
-                }
-            } else {
+            if (i != om->objIdx()) {
+                ModelElement modElem;
 
                 double bound;
                 if (rhs->iCoeff!=0 || rhs->rCoeff == 0)  {
@@ -177,25 +167,25 @@ void Solution::prepareSolutionData(string probName, string solver, MainData *md,
                     modElem.setLowerBound(-inf);
                     modElem.setUpperBound(bound);
                 } else  {
+                    m='N';
                     modElem.setLowerBound(-inf);
                     modElem.setUpperBound(inf);
                 }
 
-                nrOfCons++;
+                modElem.setName(rowNames[i]);
+
+                string type;
+                type.push_back(m);
+                modElem.setType(type);
+
+                _modConstraints.push_back(modElem);
+                _rowNameMap[rowNames[i] ] = conIdx;
+                _rowIdxMap[i]=conIdx;
+                conIdx++;
             }
-
-            modElem.setName(rowNames[i]);
-
-            string type;
-            type.push_back(m);
-            modElem.setType(type);
-
-            _modConstraints.push_back(modElem);
-            _rowNameMap[rowNames[i] ] = i;
-            _rowIdxMap[i]=i;
         }
     }
-    _nrOfConstraints=nrOfCons;
+    _nrOfConstraints=conIdx;
 
     bool hasInt = false;
     unsigned long mpsIdx=0;

@@ -73,11 +73,11 @@ void SolverCplex::usage(ostream& s)
      */
 void SolverCplex::run()
 {
+    GET_DATA(OptModel,om);
 
-    if (_solverName=="CPLEX") {
+    if (_solverName=="CPLEX" && !om->exportOnly()) {
         _ctrl->errHandler().setExecStep("run");
 
-        GET_DATA(OptModel,om);
         if (!om->isLinearModel())
             _ctrl->errHandler().internalError("CPLEX cannot solve a nonlinear model within CMPL"  );
 
@@ -344,7 +344,6 @@ void SolverCplex::readSolFile(Solution* sol,  OptModel* om) {
             }
 
             if (conSection) {
-                conIdx++;
 
                 SolutionElement solElem;
                 solElem.setMarginal(0);
@@ -374,7 +373,10 @@ void SolverCplex::readSolFile(Solution* sol,  OptModel* om) {
                 if (slack>0) {
                     activity=solElem.upperBound()-slack;
                 } else if (slack<0) {
-                    activity=solElem.lowerBound()+slack * -1;
+                    if (solElem.type()=="N")
+                        activity=slack * -1;
+                    else
+                        activity=solElem.lowerBound()+slack * -1;
                 } else {
                     if (solElem.upperBound()!=inf) {
                         activity=solElem.upperBound();
@@ -394,13 +396,12 @@ void SolverCplex::readSolFile(Solution* sol,  OptModel* om) {
                 }
 
                 solution->setConstraint(solElem);
+                conIdx++;
                 continue;
             }
 
         }
 
-        if (FileBase::exists(_instanceSolName))
-            remove(_instanceSolName.c_str());
 
     }catch (FileException& e) {
         _ctrl->errHandler().internalError(_ctrl->printBuffer("%s: solution file '%s'", e.what(), _instanceSolName.c_str()) ,&e);

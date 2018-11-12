@@ -69,6 +69,8 @@ namespace cmpl
 
         bool _exportOnly;
 
+        string _objName;
+
 	public:
 		/**
 		 * destructor
