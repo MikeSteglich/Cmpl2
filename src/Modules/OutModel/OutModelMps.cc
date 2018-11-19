@@ -350,7 +350,7 @@ namespace cmpl
         bool objFound=false;
         for (unsigned long i = 0; i < rowCnt; i++, mode++) {
 
-            if ( (*mode == '+' || *mode == '-') && (_objName.empty() || rowNames[i]==_objName) ) {
+            if ( (*mode == '+' || *mode == '-' || *mode == 'N') && (_objName.empty() || rowNames[i]==_objName) ) {
             //if (*mode == '+' || *mode == '-') {
                 if (_solverName == "GUROBI") {
                     ostr << "* OBJNAME " << rowNames[i] << endl;
@@ -380,8 +380,8 @@ namespace cmpl
             }
         }
 
-        if (!objFound) {
-            string msg ="Unknown objetive function >"+_objName;
+        if (!_objName.empty() && !objFound) {
+            string msg ="Unknown objective function >"+_objName;
             _ctrl->errHandler().internalError(msg.c_str());
         }
 

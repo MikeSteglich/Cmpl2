@@ -19,11 +19,8 @@ void Solver::init(MainControl *ctrl, MainData *data, const char *name)
     ModuleBase::init(ctrl, data, name);
 
     _solverName="CBC";
-
-    //_isActive=true;
-
     _solverBinName = "";
-    //_solverStatus = SOLVER_UNDEFINED;
+
     _instanceBaseName = FileBase::getTmpPath()+FileBase::getTmpFileName("cmpl",10000);
     _instanceFileName = _instanceBaseName+".mps";
     _instanceSolName = _instanceBaseName+".sol";
@@ -39,7 +36,7 @@ void Solver::init(MainControl *ctrl, MainData *data, const char *name)
     _solutionPool=false;
 
     readOptFile();
-   // prepareSolutionData();
+
 
 
 }
