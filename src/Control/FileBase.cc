@@ -33,6 +33,7 @@
 
 
 #include <cstdlib>
+#include <ctime>
 
 namespace cmpl
 {
