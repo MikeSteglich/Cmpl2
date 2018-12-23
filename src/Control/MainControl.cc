@@ -277,19 +277,35 @@ namespace cmpl
 
 		PROTO_OUTL("end iterating over modules");
 
-		// warning if unused command line options (only checked if no errors)
+
+        // warning if unused command line options (only checked if no errors)
 		if (_data->errorLevelMax() <= ERROR_LVL_WARN) {
 			_startOpts->checkCmdLineOptUsed(this);
 			_modConfOpts.checkCmdLineOptUsed(this);
 			_headerOpts.checkCmdLineOptUsed(this);
 		}
-	}
+
+        _ctrl->errHandler().writeCmplMsg();
+
+        if (_ctrl->data()->errorCnt()>0 || _ctrl->data()->warnCnt()>0) {
+            string oMsg;
+            if (_ctrl->data()->errorCnt()>0) {
+                oMsg="errors";
+                if (_ctrl->data()->warnCnt()>0)
+                    oMsg+= " and warnings";
+            }  else {
+                 oMsg="warnings";
+            }
+            CmplOutput(cout,"Cmpl has finished with "+oMsg);
+        }
+    }
 
 
 	/*********** handling of command line options **********/
 
 // defines for reference numbers of options
 #define OPTION_ERROR_HANDLE   10
+#define OPTION_ERROR_CMPLMSG   11
 
 	/**
 	 * register command line options for delivery to this module
@@ -299,6 +315,7 @@ namespace cmpl
 	{
 		ModuleBase::regModOptions(modOptReg);
 		REG_CMDL_OPTION( OPTION_ERROR_HANDLE, "e", 0, 1, CMDL_OPTION_NEG_ERROR, true );
+        REG_CMDL_OPTION( OPTION_ERROR_CMPLMSG, "cmsg", 0, 1, CMDL_OPTION_NEG_ERROR, true );
 	}
 
 
@@ -314,18 +331,31 @@ namespace cmpl
 		if (ModuleBase::parseOption(ref, prio, opt))
 			return true;
 
-		switch (ref) {
-			// error handling
-			case OPTION_ERROR_HANDLE:
+        switch (ref) {
+        // error handling
+        case OPTION_ERROR_HANDLE:
 
-                _errorFile.setFile(_data, IO_MODE_FILE, (opt->size() >0 ? &((*opt)[0]) : NULL), IO_FILE_STANDARD_ERROR, true);
+            _errorFile.setFile(_data, IO_MODE_FILE, (opt->size() >0 ? &((*opt)[0]) : NULL), IO_FILE_STANDARD_ERROR, true);
 
-                if (FileBase::exists(_errorFile.fileNameReplaced()))
-                    remove(_errorFile.fileNameReplaced().c_str());
+            if (FileBase::exists(_errorFile.fileNameReplaced()))
+                remove(_errorFile.fileNameReplaced().c_str());
 
-                _errHandler.setErrOut(&_errorFile);
-				return true;
-		}
+            _errHandler.setErrOut(&_errorFile);
+            return true;
+
+        // error handling via cmplMsg file
+        case OPTION_ERROR_CMPLMSG:
+
+            _cmplMsgFile.setFile(_data, IO_MODE_FILE, (opt->size() >0 ? &((*opt)[0]) : NULL), IO_FILE_CMPLMSG, true);
+
+            if (FileBase::exists(_cmplMsgFile.fileNameReplaced()))
+                remove(_cmplMsgFile.fileNameReplaced().c_str());
+
+            //_errHandler.setCmplMsg(true);
+            _errHandler.setCmplMsgOut(&_cmplMsgFile);
+
+            return true;
+        }
 
 		return false;
 	}

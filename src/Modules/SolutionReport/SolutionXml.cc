@@ -33,7 +33,7 @@ void SolutionXml::init(MainControl *ctrl, MainData *data, const char *name)
 /*********** handling of command line options **********/
 
 
-#define OPTION_SOLXML_XML       		10
+#define OPTION_SOLXML_XML       		100
 
 
 

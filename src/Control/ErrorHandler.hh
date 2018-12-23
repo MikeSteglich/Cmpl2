@@ -71,10 +71,12 @@ namespace cmpl
 		FileOutput *_errOut;		///< info for error output / NULL: output to cerr
 		const char **_errorLevelName;	///< names of ERROR_LVL_*
 
+        FileOutput *_cmplMsgOut;
+
 		const char *_curModule;			///< name of current executed module
 		const char *_execStep;			///< current step of execution within the module
 
-		//int _errCnt;					///< error count
+        //int _errCnt;					///< error count
 		//int _warnCnt;					///< warning count
 
 
@@ -100,6 +102,19 @@ namespace cmpl
 		 * sets info for error output
 		 */
 		inline void setErrOut(FileOutput *errOut)											{ _errOut = errOut; }
+
+
+        /**
+         * sets info for cmplMsg output
+         */
+        inline void setCmplMsgOut(FileOutput *cmplMsgOut)				{ _cmplMsgOut = cmplMsgOut; }
+
+
+        /**
+         * write error messages to cmplMsg file
+         */
+        void writeCmplMsg();
+
 
 		/**
 		 * sets the current module

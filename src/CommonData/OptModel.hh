@@ -377,12 +377,17 @@ namespace cmpl
         LinearModel *_modCol;							///< linear model per column; only filled from _cols and _rows if needed for output
         LinearModel *_modRow;							///< linear model per row; only filled from _cols and _rows if needed for output
 
+        unsigned long _objIdx;
+        string _objName;
+        string _objSense;
+
         bool _linearModelChecked;                       ///< to prevent to repeat the test for linearity
         bool _isLinearModel;                            ///< indicator whether the model is linear
 
         bool _isInteger;                                ///< indicator whether the model is integer
 
         bool _exportOnly;                               ///< indicator for export mode (true) or solving mode (false)
+
 
         //TODO
 
@@ -454,6 +459,40 @@ namespace cmpl
          * * @return        true for export mode
          */
         inline bool exportOnly() { return _exportOnly; }
+
+        /**
+         * sets row idx for the objective function
+         * @param idx		row idx
+         */
+        inline void setObjIdx(unsigned long idx) { _objIdx=idx;}
+
+        /**
+         * gets row idx for the objective function
+         */
+        inline unsigned long objIdx() {return _objIdx;}
+
+
+        /**
+         * sets name for the objective function
+         * @param name		obj name
+         */
+        inline void setObjName(string name) { _objName=name;}
+
+        /**
+         * gets the name for the objective function
+         */
+        inline string objName() {return _objName;}
+
+        /**
+         * sets sense for the objective function
+         * @param name		obj name
+         */
+        inline void setObjSense(string sense) { _objSense=sense;}
+
+        /**
+         * gets the sense for the objective function
+         */
+        inline string objSense() {return _objSense;}
 
 
     private:

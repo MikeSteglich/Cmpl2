@@ -73,11 +73,11 @@ void SolverScip::usage(ostream& s)
      */
 void SolverScip::run()
 {
+    GET_DATA(OptModel,om);
 
-    if (_solverName=="SCIP") {
+    if (_solverName=="SCIP" && !om->exportOnly()) {
         _ctrl->errHandler().setExecStep("run");
 
-        GET_DATA(OptModel,om);
         if (!om->isLinearModel())
             _ctrl->errHandler().internalError("SCIP cannot solve a nonlinear model"  );
 
@@ -211,21 +211,28 @@ void SolverScip::readSolFile(Solution* sol,  OptModel* om) {
             }
         }
 
+        unsigned long idx=0;
+        const char *mode;
+        mode = lm->mode();
 
-        for(unsigned long i=1; i<=sol->nrOfConstraints(); i++) {
-            double conAct = solution.calculateConActivity(om, sol, coeffs[i] );
 
-            SolutionElement solElem;
-            solElem.setActivity(conAct);
-            solElem.setModelElement(sol->modelConstraint(i));
-            solution.setConstraint(solElem);
+        for(unsigned long i=0; i<rowCnt; i++,mode++) {
+            char m = *mode;
+            if (m) {
+                if (i!=om->objIdx()) {
+                    double conAct = solution.calculateConActivity(om, sol, coeffs[i] );
+
+                    SolutionElement solElem;
+                    solElem.setActivity(conAct);
+                    solElem.setModelElement(sol->modelConstraint(idx));
+                    solution.setConstraint(solElem);
+                    idx++;
+                }
+            }
         }
 
 
         sol->setSolution(solution);
-
-        if (FileBase::exists(_instanceSolName))
-            remove(_instanceSolName.c_str());
 
 
     }catch (FileException& e) {

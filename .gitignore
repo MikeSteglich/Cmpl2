@@ -1,4 +1,7 @@
 
-bin/.DS_Store
-src/.DS_Store
 .DS_Store
+*.o
+cmpl2.creator.user
+*.user
+bin/cmpl
+cmpl2.creator.user

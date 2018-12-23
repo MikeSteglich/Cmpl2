@@ -73,13 +73,14 @@ void SolverGurobi::usage(ostream& s)
      */
 void SolverGurobi::run()
 {
+    GET_DATA(OptModel,om);
 
-    if (_solverName=="GUROBI") {
+    if (_solverName=="GUROBI" && !om->exportOnly()) {
         _ctrl->errHandler().setExecStep("run");
 
-        GET_DATA(OptModel,om);
+
         if (!om->isLinearModel())
-            _ctrl->errHandler().internalError("GLPK cannot solve a nonlinear model"  );
+            _ctrl->errHandler().internalError("Gurobi cannot solve a nonlinear model"  );
 
 
         PROTO_OUTL("Start SolverGurobi module " << moduleName());
@@ -209,15 +210,22 @@ void SolverGurobi::readSolFile(Solution* sol,  OptModel* om) {
                     for (auto& var: *solution->variables())
                         vars.push_back(var.activity());
 
-                    for(unsigned long i=1; i<rowCnt; i++) {
-                        //double conAct = calculateConActivity(om, coeffs[i], vars);
-                        double conAct = solution->calculateConActivity(om, sol, coeffs[i]);
+                    const char *mode;
+                    mode = lm->mode();
+                    unsigned long idx=0;
 
-                        SolutionElement solElem;
-                        solElem.setMarginal(0);
-                        solElem.setActivity(conAct);
-                        solElem.setModelElement(sol->modelConstraint(i));
-                        solution->setConstraint(solElem);
+                    for(unsigned long i=1; i<rowCnt; i++, mode++) {
+                        char m = *mode;
+                        if (m) {
+                            double conAct = solution->calculateConActivity(om, sol, coeffs[i]);
+
+                            SolutionElement solElem;
+                            solElem.setMarginal(0);
+                            solElem.setActivity(conAct);
+                            solElem.setModelElement(sol->modelConstraint(idx));
+                            solution->setConstraint(solElem);
+                            idx++;
+                        }
                     }
                }
 
@@ -316,17 +324,15 @@ void SolverGurobi::readSolFile(Solution* sol,  OptModel* om) {
                     solution->setVariable(solElem);
                     varIdx++;
                 } else {
-                    conIdx++;
                     solElem.setModelElement(sol->modelConstraint(conIdx));
                     solution->setConstraint(solElem);
+                    conIdx++;
 
                 }
                 continue;
             }
         }
 
-        if (FileBase::exists(_instanceSolName))
-            remove(_instanceSolName.c_str());
     }catch (FileException& e) {
         _ctrl->errHandler().internalError(_ctrl->printBuffer("%s: solution file '%s'", e.what(), _instanceSolName.c_str()) ,&e);
     }

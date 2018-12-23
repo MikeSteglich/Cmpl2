@@ -284,6 +284,21 @@ namespace cmpl
         // str=str.substr(firstQuote+1,lastQuote-1);
     }
 
+
+    /**
+     * encodes xml expressions in a string
+     * @return			encoded string
+     */
+   string StringStore::encodeXml(string &str) {
+       string tmpString = str;
+       tmpString = replaceAll(tmpString, "&", "&amp;");
+       tmpString = replaceAll(tmpString, "\"", "&quot;");
+       tmpString = replaceAll(tmpString, "'", "&apos;");
+       tmpString = replaceAll(tmpString, ">", "&gt;");
+       tmpString = replaceAll(tmpString, "<", "&lt;");
+       return tmpString;
+   }
+
     /**
 	 * iterates over words in a string, on each call the next word is given back, with regarding of quotes
 	 * @param str       string to iterate over

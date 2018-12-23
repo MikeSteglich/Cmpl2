@@ -67,6 +67,8 @@ namespace cmpl
         _syntaxElems = NULL;
 
         _exportOnly=false;
+
+        _objName="";
 	}
 
 	/**
@@ -94,6 +96,8 @@ namespace cmpl
 #define OPTION_OUT_MODEL_MPS_REALFORMAT         20
 #define OPTION_OUT_MODEL_MPS_SOLVERNAME         25
 
+#define OPTION_OUT_MODEL_MPS_OBJNAME            30
+
 
 	/**
 	 * register command line options options for delivery to this module
@@ -109,6 +113,7 @@ namespace cmpl
 
         REG_CMDL_OPTION( OPTION_OUT_MODEL_MPS_REALFORMAT, "f%", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
         REG_CMDL_OPTION( OPTION_OUT_MODEL_MPS_SOLVERNAME, "solver", 1, 1, CMDL_OPTION_NEG_NO_ARG, false );
+        REG_CMDL_OPTION( OPTION_OUT_MODEL_MPS_OBJNAME, "obj", 1, 1, CMDL_OPTION_NEG_NO_ARG, false );
     }
 
 	/**
@@ -176,6 +181,14 @@ namespace cmpl
             }
             return true;
 
+        case OPTION_OUT_MODEL_MPS_OBJNAME:
+            if (opt->neg())
+                _objName.clear();
+            else {
+                _objName = (*opt)[0];
+            }
+            return true;
+
 
         }
 
@@ -194,6 +207,7 @@ namespace cmpl
 		s << "  -fm [<file>]                  export model in Free MPS format in a file or stdout" << endl;
         s << "  -f% <format>                  format spezifier (printf format) for real number output" << endl;
         s << "  -solver <name>                name of solver, for special extensions of the MPS format" << endl;
+        s << "  -obj <name>                   name of the objective function to be invoked" << endl;
 	}
 
 
@@ -322,6 +336,8 @@ namespace cmpl
         const char *mode;
         bool fs;
 
+        double minVal = std::numeric_limits<double>::min();
+
         // write mps
         PROTO_OUTL("write mps");
         ostr << "* CMPL - " << (fm ? "Free-MPS" : "MPS") << " - Export" << endl;
@@ -331,8 +347,11 @@ namespace cmpl
             ostr << "NAME" << setw(10) << " " << modp()->data()->cmplFileBase() << endl;
 
         mode = lm->mode();
+        bool objFound=false;
         for (unsigned long i = 0; i < rowCnt; i++, mode++) {
-            if (*mode == '+' || *mode == '-') {
+
+            if ( (*mode == '+' || *mode == '-' || *mode == 'N') && (_objName.empty() || rowNames[i]==_objName) ) {
+            //if (*mode == '+' || *mode == '-') {
                 if (_solverName == "GUROBI") {
                     ostr << "* OBJNAME " << rowNames[i] << endl;
                     ostr << "OBJSENSE" << endl << "\t" << (*mode == '+' ? "max" : "min") << endl;
@@ -348,7 +367,22 @@ namespace cmpl
                 else {
                     ostr << "* OBJNAME " << rowNames[i] << endl << "* OBJSENSE " << (*mode == '+' ? "MAX" : "MIN") << endl;
                 }
+
+                om->setObjIdx(i);
+                om->setObjName(rowNames[i]);
+
+
+                string objSense = (*mode == '+' ? "max" : "min");
+                om->setObjSense(objSense);
+
+                objFound=true;
+                break;
             }
+        }
+
+        if (!_objName.empty() && !objFound) {
+            string msg ="Unknown objective function >"+_objName;
+            _ctrl->errHandler().internalError(msg.c_str());
         }
 
         ostr << "ROWS" << endl;
@@ -357,7 +391,10 @@ namespace cmpl
             char m = *mode;
             if (m) {
                 if (m == '+' || m == '-')
-                    m = 'N';
+                    if (i==om->objIdx())
+                        m = 'N';
+                    else
+                        m='G';
 
                 if (fm)
                     ostr << ' ' << m << ' ' << rowNames[i] << endl;
@@ -403,6 +440,18 @@ namespace cmpl
         fs = true;
         for (unsigned long i = 0; i < rowCnt; i++, rhs++, mode++) {
             if (*mode) {
+
+               // handling of non activated obj functions
+               if ( (*mode == '+' || *mode == '-') && i!=om->objIdx() ) {
+                    if (fs) {
+                        fs = false;
+                        if (fm)
+                            ostr << ' ' << left << "RHS" << ' ' << rowNames[i] << ' ' << right << minVal;
+                        else
+                            ostr << "    " << setw(8) << left << "RHS" << "  " << setw(8) << rowNames[i] << "  " << setw(12) << right << minVal;
+                    }
+               }
+
                 if (!rhs->isNumNull()) {
                     if (fs) {
                         fs = false;

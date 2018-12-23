@@ -44,6 +44,7 @@ namespace cmpl
 	ErrorHandler::ErrorHandler()
 	{
 		_errOut = NULL;
+        _cmplMsgOut = NULL;
 
 		_curModule = NULL;
 		_execStep = NULL;
@@ -56,6 +57,7 @@ namespace cmpl
 			"error",
 			"fatal error",
 		};
+
 	}
 
 	/**
@@ -90,66 +92,151 @@ namespace cmpl
 	 */
 	void ErrorHandler::error(int level, bool cont, const char *msg, const LocationInfo& loc, exception* orgExc, int fatal)
 	{
-		try {
-            LockGlobalGuard(true, LockGlobalGuard::errLock);
 
-			if (!cont && level == ERROR_LVL_WARN && MAX_WARN_COUNT >= 0 && _ctrl->data()->warnCnt() > MAX_WARN_COUNT)
-				return;
+        try {
 
-			_ctrl->data()->addError(level, cont, msg, orgExc, _curModule, _execStep, loc);
 
+            if (!cont && level == ERROR_LVL_WARN && MAX_WARN_COUNT >= 0 && _ctrl->data()->warnCnt() > MAX_WARN_COUNT)
+                return;
+
+            _ctrl->data()->addError(level, cont, msg, orgExc, _curModule, _execStep, loc);
+
+            if (_errOut || (!_errOut && !_cmplMsgOut) ) {
+                LockGlobalGuard(true, LockGlobalGuard::errLock);
+                LockGlobalGuard(true, LockGlobalGuard::coutLock);
+                ostream *oOut = openOutput();
+
+                if (!cont) {
+                    *oOut << _errorLevelName[level] << " (module " << _curModule;
+                    if (_execStep)
+                        *oOut << ": " << _execStep;
+                    *oOut << "): ";
+                }
+                else {
+                    *oOut << "                ";
+                }
+
+                *oOut << msg;
+                if (orgExc)
+                    *oOut << ": " << orgExc->what();
+
+                *oOut << "; at " << loc << endl;
+
+                if (!cont) {
+                    if (level == ERROR_LVL_WARN) {
+                        if (MAX_WARN_COUNT >= 0 && _ctrl->data()->warnCnt() > MAX_WARN_COUNT) {
+                            *oOut << "to much warnings, suppress further warnings" << endl;
+                        }
+                    }
+                    else {
+                        if (MAX_ERROR_COUNT >= 0 && _ctrl->data()->errorCnt() > MAX_ERROR_COUNT) {
+                            *oOut << "to much errors, giving up" << endl;
+
+                            if (level < ERROR_LVL_CANCEL)
+                                level = ERROR_LVL_CANCEL;
+
+                            if (_ctrl->data()->errorLevelMax() < ERROR_LVL_CANCEL)
+                                _ctrl->data()->setErrorLevelMax(ERROR_LVL_CANCEL);
+                        }
+                    }
+                }
+
+                closeOutput();
+            }
+        }
+        catch (exception& e) {
             LockGlobalGuard(true, LockGlobalGuard::coutLock);
-			ostream *oOut = openOutput();
+            cerr << "Fatal cmpl error: Exception in error handling: " << e.what() << endl;
+            level = ERROR_LVL_FATAL;
+        }
 
-			if (!cont) {
-				*oOut << _errorLevelName[level] << " (module " << _curModule;
-				if (_execStep)
-					*oOut << ": " << _execStep;
-				*oOut << "): ";
-			}
-			else {
-				*oOut << "                ";
-			}
+        if (fatal > 0 || (fatal < 0 && level == ERROR_LVL_FATAL))
+            throw FatalException(100, _curModule, _execStep, (orgExc ? orgExc->what() : NULL));
 
-			*oOut << msg;
-			if (orgExc)
-				*oOut << ": " << orgExc->what();
-
-			*oOut << "; at " << loc << endl;
-
-			if (!cont) {
-				if (level == ERROR_LVL_WARN) {
-					if (MAX_WARN_COUNT >= 0 && _ctrl->data()->warnCnt() > MAX_WARN_COUNT) {
-						*oOut << "to much warnings, suppress further warnings" << endl;
-					}
-				}
-				else {
-					if (MAX_ERROR_COUNT >= 0 && _ctrl->data()->errorCnt() > MAX_ERROR_COUNT) {
-						*oOut << "to much errors, giving up" << endl;
-
-						if (level < ERROR_LVL_CANCEL)
-							level = ERROR_LVL_CANCEL;
-
-						if (_ctrl->data()->errorLevelMax() < ERROR_LVL_CANCEL)
-							_ctrl->data()->setErrorLevelMax(ERROR_LVL_CANCEL);
-					}
-				}
-			}
-
-			closeOutput();
-		}
-		catch (exception& e) {
-            LockGlobalGuard(true, LockGlobalGuard::coutLock);
-			cerr << "Fatal cmpl error: Exception in error handling: " << e.what() << endl;
-			level = ERROR_LVL_FATAL;
-		}
-
-		if (fatal > 0 || (fatal < 0 && level == ERROR_LVL_FATAL))
-			throw FatalException(100, _curModule, _execStep, (orgExc ? orgExc->what() : NULL));
-
-		if (level >= ERROR_LVL_CANCEL)
-			throw ModuleException();
+        if (level >= ERROR_LVL_CANCEL)
+            throw ModuleException();
 	}
+
+
+    /**
+     * write error messages to cmplMsg file
+     */
+    void ErrorHandler::writeCmplMsg() {
+
+        if (_cmplMsgOut) {
+
+            try {
+                ostream *oOut = _cmplMsgOut->open();
+
+
+                *oOut << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" << endl;
+                *oOut << "<CmplMessages version=\"1.2\">" << endl;
+
+                *oOut << "\t<general>"<< endl;
+
+                *oOut << "\t\t<instanceName>" << _ctrl->modp()->data()->cmplFileBase()  << ".cmpl</instanceName>" << endl;
+
+                if (_ctrl->data()->errorCnt() > 0) {
+                    *oOut <<"\t\t<generalStatus>error</generalStatus>"<< endl;
+                    *oOut << "\t\t<message>cmpl finished with errors</message>" << endl;
+                }
+                else if (_ctrl->data()->warnCnt() > 0){
+                    *oOut << "\t\t<generalStatus>warning</generalStatus>\n" << endl;
+                    *oOut << "\t\t<message>cmpl finished with warnings</message>" << endl;
+                }
+                else {
+                    *oOut << "\t\t<generalStatus>normal</generalStatus>\n" << endl;
+                    *oOut << "\t\t<message>cmpl finished normal</message>" << endl;
+                }
+
+                *oOut << "\t\t<cmplVersion>" << CMPL_VERSION << "</cmplVersion>" << endl;
+                *oOut << "\t</general>" << endl;
+
+                if ( (_ctrl->data()->errorCnt() + _ctrl->data()->warnCnt())  > 0)
+                {
+
+                    *oOut << "\t<messages numberOfMessages=\""<< (_ctrl->data()->errorCnt() + _ctrl->data()->warnCnt()) << "\">" << endl;
+
+
+                    for (MainData::ErrorEntry e: *_ctrl->data()->errorList())
+                    {
+                        *oOut << "\t\t<message";
+
+                        *oOut << " type =\"" << _errorLevelName[e.lvl] <<"\"";
+
+                        *oOut << " module =\"";
+                        if (!e.cont)
+                            *oOut << e.module <<"\"";
+                        else
+                            *oOut << "\"";
+
+                        *oOut << " location=\"" << *e.loc << "\"";
+
+                        string msgString = e.msg;
+                        msgString = StringStore::encodeXml(msgString);
+
+                        *oOut << " description=\"" << msgString << "\"";
+
+                        *oOut << "/>" << endl;
+                    }
+
+                    *oOut << "\t</messages>" << endl;
+                }
+
+                *oOut << "</CmplMessages>" << endl;
+                _cmplMsgOut->close();
+
+                _ctrl->CmplOutput(cout,"CmplMessages have been written to >"+ _cmplMsgOut->fileNameReplaced()  );
+            }
+
+            catch (exception& e) {
+                cerr << "Fatal cmpl error: Exception in error handling: " << e.what() << endl;
+            }
+        }
+    }
+
+
+
 
 
     /* **************** internal functions ************* */

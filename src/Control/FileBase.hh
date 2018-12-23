@@ -63,6 +63,7 @@ namespace cmpl
 #define IO_FILE_STANDARD_OSIL		"{}.osil"			///< model output osil file
 #define IO_FILE_STANDARD_MATRIX		"{}.mat"			///< model output  matrix file
 #define IO_FILE_STANDARD_ERROR		"{}.err"			///< error file
+#define IO_FILE_CMPLMSG     		"{}.cmsg"			///< cmplMsg file
 #define IO_FILE_STANDARD_PROTO		"{}.proto"			///< protocol file
 #define IO_FILE_STANDARD_SYNTAX		"{}.syntax"			///< syntax info file
 #define IO_FILE_SOLUTION_ASCII		"{}.sol"			///< std solution file

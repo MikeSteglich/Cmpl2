@@ -237,6 +237,7 @@ public:
 
     inline string problemName() {return _probName;}
     inline void setProblemName(string name) {_probName=name;}
+
     inline string objSense() { return _objSense;}
     inline string objName() { return _objName;}
     inline unsigned long nrOfVariables() {return _nrOfVariables;}
@@ -266,6 +267,9 @@ public:
 
     inline unsigned long varMpsIdxByName(string& name) { return _colNameMap[name];}
     inline unsigned long varMpsIdxByIdx(unsigned long idx) { return _colIdxMap[idx];}
+
+    inline unsigned long conMpsIdxByName(string& name) { return _rowNameMap[name];}
+    inline unsigned long conMpsIdxByIdx(unsigned long idx) { return _rowIdxMap[idx];}
 
     inline bool hasMarginal() { return _hasMarginal;}
     inline void setHasMarginal(bool marginal) {_hasMarginal=marginal;}

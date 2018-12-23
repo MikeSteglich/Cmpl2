@@ -74,19 +74,18 @@ void SolverGlpk::usage(ostream& s)
      */
 void SolverGlpk::run()
 {
+    GET_DATA(OptModel,om);
 
-    if (_solverName=="GLPK") {
+    if (_solverName=="GLPK" && !om->exportOnly()) {
         _ctrl->errHandler().setExecStep("run");
 
-        GET_DATA(OptModel,om);
+
         if (!om->isLinearModel())
             _ctrl->errHandler().internalError("GLPK cannot solve a nonlinear model"  );
 
 
         PROTO_OUTL("Start SolverGlpk module " << moduleName());
 
-        //PROTO_OUTL("SolverGlpk: reading option file " << moduleName());
-        //readOptFile();
         setBinFullName();
 
         PROTO_OUTL("SolverGlpk: writing instance file " << moduleName());
@@ -250,26 +249,21 @@ void SolverGlpk::readSolFile(Solution* sol) {
                 solElem.setMarginal(marginal);
 
                 if ( StringStore::startsWith(line,"j") ){
-
                     solElem.setModelElement(sol->modelVariable(varIdx));
-
                     solution.setVariable(solElem);
                     varIdx++;
                 }
 
                 if ( StringStore::startsWith(line,"i") ) {
-                    conIdx++;
                     solElem.setModelElement(sol->modelConstraint(conIdx));
                     solution.setConstraint(solElem);
+                    conIdx++;
 
                 }
             }
         }
 
         sol->setSolution(solution);
-
-        if (FileBase::exists(_instanceSolName))
-            remove(_instanceSolName.c_str());
 
     }catch (FileException& e) {
         _ctrl->errHandler().internalError(_ctrl->printBuffer("%s: solution file '%s'", e.what(), _instanceSolName.c_str()) ,&e);

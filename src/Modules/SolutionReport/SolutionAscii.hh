@@ -70,6 +70,7 @@ private:
     FileOutput *_solutionStdOut;
 
     bool _isSolStd;
+    bool _isFileOut;
 
     void solutionReport(Solution *sol, FileOutput *file);
     void writeSolReport(Solution *sol, ostream& ostr);

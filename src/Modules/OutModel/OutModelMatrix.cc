@@ -60,6 +60,7 @@ namespace cmpl
 		ModuleBase::init(ctrl, data, name);
 
         _outMatrix = NULL;
+        _objName="";
     }
 
 	/**
@@ -76,6 +77,8 @@ namespace cmpl
 	/*********** handling of command line options **********/
 
 #define OPTION_OUT_MODEL_MATRIX           10
+#define OPTION_OUT_MODEL_MATRIX_OBJNAME    20
+
 
 
 
@@ -89,6 +92,7 @@ namespace cmpl
 		ModuleBase::regModOptions(modOptReg);
 
         REG_CMDL_OPTION( OPTION_OUT_MODEL_MATRIX , "matrix", 0, 1, CMDL_OPTION_NEG_NO_ARG, true );
+        REG_CMDL_OPTION( OPTION_OUT_MODEL_MATRIX_OBJNAME, "obj", 1, 1, CMDL_OPTION_NEG_NO_ARG, false );
 
          }
 
@@ -100,32 +104,39 @@ namespace cmpl
 	 * @return				true if option is used by the module
 	 */
     bool OutModelMatrix::parseOption(int ref, int prio, CmdLineOptList::SingleOption *opt)
-	{
-		if (ModuleBase::parseOption(ref, prio, opt))
-			return true;
+    {
+        if (ModuleBase::parseOption(ref, prio, opt))
+            return true;
 
-		switch (ref) {
-            case OPTION_OUT_MODEL_MATRIX:
-                if (_outMatrix) {
-                    delete _outMatrix;
-                    _outMatrix = NULL;
-				}
-                if (!(opt->neg())) {
-                    _outMatrix = new FileOutput();
-                    _outMatrix->setFile(_data, IO_MODE_FILE, (opt->size() > 0 ? &((*opt)[0]) : NULL), IO_FILE_STANDARD_MATRIX, true);
-					if (opt->size() > 0)
-                        _outMatrix->setLocSrc(opt->argPos(0));
-					else
-                        _outMatrix->setLocSrc(opt->loc(true));
-				}
+        switch (ref) {
+        case OPTION_OUT_MODEL_MATRIX:
+            if (_outMatrix) {
+                delete _outMatrix;
+                _outMatrix = NULL;
+            }
+            if (!(opt->neg())) {
+                _outMatrix = new FileOutput();
+                _outMatrix->setFile(_data, IO_MODE_FILE, (opt->size() > 0 ? &((*opt)[0]) : NULL), IO_FILE_STANDARD_MATRIX, true);
+                if (opt->size() > 0)
+                    _outMatrix->setLocSrc(opt->argPos(0));
+                else
+                    _outMatrix->setLocSrc(opt->loc(true));
+            }
 
-				return true;
+            return true;
 
+        case OPTION_OUT_MODEL_MATRIX_OBJNAME:
+            if (opt->neg())
+                _objName.clear();
+            else {
+                _objName = (*opt)[0];
+            }
+            return true;
 
-       }
+        }
 
-		return false;
-	}
+        return false;
+    }
 
 	/**
 	 * writes usage info for the module to stream
@@ -263,20 +274,26 @@ namespace cmpl
 
         const char *mode;
         mode = lm->mode();
-        string objName;
-        unsigned long objRow;
 
-        for (unsigned long i=0; i<rowCnt; i++, mode++) {
-            if (*mode == '+' || *mode == '-') {
-                objName=rowNames[i] ;
-                objRow=i;
-            }
+        unsigned long objRow;
+        bool objFound=false;
+        for (unsigned long i = 0; i < rowCnt; i++, mode++) {
+             if ( (*mode == '+' || *mode == '-') && (_objName.empty() || rowNames[i]==_objName) ) {
+
+                 ostr << setw(20) << left << rowNames[i] << setw(4) << (*mode == '+' ? "MAX" : "MIN") ;
+                 writeColCoeffs(ostr, coeffs[i], colCnt);
+                 ostr << endl;
+                 objRow=i;
+                 objFound=true;
+
+                 break;
+             }
         }
 
-        ostr << setw(20) << left << objName << setw(4) << (*mode == '+' ? "MAX" : "MIN") ;
-        writeColCoeffs(ostr, coeffs[objRow], colCnt);
-
-        ostr << endl;
+        if (!objFound) {
+            string msg ="Unknown objetive function >"+_objName;
+            _ctrl->errHandler().internalError(msg.c_str());
+        }
 
         ostr << left << setw(24) << "Subject to " ;
         ostr << setw( colCnt * 15 ) << "" << right << setw(15) << "RHS" << endl;
@@ -288,9 +305,13 @@ namespace cmpl
         for (unsigned long i = 0; i < rowCnt; i++, rhs++, mode++) {
             if (i!=objRow) {
                 char m = *mode;
-                ostr << setw(20) << left << rowNames[i] << setw(4) << m ;
-                writeColCoeffs(ostr, coeffs[i], colCnt);
-                ostr << right << setw(15) <<  rhs->outString( realFormat.c_str(), 100) << endl;
+                if (m) {
+                    if (*mode == '+' || *mode == '-')
+                        m='N';
+                    ostr << setw(20) << left << rowNames[i] << setw(4) << m ;
+                    writeColCoeffs(ostr, coeffs[i], colCnt);
+                    ostr << right << setw(15) <<  rhs->outString( realFormat.c_str(), 100) << endl;
+                }
             }
         }
 

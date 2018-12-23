@@ -30,17 +30,18 @@ void SolutionAscii::init(MainControl *ctrl, MainData *data, const char *name)
     _solutionStdOut=NULL;
 
     _isSolStd=false;
+    _isFileOut=false;
 
 }
 
 
 /*********** handling of command line options **********/
 
-#define OPTION_SOLASCII_STD            	10
-#define OPTION_SOLASCII_STDIO      		11
-#define OPTION_SOLASCII_ASCII      		12
-#define OPTION_SOLASCII_CSV      		13
-#define OPTION_SOLASCII_XML      		14
+#define OPTION_SOLASCII_STD            	100
+#define OPTION_SOLASCII_STDIO      		101
+#define OPTION_SOLASCII_ASCII      		102
+#define OPTION_SOLASCII_CSV      		103
+#define OPTION_SOLASCII_XML      		104
 
 
 
@@ -60,7 +61,7 @@ void SolutionAscii::regModOptions(vector<CmdLineOptList::RegOption> &modOptReg)
 
     REG_CMDL_OPTION( OPTION_SOLASCII_CSV, "solutionCsv", 0, 1, CMDL_OPTION_NEG_NO_ARG, false );
 
-    REG_CMDL_OPTION( OPTION_SOLASCII_XML, "solutionXml", 0, 1, CMDL_OPTION_NEG_NO_ARG, false );
+    REG_CMDL_OPTION( OPTION_SOLASCII_XML, "solution", 0, 1, CMDL_OPTION_NEG_NO_ARG, false );
 
 }
 
@@ -105,7 +106,13 @@ bool SolutionAscii::parseOption(int ref, int prio, CmdLineOptList::SingleOption 
             else
                 _solutionAscii->setLocSrc(opt->loc(true));
         }
+        _isFileOut=true;
+
         return true;
+    case OPTION_SOLASCII_CSV:
+    case OPTION_SOLASCII_XML:
+        _isFileOut=true;
+
 
     }
 
@@ -136,18 +143,16 @@ void SolutionAscii::run()
 
     if (sol) {
 
-        if (_solutionAscii) {
-            if (!_isSolStd) {
-                if (_solutionStdOut) {
-                    delete _solutionStdOut;
-                    _solutionStdOut = NULL;
-                }
+        if (_isFileOut && !_isSolStd) {
+            if (_solutionStdOut) {
+                delete _solutionStdOut;
+                _solutionStdOut = NULL;
             }
+        }
 
+        if (_solutionAscii) {
             CmplOutput(cout,"Writing solution to Ascii file > "  +_solutionAscii->fileNameReplaced());
             solutionReport(sol,_solutionAscii);
-
-
         }
 
         if (_solutionStdOut) {
@@ -298,10 +303,13 @@ void SolutionAscii::writeSolReport(Solution *sol, ostream& ostr) {
                     string tmpStr=_displayVarList[k].substr(0,starPos);
 
                     for (unsigned long j=0; j<sol->nrOfVariables(); j++ ) {
-                        if ( (starPos>-1 && StringStore::startsWith(  sol->solution(i)->variable(j)->name() ,tmpStr) ) ||
-                             (starPos==-1 &&  sol->solution(i)->variable(j)->name()==tmpStr) ) {
+                        unsigned long jj=sol->varMpsIdxByIdx(j);
+                        if ( (starPos>-1 && StringStore::startsWith(  sol->solution(i)->variable(jj)->name() ,tmpStr) ) ||
+                             (starPos==-1 &&  sol->solution(i)->variable(jj)->name()==tmpStr) ) {
+                       // if ( (starPos>-1 && StringStore::startsWith(  sol->solution(i)->variable(j)->name() ,tmpStr) ) ||
+                         //        (starPos==-1 &&  sol->solution(i)->variable(j)->name()==tmpStr) ) {
                             if (!(sol->solution(i)->variable(j)->activity()==0.0 && _ignoreZeros) ) {
-                                unsigned long jj=sol->varMpsIdxByIdx(j);
+                                //unsigned long jj=sol->varMpsIdxByIdx(j);
                                 writeVarValues(sol, i,jj, ostr) ;
                             }
                         }
@@ -348,8 +356,8 @@ void SolutionAscii::writeSolReport(Solution *sol, ostream& ostr) {
                 }
             }
 
-            //ostr << setw(105) << setfill('-') << "" <<endl;
-            ostr << setw(105) << setfill('-') << "";
+            ostr << setw(105) << setfill('-') << "" <<endl;
+            //ostr << setw(105) << setfill('-') << "";
 
         }
 
