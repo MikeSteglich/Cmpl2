@@ -373,7 +373,7 @@ namespace cmpl
          * @param line		current line in the input file
          * @param lstr		line to process before reading next line from file
          * @param set		set to which index tuples must belong
-         * @param defset	default value
+         * @param def       default value
          */
         void readValuesIndices(CmplVal& res, istream *inStr, unsigned& line, string& lstr, CmplVal& set, CmplVal& def);
 
