@@ -94,7 +94,7 @@ namespace cmpl
 	{
 
         try {
-
+            LockGlobalGuard(true, LockGlobalGuard::errLock);
 
             if (!cont && level == ERROR_LVL_WARN && MAX_WARN_COUNT >= 0 && _ctrl->data()->warnCnt() > MAX_WARN_COUNT)
                 return;
@@ -102,7 +102,6 @@ namespace cmpl
             _ctrl->data()->addError(level, cont, msg, orgExc, _curModule, _execStep, loc);
 
             if (_errOut || (!_errOut && !_cmplMsgOut) ) {
-                LockGlobalGuard(true, LockGlobalGuard::errLock);
                 LockGlobalGuard(true, LockGlobalGuard::coutLock);
                 ostream *oOut = openOutput();
 

@@ -574,6 +574,10 @@ namespace cmpl
 
         ctx.run(0, false, NULL);
 
+        // solver selection
+        _ctrl->errHandler().setExecStep("solver selection");
+        _ctrl->runExtension(this, EXT_STEP_INTERPRET_SOLVERSEL, _resModel);
+
         // linearization or other remodeling
         _ctrl->errHandler().setExecStep("remodeling");
         _ctrl->runExtension(this, EXT_STEP_INTERPRET_REMODEL, _resModel);

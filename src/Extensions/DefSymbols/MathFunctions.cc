@@ -283,7 +283,7 @@ namespace cmpl
 					res = 0;
 				}
 
-				if (isnan(res)) {
+                if (std::isnan(res)) {
 					ctx->valueError(ctx->modp()->ctrl()->printBuffer("illegal argument for math function %s", funcName()), arg);
 					res = 0;
 				}
