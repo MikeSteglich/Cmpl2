@@ -36,6 +36,7 @@
 #include <map>
 #include <list>
 
+#include "OutModelExtData.hh"
 #include "../../Control/ModuleBase.hh"
 
 
@@ -77,13 +78,16 @@ namespace cmpl
 	};
 
 
+    #define OutModelExtDataSOS1Key           101
+
 	/**
      * class for data for SOS
 	 */
     class OutModelExtDataSOS1: public OutModelExtDataBase
-	{
+    {
     public:
-        constexpr static int key = 101;         ///< key identifying this type
+        //constexpr static int key = 101;         ///< key identifying this type
+        //const static int key = 101;         ///< key identifying this type
 
         /**
          * get data for one SOS
@@ -93,17 +97,22 @@ namespace cmpl
          * @param name          name for SOS / 0: no name given
          * @return              identity number of SOS/SOS2
          */
-        virtual unsigned getData(Info& info, unsigned row, vector<unsigned long>* vars, unsigned& name) = 0;
-	};
+        //virtual unsigned getData(Info& info, unsigned row, vector<unsigned long>* vars, unsigned& name) = 0;
+        virtual unsigned getData(Info& info, unsigned row, vector<unsigned long>& vars, unsigned& name) = 0;
+    };
 
+
+    #define OutModelExtDataSOS2Key           102
     /**
      * class for data for SOS2
      */
     class OutModelExtDataSOS2: public OutModelExtDataSOS1
     {
     public:
-        constexpr static int key = 102;         ///< key identifying this type
+        //constexpr static int key = 102;         ///< key identifying this type
+        //const static int key = 102;         ///< key identifying this type
     };
+
 
 }
 

@@ -38,6 +38,7 @@
 #include "../../Control/ModuleBase.hh"
 #include "../../CommonData/OptModel.hh"
 #include "../../CommonData/SyntaxElements.hh"
+#include "OutModelExtData.hh"
 
 
 using namespace std;
@@ -68,8 +69,11 @@ namespace cmpl
         map<unsigned, const SyntaxElement *> *_syntaxElems;	///< syntax elements by id, only filled for error output
 
         bool _exportOnly;
+        bool _sosFormatNative;
 
         string _objName;
+
+        map<int, list<OutModelExtDataBase::Info> > _mki;
 
 	public:
 		/**
@@ -135,6 +139,10 @@ namespace cmpl
          * @param fm			use free MPS format
          */
         void writeModel(OptModel *om, ostream& ostr, bool fm);
+
+
+
+        void writeSos(ostream& ostr, int type, bool fm, unsigned i, string *colNames, vector<unsigned long>& sosvars, string& sosName) ;
 
         /**
          * write column coefficients for one column

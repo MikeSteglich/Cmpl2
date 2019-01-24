@@ -218,6 +218,10 @@ void Solver::writeInstanceFile() {
         opts = _ctrl->printBuffer("-fms %s -solver %s", _instanceFileName.c_str(), _solverName.c_str());
     else
         opts = _ctrl->printBuffer("-fms %s -solver %s -silent", _instanceFileName.c_str(), _solverName.c_str());
+
+    if (_solverModule=="CPLEX" || _solverModule=="GUROBI" || _solverModule=="SCIP")
+        opts+=" -mps-format-sos-native";
+
     clOpts.addOption(opts, pos);
     _ctrl->runModuleFunc("writeMps", &clOpts);
 

@@ -106,7 +106,8 @@ namespace cmpl
      * @param name          name for SOS / 0: no name given
      * @return              identity number of SOS/SOS2
      */
-    unsigned LinearSos::OutModelExtData::getData(Info& info, unsigned row, vector<unsigned long>* vars, unsigned& name)
+   // unsigned LinearSos::OutModelExtData::getData(Info& info, unsigned row, vector<unsigned long>* vars, unsigned& name)
+    unsigned LinearSos::OutModelExtData::getData(Info& info, unsigned row, vector<unsigned long>& vars, unsigned& name)
     {
         if (row < 0 || row >= _rows.size())
             return 0;
@@ -115,7 +116,8 @@ namespace cmpl
         SOSStore *sos = &(_ext->_storeSos[rsos]);
 
         if (!_sos2 || sos->posConst.size() == 0) {
-            vars = &(sos->vars);
+            //vars = &(sos->vars);
+            vars = sos->vars;
         }
         else {
             if (sos->vars2.size() == 0 && sos->posConst.size() < sos->vars.size()) {
@@ -130,7 +132,8 @@ namespace cmpl
                 }
             }
 
-            vars = &(sos->vars2);
+            //vars = &(sos->vars2);
+            vars = sos->vars2;
         }
 
         name = sos->name;
@@ -781,7 +784,10 @@ namespace cmpl
         // fill info in lst
         for (OutModelExtData& t: _transfer) {
             if (t._rows.size()) {
-                int key = (t._sos2 ? OutModelExtDataSOS1::key : OutModelExtDataSOS2::key);
+                //int key = (t._sos2 ? OutModelExtDataSOS1::key : OutModelExtDataSOS2::key);
+
+                int key = (t._sos2 ? OutModelExtDataSOS2Key : OutModelExtDataSOS1Key);
+
                 string errMsg;
                 if (!t._linearized)
                     errMsg = string("definition of ") + (t._sos2 ? "SOS2" : "SOS") + (" (change configuration or command line options to use linearization for SOS)");

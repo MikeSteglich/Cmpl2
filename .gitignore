@@ -5,3 +5,7 @@ cmpl2.creator.user
 *.user
 bin/cmpl
 cmpl2.creator.user
+*.user
+bin/cmpl.opt
+bin/cmpl.opt
+src/makefile
