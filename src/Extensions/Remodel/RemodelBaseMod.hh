@@ -70,7 +70,7 @@ namespace cmpl
         /**
          * run module function
          */
-        virtual void run();
+        void run() override;
 
     protected:
         /**
@@ -79,34 +79,20 @@ namespace cmpl
          * @param data			data object
          * @param name			module name (or alias)
          */
-        virtual void init(MainControl *ctrl, MainData *data, const char *name);
+        void init(MainControl *ctrl, MainData *data, const char *name) override;
 
         /**
-         * register command line options options for delivery to this module
-         * @param modOptReg		vector to register in
+         * register command line options for the extension
+         * @param ext           extension object
+         * @param id			extension identificator
          */
-        virtual void regModOptions(vector<CmdLineOptList::RegOption> &modOptReg);
-
-        /**
-         * parse single option from command line options, this function is called for every delivered option
-         * @param ref			reference number of option registration, should be used for discriminate the options
-         * @param prio			priority value of option
-         * @param opt			option
-         * @return				true if option is used by the module
-         */
-        virtual bool parseOption(int ref, int prio, CmdLineOptList::SingleOption *opt);
-
-        /**
-         * parse single command line option containing a string
-         * @param opt           option
-         */
-        unsigned parseOptString(CmdLineOptList::SingleOption *opt);
+        void regExtOptions(ExtensionBase *ext, int id) override;
 
         /**
          * writes usage info for the module to stream
          * @param s				stream to write to
          */
-        virtual void usage(ostream& s);
+        void usage(ostream& s) override;
 
 
 
@@ -142,6 +128,24 @@ namespace cmpl
          * flag whether _nameSep is used for remodeling
          */
         virtual bool useNameSep()                   { return true; }
+
+        /**
+         * return registration name of the module calling the remodeling, used for registration of command line options
+         */
+        virtual const char *modNameRemodel()        { return (_registerMods.size() > 0 ? _registerMods[0].c_str() : "interpret"); }
+
+        /**
+         * parse single command line option containing a string
+         * @param opt           option
+         */
+        unsigned parseOptString(CmdLineOptList::SingleOption *opt)      { return parseOptString(this, opt); }
+
+        /**
+         * parse single command line option containing a string
+         * @param mod           module
+         * @param opt           option
+         */
+        static unsigned parseOptString(ModuleBase *mod, CmdLineOptList::SingleOption *opt);
     };
 }
 

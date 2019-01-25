@@ -62,7 +62,6 @@ namespace cmpl
         vector<unsigned> _namespace;        ///< namespace parts of the namespace for the functions
 
         SosType _useForSos;                 ///< use extension for this SOS type (cannot be sosTypeNone)
-        SosType _sosNative;                 ///< don't linearize this SOS type (let it for native handling by the solver)
 
         bool _warnInvalid;                  ///< show warning if SOS is invalid because of contained non zero parameters
 
@@ -72,9 +71,6 @@ namespace cmpl
 
         unsigned _attachNameVarSos2;        ///< postfix for variable name for linearization of order for SOS2
         unsigned _attachNameConSos2;        ///< postfix for constraint name for linearization of SOS2 (order of non zero elements restriction)
-
-
-        int _sos2NativeOptPrio;             ///< priority of given option '-native-sos2' (only used for evaluating the command line options)
 
 
         /************** overwritten methods of <code>ModuleBase</code> **********/
@@ -99,6 +95,13 @@ namespace cmpl
          * @param modOptReg		vector to register in
          */
         void regModOptions(vector<CmdLineOptList::RegOption> &modOptReg) override;
+
+        /**
+         * register command line options for the extension
+         * @param ext           extension object
+         * @param id			extension identificator
+         */
+        void regExtOptions(ExtensionBase *ext, int id) override;
 
         /**
          * parse single option from command line options, this function is called for every delivered option
@@ -134,6 +137,11 @@ namespace cmpl
          * flag whether _nameSep is used for remodeling
          */
         bool useNameSep() override                   { return true; }
+
+        /**
+         * return registration name of the module calling the remodeling, used for registration of command line options
+         */
+        const char *modNameRemodel() override        { return (_registerMods.size() > 3 ? _registerMods[3].c_str() : "interpret"); }
     };
 }
 

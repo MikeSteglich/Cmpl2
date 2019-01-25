@@ -4,7 +4,7 @@
 CXX ?= g++
 CXXFLAGS ?= -DSTANDALONE -DPROTO -DCHDIR -ggdb -std=c++0x -Wall -Wno-parentheses
 
-EXTENSIONS := DefSymbols DataImport Remodel
+EXTENSIONS := DefSymbols DataImport Remodel SolverSel
 
 all : extensions
 

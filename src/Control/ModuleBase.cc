@@ -186,7 +186,7 @@ namespace cmpl
 
             for (int i: v) {
                 if (i == extStep)
-                    return true;
+                    continue;
             }
 
             v.push_back(extStep);

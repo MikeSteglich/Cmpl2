@@ -49,6 +49,15 @@ namespace cmpl
     class LinearConstantRowMod;
 
 
+    /*********** command line options delivered to the extension by run() **********/
+
+    #define OPTION_EXT_DELCONSTROW		70
+    #define OPTION_EXT_FALSEASERROR		71
+
+    #define OPTION_EXT_ATTACHNAMEVAR    80
+
+
+
     /**
      * the <code>LinearConstantRow</code> class replace constant values
      * used as constraint or objective by a dummy matrix row
@@ -80,12 +89,25 @@ namespace cmpl
         virtual const char *extName()				{ return "linearConstantRow"; }
 #endif //PROTO
 
-		/**
+        /**
+         * run the extension function for processing a command line option
+         * @param mod			module calling the extension
+         * @param step			execution step within the module
+         * @param id			additional identificator
+         * @param ref           reference number of option registration, should be used for discriminate the options
+         * @param prio          priority value of option
+         * @param opt           command line option
+         * @param par			additional parameter
+         * @return              true if option is used by the extension
+         */
+        bool run(ModuleBase *mod, int step, int id, int ref, int prio, CmdLineOptList::SingleOption *opt, void *par) override;
+
+        /**
 		 * write data object to output stream
 		 * @param si        serialization info
 		 * @param data      main data object
 		 */
-		virtual void serializeTo(MainData::SerializeInfo& si, const MainData *data);
+        void serializeTo(MainData::SerializeInfo& si, const MainData *data) override;
 
 		/**
 		 * fill data object from input stream
@@ -95,7 +117,7 @@ namespace cmpl
 		 * @param lc		line count per element or 0 if elements are len coded
 		 * @param rline		remaining section start line
 		 */
-		virtual void deserializeFrom(MainData::SerializeInfo& si, const MainData *data, int subCnt, int lc, string &rline);
+        void deserializeFrom(MainData::SerializeInfo& si, const MainData *data, int subCnt, int lc, string &rline) override;
 
 
         /************** linearization **********/
@@ -107,7 +129,7 @@ namespace cmpl
          * @param oc        constraint and objective
          * @return          count of executed remodelations
          */
-        virtual unsigned remodelCon(Interpreter *modp, OptModel *om, OptCon *oc);
+        unsigned remodelCon(Interpreter *modp, OptModel *om, OptCon *oc) override;
 
         /**
          * linearize objective with constant value

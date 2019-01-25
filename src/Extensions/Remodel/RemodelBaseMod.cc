@@ -45,18 +45,15 @@ namespace cmpl
 
         // register for module "interpret"
         RemodelBase *ext = create(this);
-        _ctrl->registerExtension((_registerMods.size() > 0 ? _registerMods[0].c_str() : "interpret"), EXT_STEP_INTERPRET_REMODEL, ext);
+        int id = _ctrl->registerExtension((_registerMods.size() > 0 ? _registerMods[0].c_str() : "interpret"), EXT_STEP_INTERPRET_REMODEL, ext);
+
+        regExtOptions(ext, id);
 
         PROTO_OUTL("End run module " << moduleName());
     }
 
 
     /*********** handling of command line options **********/
-
-#define OPTION_EXT_THREADS          20
-#define OPTION_EXT_REMODEL_BIGM     21
-#define OPTION_EXT_NAMESEP          30
-
 
     /**
      * initialize modul, to call immediately after the constructor.
@@ -74,69 +71,36 @@ namespace cmpl
     }
 
     /**
-     * register command line options options for delivery to this module
-     * @param modOptReg		vector to register in
+     * register command line options for the extension
+     * @param ext           extension object
+     * @param id			extension identificator
      */
-    void RemodelBaseMod::regModOptions(vector<CmdLineOptList::RegOption> &modOptReg)
+    void RemodelBaseMod::regExtOptions(ExtensionBase *ext, int id)
     {
-        ExtensionModule::regModOptions(modOptReg);
+        const char *m = modNameRemodel();
 
-        REG_CMDL_OPTION( OPTION_EXT_THREADS, "threads", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
+        REG_CMDL_OPTION_EXT( OPTION_EXT_THREADS, "threads", 1, 1, CMDL_OPTION_NEG_NO_ARG, true, id, m, EXT_CMDLOPT_INTERPRET_SIMPLE, ext );
 
         if (useBigM()) {
-            REG_CMDL_OPTION( OPTION_EXT_REMODEL_BIGM, "big-M", 1, 1, CMDL_OPTION_NEG_ERROR, true );
+            REG_CMDL_OPTION_EXT( OPTION_EXT_REMODEL_BIGM, "big-M", 1, 1, CMDL_OPTION_NEG_ERROR, true, id, m, EXT_CMDLOPT_INTERPRET_SIMPLE, ext );
         }
 
         if (useNameSep()) {
-            REG_CMDL_OPTION( OPTION_EXT_NAMESEP, "namesep", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
+            REG_CMDL_OPTION_EXT( OPTION_EXT_NAMESEP, "namesep", 1, 1, CMDL_OPTION_NEG_NO_ARG, true, id, m, EXT_CMDLOPT_INTERPRET_SIMPLE, ext );
         }
-    }
-
-    /**
-     * parse single option from command line options, this function is called for every delivered option
-     * @param ref			reference number of option registration, should be used for discriminate the options
-     * @param prio			priority value of option
-     * @param opt			option
-     * @return				true if option is used by the module
-     */
-    bool RemodelBaseMod::parseOption(int ref, int prio, CmdLineOptList::SingleOption *opt)
-    {
-        if (ExtensionModule::parseOption(ref, prio, opt))
-            return true;
-
-        switch (ref) {
-            case OPTION_EXT_THREADS:
-                _maxThreads = (unsigned)(opt->neg() ? 0 : opt->argAsInt(0, _ctrl));
-                return true;
-
-            case OPTION_EXT_REMODEL_BIGM:
-                if (useBigM()) {
-                    _bigM = STR_TO_CMPLREAL((*opt)[0].c_str());
-                    return true;
-                }
-                break;
-
-            case OPTION_EXT_NAMESEP:
-                if (useNameSep()) {
-                    _nameSep = parseOptString(opt);
-                    return true;
-                }
-                break;
-        }
-
-        return false;
     }
 
     /**
      * parse single command line option containing a string
+     * @param mod           module
      * @param opt           option
      */
-    unsigned RemodelBaseMod::parseOptString(CmdLineOptList::SingleOption *opt)
+    unsigned RemodelBaseMod::parseOptString(ModuleBase *mod, CmdLineOptList::SingleOption *opt)
     {
         if (opt->neg())
             return 0;
         else
-            return data()->globStrings()->storeInd((*opt)[0]);
+            return mod->data()->globStrings()->storeInd((*opt)[0]);
     }
 
     /**

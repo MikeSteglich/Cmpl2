@@ -51,6 +51,12 @@ namespace cmpl
     class ValFormulaCompare;
 
 
+    /*********** command line options delivered to the extension by run() **********/
+
+    #define OPTION_EXT_DELALLBOUNDROW		70
+    #define OPTION_EXT_DELUNMBOUNDROW		71
+
+
     /**
      * the <code>BoundRow</code> class replaces rows with only one variable by bounds
      */
@@ -80,6 +86,19 @@ namespace cmpl
          */
         const char *extName() override				{ return "boundRow"; }
 #endif //PROTO
+
+        /**
+         * run the extension function for processing a command line option
+         * @param mod			module calling the extension
+         * @param step			execution step within the module
+         * @param id			additional identificator
+         * @param ref           reference number of option registration, should be used for discriminate the options
+         * @param prio          priority value of option
+         * @param opt           command line option
+         * @param par			additional parameter
+         * @return              true if option is used by the extension
+         */
+        bool run(ModuleBase *mod, int step, int id, int ref, int prio, CmdLineOptList::SingleOption *opt, void *par) override;
 
 		/**
 		 * write data object to output stream

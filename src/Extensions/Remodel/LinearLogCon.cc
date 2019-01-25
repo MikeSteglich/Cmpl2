@@ -55,6 +55,47 @@ namespace cmpl
         _attachNameVarDltNeg = mod->_attachNameVarDltNeg;
     }
 
+    /**
+     * run the extension function for processing a command line option
+     * @param mod			module calling the extension
+     * @param step			execution step within the module
+     * @param id			additional identificator
+     * @param ref           reference number of option registration, should be used for discriminate the options
+     * @param prio          priority value of option
+     * @param opt           command line option
+     * @param par			additional parameter
+     * @return              true if option is used by the extension
+     */
+    bool LinearLogCon::run(ModuleBase *mod, int step, int id, int ref, int prio, CmdLineOptList::SingleOption *opt, void *par)
+    {
+        if (RemodelBase::run(mod, step, id, ref, prio, opt, par))
+            return true;
+
+        switch (ref) {
+            case OPTION_EXT_ATTACHNAMECONAND:
+                _attachNameConAnd = RemodelBaseMod::parseOptString(mod, opt);
+                return true;
+
+            case OPTION_EXT_ATTACHNAMECONOR:
+                _attachNameConOr = RemodelBaseMod::parseOptString(mod, opt);
+                return true;
+
+            case OPTION_EXT_ATTACHNAMEVAROR:
+                _attachNameVarOr = RemodelBaseMod::parseOptString(mod, opt);
+                return true;
+
+            case OPTION_EXT_ATTACHNAMECONDLTNEG:
+                _attachNameConDltNeg = RemodelBaseMod::parseOptString(mod, opt);
+                return true;
+
+            case OPTION_EXT_ATTACHNAMEVARDLTNEG:
+                _attachNameVarDltNeg = RemodelBaseMod::parseOptString(mod, opt);
+                return true;
+        }
+
+        return false;
+    }
+
 	/**
 	 * write data object to output stream
 	 * @param si        serialization info

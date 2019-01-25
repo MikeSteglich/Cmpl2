@@ -56,6 +56,14 @@ namespace cmpl
     class RemodelBaseMod;
 
 
+    /*********** command line options delivered to the extension by run() **********/
+
+    #define OPTION_EXT_THREADS          20
+    #define OPTION_EXT_REMODEL_BIGM     21
+    #define OPTION_EXT_NAMESEP          30
+
+
+
     /**
      * the <code>RemodelBase</code> class is the base class for
      * extension classes for linearization or other remodeling of constraints and objectives
@@ -81,27 +89,40 @@ namespace cmpl
 		/************** overwritten methods of <code>ExtensionBase</code> **********/
 
 	protected:
-		/**
+        /**
+         * run the extension function for processing a command line option
+         * @param mod			module calling the extension
+         * @param step			execution step within the module
+         * @param id			additional identificator
+         * @param ref           reference number of option registration, should be used for discriminate the options
+         * @param prio          priority value of option
+         * @param opt           command line option
+         * @param par			additional parameter
+         * @return              true if option is used by the extension
+         */
+        bool run(ModuleBase *mod, int step, int id, int ref, int prio, CmdLineOptList::SingleOption *opt, void *par) override;
+
+        /**
 		 * run the extension function
 		 * @param mod			module calling the extension
 		 * @param step			execution step within the module
 		 * @param id			additional identificator
 		 * @param par			additional parameter
 		 */
-		virtual void run(ModuleBase *mod, int step, int id, void *par);
+        void run(ModuleBase *mod, int step, int id, void *par) override;
 
 		/**
 		 * called after running the module, before deleting the module object
 		 * @param mod			module calling the extension
 		 * @param id			additional identificator
 		 */
-        virtual void moduleEnd(ModuleBase *mod, int id)         { }
+        void moduleEnd(ModuleBase *mod, int id) override        { }
 
     public:
         /**
 		 * get count of sub data objects
 		 */
-        virtual int subCnt()                                    { return 0; }
+        int subCnt() override                                   { return 0; }
 
 
         /************** remodeling **********/

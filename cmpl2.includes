@@ -15,3 +15,4 @@ src/Extensions/Remodel
 src/Modules/Solver
 src/Modules/SolutionReport
 src/Modules
+src/Extensions/SolverSel

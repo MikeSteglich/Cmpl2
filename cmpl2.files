@@ -612,3 +612,7 @@ src/Extensions/Remodel/BoundRow.hh
 src/Extensions/Remodel/BoundRow.cc
 src/Extensions/Remodel/BoundRowMod.hh
 src/Extensions/Remodel/BoundRowMod.cc
+src/Extensions/SolverSel/SolverSelect.cc
+src/Extensions/SolverSel/SolverSelect.hh
+src/Extensions/SolverSel/SolverSelectMod.cc
+src/Extensions/SolverSel/SolverSelectMod.hh

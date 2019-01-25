@@ -79,19 +79,11 @@ namespace cmpl
         void init(MainControl *ctrl, MainData *data, const char *name) override;
 
         /**
-         * register command line options options for delivery to this module
-         * @param modOptReg		vector to register in
+         * register command line options for the extension
+         * @param ext           extension object
+         * @param id			extension identificator
          */
-        void regModOptions(vector<CmdLineOptList::RegOption> &modOptReg) override;
-
-        /**
-         * parse single option from command line options, this function is called for every delivered option
-         * @param ref			reference number of option registration, should be used for discriminate the options
-         * @param prio			priority value of option
-         * @param opt			option
-         * @return				true if option is used by the module
-         */
-        bool parseOption(int ref, int prio, CmdLineOptList::SingleOption *opt) override;
+        void regExtOptions(ExtensionBase *ext, int id) override;
 
         /**
          * writes usage info for the module to stream

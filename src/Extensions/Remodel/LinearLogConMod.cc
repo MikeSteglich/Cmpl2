@@ -47,15 +47,6 @@ namespace cmpl
 
     /*********** handling of command line options **********/
 
-#define OPTION_EXT_ATTACHNAMECONAND         80
-
-#define OPTION_EXT_ATTACHNAMECONOR          82
-#define OPTION_EXT_ATTACHNAMEVAROR          83
-
-#define OPTION_EXT_ATTACHNAMECONDLTNEG      84
-#define OPTION_EXT_ATTACHNAMEVARDLTNEG      85
-
-
     /**
      * initialize modul, to call immediately after the constructor.
      * @param ctrl			main object
@@ -74,57 +65,23 @@ namespace cmpl
     }
 
     /**
-     * register command line options options for delivery to this module
-     * @param modOptReg		vector to register in
+     * register command line options for the extension
+     * @param ext           extension object
+     * @param id			extension identificator
      */
-    void LinearLogConMod::regModOptions(vector<CmdLineOptList::RegOption> &modOptReg)
+    void LinearLogConMod::regExtOptions(ExtensionBase *ext, int id)
     {
-        RemodelBaseMod::regModOptions(modOptReg);
+        // command line options delivered to the extension by run()
+        RemodelBaseMod::regExtOptions(ext, id);
 
-        REG_CMDL_OPTION( OPTION_EXT_ATTACHNAMECONAND, "an-con-and", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
+        const char *m = modNameRemodel();
+        REG_CMDL_OPTION_EXT( OPTION_EXT_ATTACHNAMECONAND, "an-con-and", 1, 1, CMDL_OPTION_NEG_NO_ARG, true, id, m, EXT_CMDLOPT_INTERPRET_SIMPLE, ext );
 
-        REG_CMDL_OPTION( OPTION_EXT_ATTACHNAMECONOR, "an-con-or", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
-        REG_CMDL_OPTION( OPTION_EXT_ATTACHNAMEVAROR, "an-var-or", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
+        REG_CMDL_OPTION_EXT( OPTION_EXT_ATTACHNAMECONOR, "an-con-or", 1, 1, CMDL_OPTION_NEG_NO_ARG, true, id, m, EXT_CMDLOPT_INTERPRET_SIMPLE, ext );
+        REG_CMDL_OPTION_EXT( OPTION_EXT_ATTACHNAMEVAROR, "an-var-or", 1, 1, CMDL_OPTION_NEG_NO_ARG, true, id, m, EXT_CMDLOPT_INTERPRET_SIMPLE, ext );
 
-        REG_CMDL_OPTION( OPTION_EXT_ATTACHNAMECONDLTNEG, "an-con-neg", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
-        REG_CMDL_OPTION( OPTION_EXT_ATTACHNAMEVARDLTNEG, "an-var-neg", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
-    }
-
-    /**
-     * parse single option from command line options, this function is called for every delivered option
-     * @param ref			reference number of option registration, should be used for discriminate the options
-     * @param prio			priority value of option
-     * @param opt			option
-     * @return				true if option is used by the module
-     */
-    bool LinearLogConMod::parseOption(int ref, int prio, CmdLineOptList::SingleOption *opt)
-    {
-        if (RemodelBaseMod::parseOption(ref, prio, opt))
-            return true;
-
-        switch (ref) {
-            case OPTION_EXT_ATTACHNAMECONAND:
-                _attachNameConAnd = parseOptString(opt);
-                return true;
-
-            case OPTION_EXT_ATTACHNAMECONOR:
-                _attachNameConOr = parseOptString(opt);
-                return true;
-
-            case OPTION_EXT_ATTACHNAMEVAROR:
-                _attachNameVarOr = parseOptString(opt);
-                return true;
-
-            case OPTION_EXT_ATTACHNAMECONDLTNEG:
-                _attachNameConDltNeg = parseOptString(opt);
-                return true;
-
-            case OPTION_EXT_ATTACHNAMEVARDLTNEG:
-                _attachNameVarDltNeg = parseOptString(opt);
-                return true;
-        }
-
-        return false;
+        REG_CMDL_OPTION_EXT( OPTION_EXT_ATTACHNAMECONDLTNEG, "an-con-neg", 1, 1, CMDL_OPTION_NEG_NO_ARG, true, id, m, EXT_CMDLOPT_INTERPRET_SIMPLE, ext );
+        REG_CMDL_OPTION_EXT( OPTION_EXT_ATTACHNAMEVARDLTNEG, "an-var-neg", 1, 1, CMDL_OPTION_NEG_NO_ARG, true, id, m, EXT_CMDLOPT_INTERPRET_SIMPLE, ext );
     }
 
     /**

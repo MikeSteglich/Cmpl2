@@ -4,6 +4,7 @@ LinearSos.o LinearSos.d : LinearSos.cc LinearSos.hh RemodelBase.hh \
  ../../Control/MainData.hh ../../Control/StringStore.hh \
  ../../Control/ErrorHandler.hh ../../CommonData/ExtensionSteps.hh \
  ../../Control/ThreadHandler.hh ../../CommonData/CmplVal.hh \
+ LinearSosMod.hh RemodelBaseMod.hh ../../Control/ExtensionModule.hh \
  ../../Modules/Interpreter/ValFunction.hh \
  ../../Modules/Interpreter/../../CommonData/CmplVal.hh \
  ../../Modules/Interpreter/../../Control/ThreadHandler.hh \
@@ -21,8 +22,7 @@ LinearSos.o LinearSos.d : LinearSos.cc LinearSos.hh RemodelBase.hh \
  ../../Modules/Interpreter/StackValue.hh \
  ../../Modules/Interpreter/CodeBlockContext.hh \
  ../../Modules/OutModel/OutModelExtData.hh \
- ../../Modules/OutModel/../../Control/ModuleBase.hh LinearSosMod.hh \
- RemodelBaseMod.hh ../../Control/ExtensionModule.hh \
+ ../../Modules/OutModel/../../Control/ModuleBase.hh \
  ../../Modules/Compiler/CompilerContext.hh \
  ../../Modules/Compiler/Compiler.hh \
  ../../Modules/Compiler/../../Control/ModuleBase.hh \

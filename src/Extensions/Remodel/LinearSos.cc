@@ -150,21 +150,93 @@ namespace cmpl
         _namespace = mod->_namespace;
 
         _useForSos1 = (mod->_useForSos == LinearSosMod::sosTypeOnlySos1 || mod->_useForSos == LinearSosMod::sosTypeBoth);
-        _linForSos1 = (mod->_sosNative != LinearSosMod::sosTypeOnlySos1 && mod->_sosNative != LinearSosMod::sosTypeBoth);
-        _idForSos1 = 0;
-
         _useForSos2 = (mod->_useForSos == LinearSosMod::sosTypeOnlySos2 || mod->_useForSos == LinearSosMod::sosTypeBoth);
-        _linForSos2 = (mod->_sosNative != LinearSosMod::sosTypeOnlySos2 && mod->_sosNative != LinearSosMod::sosTypeBoth);
+
+        _idForSos1 = 0;
         _idForSos2 = 0;
+
+        _sosNative = LinearSosMod::sosTypeNone;
+        _sos2NativeOptPrio = 0;
 
         _warnInvalid = mod->_warnInvalid;
 
         _attachNameVarSos = mod->_attachNameVarSos;
-        _attachNameVarSosNeg = mod->_attachNameVarSos;
+        _attachNameVarSosNeg = mod->_attachNameVarSosNeg;
         _attachNameConSos = mod->_attachNameConSos;
 
         _attachNameVarSos2 = mod->_attachNameVarSos2;
         _attachNameConSos2 = mod->_attachNameConSos2;
+    }
+
+    /**
+     * run the extension function for processing a command line option
+     * @param mod			module calling the extension
+     * @param step			execution step within the module
+     * @param id			additional identificator
+     * @param ref           reference number of option registration, should be used for discriminate the options
+     * @param prio          priority value of option
+     * @param opt           command line option
+     * @param par			additional parameter
+     * @return              true if option is used by the extension
+     */
+    bool LinearSos::run(ModuleBase *mod, int step, int id, int ref, int prio, CmdLineOptList::SingleOption *opt, void *par)
+    {
+        if (RemodelBase::run(mod, step, id, ref, prio, opt, par))
+            return true;
+
+        switch (ref) {
+            case OPTION_EXT_SOSNATIVE:
+                if (prio >= _sos2NativeOptPrio) {
+                    prio = _sos2NativeOptPrio;
+                    if (!opt->neg())
+                        _sosNative = LinearSosMod::sosTypeBoth;
+                    else
+                        _sosNative = LinearSosMod::sosTypeNone;
+                }
+                else {
+                    if (!opt->neg())
+                        _sosNative = (_sosNative == LinearSosMod::sosTypeNone || _sosNative == LinearSosMod::sosTypeOnlySos1 ? LinearSosMod::sosTypeOnlySos1 : LinearSosMod::sosTypeBoth);
+                    else
+                        _sosNative = (_sosNative == LinearSosMod::sosTypeNone || _sosNative == LinearSosMod::sosTypeOnlySos1 ? LinearSosMod::sosTypeNone : LinearSosMod::sosTypeOnlySos2);
+                }
+                return true;
+
+            case OPTION_EXT_SOS2NATIVE:
+                if (prio >= _sos2NativeOptPrio) {
+                    prio = _sos2NativeOptPrio;
+                    if (!opt->neg())
+                        _sosNative = (_sosNative == LinearSosMod::sosTypeNone || _sosNative == LinearSosMod::sosTypeOnlySos2 ? LinearSosMod::sosTypeOnlySos2 : LinearSosMod::sosTypeBoth);
+                    else
+                        _sosNative = (_sosNative == LinearSosMod::sosTypeNone || _sosNative == LinearSosMod::sosTypeOnlySos2 ? LinearSosMod::sosTypeNone : LinearSosMod::sosTypeOnlySos1);
+                }
+                return true;
+
+            case OPTION_EXT_WARNINVALID:
+                _warnInvalid = !opt->neg();
+                return true;
+
+            case OPTION_EXT_ATTACHNAMEVARSOS:
+                _attachNameVarSos = RemodelBaseMod::parseOptString(mod, opt);
+                return true;
+
+            case OPTION_EXT_ATTACHNAMEVARSOSNEG:
+                _attachNameVarSosNeg = RemodelBaseMod::parseOptString(mod, opt);
+                return true;
+
+            case OPTION_EXT_ATTACHNAMECONSOS:
+                _attachNameConSos = RemodelBaseMod::parseOptString(mod, opt);
+                return true;
+
+            case OPTION_EXT_ATTACHNAMEVARSOS2:
+                _attachNameVarSos2 = RemodelBaseMod::parseOptString(mod, opt);
+                return true;
+
+            case OPTION_EXT_ATTACHNAMECONSOS2:
+                _attachNameConSos2 = RemodelBaseMod::parseOptString(mod, opt);
+                return true;
+        }
+
+        return false;
     }
 
     /**
@@ -254,6 +326,10 @@ namespace cmpl
 
         else if (step == EXT_STEP_INTERPRET_REMODEL) {
             PROTO_MOD_OUTL(mod, " extension " << extName() << ": matrix remodeling: " << step << " " << id);
+
+            _linForSos1 = (_sosNative != LinearSosMod::sosTypeOnlySos1 && _sosNative != LinearSosMod::sosTypeBoth);
+            _linForSos2 = (_sosNative != LinearSosMod::sosTypeOnlySos2 && _sosNative != LinearSosMod::sosTypeBoth);
+
             if (!_storeSos.empty())
                 remodelAll((Interpreter *)mod, (OptModel *)par, _storeSos.size());
 

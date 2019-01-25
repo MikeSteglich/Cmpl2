@@ -12,6 +12,7 @@ default			run cmpl with default modules
 	inputFunctions
 	classFunctions
 	externDataFile
+        solverSelect
 	boundRow
 	linearSos -warn-invalid-sos
 	linearVarProd

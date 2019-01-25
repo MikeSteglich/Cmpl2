@@ -51,6 +51,18 @@ namespace cmpl
     class ValFormulaVarProd;
 
 
+    /*********** command line options delivered to the extension by run() **********/
+
+    #define OPTION_EXT_USEBIGMBOUND             70
+
+    #define OPTION_EXT_PRODREALERR              80
+    #define OPTION_EXT_PRODREALWARN             81
+    #define OPTION_EXT_PRODREALWARNONCE         82
+
+    #define OPTION_EXT_ATTACHNAMEVARDECOMP      90
+    #define OPTION_EXT_ATTACHNAMEVARNORM        91
+
+
     /**
      * <code>LinearVarProdMod</code> is the extension module for
      * linearization of products of optimization variables
@@ -130,6 +142,19 @@ namespace cmpl
          */
         const char *extName() override				{ return "linearVarProd"; }
 #endif //PROTO
+
+        /**
+         * run the extension function for processing a command line option
+         * @param mod			module calling the extension
+         * @param step			execution step within the module
+         * @param id			additional identificator
+         * @param ref           reference number of option registration, should be used for discriminate the options
+         * @param prio          priority value of option
+         * @param opt           command line option
+         * @param par			additional parameter
+         * @return              true if option is used by the extension
+         */
+        bool run(ModuleBase *mod, int step, int id, int ref, int prio, CmdLineOptList::SingleOption *opt, void *par) override;
 
         /**
 		 * get count of sub data objects

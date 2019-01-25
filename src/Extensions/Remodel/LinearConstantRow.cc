@@ -54,6 +54,39 @@ namespace cmpl
     }
 
     /**
+     * run the extension function for processing a command line option
+     * @param mod			module calling the extension
+     * @param step			execution step within the module
+     * @param id			additional identificator
+     * @param ref           reference number of option registration, should be used for discriminate the options
+     * @param prio          priority value of option
+     * @param opt           command line option
+     * @param par			additional parameter
+     * @return              true if option is used by the extension
+     */
+    bool LinearConstantRow::run(ModuleBase *mod, int step, int id, int ref, int prio, CmdLineOptList::SingleOption *opt, void *par)
+    {
+        if (RemodelBase::run(mod, step, id, ref, prio, opt, par))
+            return true;
+
+        switch (ref) {
+            case OPTION_EXT_DELCONSTROW:
+                _delConstRow = !opt->neg();
+                return true;
+
+            case OPTION_EXT_FALSEASERROR:
+                _falseAsError = !opt->neg();
+                return true;
+
+            case OPTION_EXT_ATTACHNAMEVAR:
+                _attachNameVar = RemodelBaseMod::parseOptString(mod, opt);
+                return true;
+        }
+
+        return false;
+    }
+
+    /**
 	 * write data object to output stream
 	 * @param si        serialization info
 	 * @param data      main data object

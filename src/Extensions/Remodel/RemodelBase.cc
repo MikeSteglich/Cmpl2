@@ -55,6 +55,36 @@ namespace cmpl
     }
 
     /**
+     * run the extension function for processing a command line option
+     * @param mod			module calling the extension
+     * @param step			execution step within the module
+     * @param id			additional identificator
+     * @param ref           reference number of option registration, should be used for discriminate the options
+     * @param prio          priority value of option
+     * @param opt           command line option
+     * @param par			additional parameter
+     * @return              true if option is used by the extension
+     */
+    bool RemodelBase::run(ModuleBase *mod, int step, int id, int ref, int prio, CmdLineOptList::SingleOption *opt, void *par)
+    {
+        switch (ref) {
+            case OPTION_EXT_THREADS:
+                _maxThreads = (unsigned)(opt->neg() ? 0 : opt->argAsInt(0, mod->ctrl()));
+                return true;
+
+            case OPTION_EXT_REMODEL_BIGM:
+                _bigM = STR_TO_CMPLREAL((*opt)[0].c_str());
+                return true;
+
+            case OPTION_EXT_NAMESEP:
+                _nameSep = RemodelBaseMod::parseOptString(mod, opt);
+                return true;
+        }
+
+        return false;
+    }
+
+    /**
 	 * run the extension function
 	 * @param mod			module calling the extension
 	 * @param step			execution step within the module

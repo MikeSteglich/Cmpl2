@@ -69,6 +69,8 @@ namespace cmpl
         // register for special data for model output
         _ctrl->registerExtension((_registerMods.size() > 4 ? _registerMods[4].c_str() : NULL), EXT_STEP_OUTMODEL_SPECIAL_INFO, id, ext);
 
+        regExtOptions(ext, id);
+
         PROTO_OUTL("End run module " << moduleName());
     }
 
@@ -76,20 +78,8 @@ namespace cmpl
     /*********** handling of command line options **********/
 
 #define OPTION_EXT_FUNCTION_NAMESPACE       70
-
 #define OPTION_EXT_SOSTYPEONLY              80
 
-#define OPTION_EXT_SOSNATIVE                81
-#define OPTION_EXT_SOS2NATIVE               82
-
-#define OPTION_EXT_WARNINVALID              85
-
-#define OPTION_EXT_ATTACHNAMEVARSOS         90
-#define OPTION_EXT_ATTACHNAMEVARSOSNEG      91
-#define OPTION_EXT_ATTACHNAMECONSOS         92
-
-#define OPTION_EXT_ATTACHNAMEVARSOS2        95
-#define OPTION_EXT_ATTACHNAMECONSOS2        96
 
 
     /**
@@ -103,9 +93,7 @@ namespace cmpl
         RemodelBaseMod::init(ctrl, data, name);
 
         _namespace.push_back(data->globStrings()->storeInd("sos"));
-
         _useForSos = sosTypeBoth;
-        _sosNative = sosTypeNone;
 
         _warnInvalid = false;
 
@@ -115,8 +103,6 @@ namespace cmpl
 
         _attachNameVarSos2 = data->globStrings()->storeInd("d");
         _attachNameConSos2 = data->globStrings()->storeInd("sos2");
-
-        _sos2NativeOptPrio = 0;
     }
 
     /**
@@ -125,23 +111,35 @@ namespace cmpl
      */
     void LinearSosMod::regModOptions(vector<CmdLineOptList::RegOption> &modOptReg)
     {
+        // initial command line options
         RemodelBaseMod::regModOptions(modOptReg);
 
         REG_CMDL_OPTION( OPTION_EXT_FUNCTION_NAMESPACE, "namespace", 0, 1, CMDL_OPTION_NEG_NO_ARG, true );
-
         REG_CMDL_OPTION( OPTION_EXT_SOSTYPEONLY, "sos-type-only", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
+    }
 
-        REG_CMDL_OPTION( OPTION_EXT_SOSNATIVE, "native-sos", 0, 0, CMDL_OPTION_NEG_DELIV, true );
-        REG_CMDL_OPTION( OPTION_EXT_SOS2NATIVE, "native-sos2", 0, 0, CMDL_OPTION_NEG_DELIV, true );
+    /**
+     * register command line options for the extension
+     * @param ext           extension object
+     * @param id			extension identificator
+     */
+    void LinearSosMod::regExtOptions(ExtensionBase *ext, int id)
+    {
+        // command line options delivered to the extension by run()
+        RemodelBaseMod::regExtOptions(ext, id);
 
-        REG_CMDL_OPTION( OPTION_EXT_WARNINVALID, "warn-invalid-sos", 0, 0, CMDL_OPTION_NEG_DELIV, true );
+        const char *m = modNameRemodel();
+        REG_CMDL_OPTION_EXT( OPTION_EXT_SOSNATIVE, "native-sos", 0, 0, CMDL_OPTION_NEG_DELIV, true, id, m, EXT_CMDLOPT_INTERPRET_SIMPLE, ext );
+        REG_CMDL_OPTION_EXT( OPTION_EXT_SOS2NATIVE, "native-sos2", 0, 0, CMDL_OPTION_NEG_DELIV, true, id, m, EXT_CMDLOPT_INTERPRET_SIMPLE, ext );
 
-        REG_CMDL_OPTION( OPTION_EXT_ATTACHNAMEVARSOS, "an-var-sos", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
-        REG_CMDL_OPTION( OPTION_EXT_ATTACHNAMEVARSOSNEG, "an-var-sosneg", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
-        REG_CMDL_OPTION( OPTION_EXT_ATTACHNAMECONSOS, "an-con-sos", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
+        REG_CMDL_OPTION_EXT( OPTION_EXT_WARNINVALID, "warn-invalid-sos", 0, 0, CMDL_OPTION_NEG_DELIV, true, id, m, EXT_CMDLOPT_INTERPRET_SIMPLE, ext );
 
-        REG_CMDL_OPTION( OPTION_EXT_ATTACHNAMEVARSOS2, "an-var-sos2", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
-        REG_CMDL_OPTION( OPTION_EXT_ATTACHNAMECONSOS2, "an-con-sos2", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
+        REG_CMDL_OPTION_EXT( OPTION_EXT_ATTACHNAMEVARSOS, "an-var-sos", 1, 1, CMDL_OPTION_NEG_NO_ARG, true, id, m, EXT_CMDLOPT_INTERPRET_SIMPLE, ext );
+        REG_CMDL_OPTION_EXT( OPTION_EXT_ATTACHNAMEVARSOSNEG, "an-var-sosneg", 1, 1, CMDL_OPTION_NEG_NO_ARG, true, id, m, EXT_CMDLOPT_INTERPRET_SIMPLE, ext );
+        REG_CMDL_OPTION_EXT( OPTION_EXT_ATTACHNAMECONSOS, "an-con-sos", 1, 1, CMDL_OPTION_NEG_NO_ARG, true, id, m, EXT_CMDLOPT_INTERPRET_SIMPLE, ext );
+
+        REG_CMDL_OPTION_EXT( OPTION_EXT_ATTACHNAMEVARSOS2, "an-var-sos2", 1, 1, CMDL_OPTION_NEG_NO_ARG, true, id, m, EXT_CMDLOPT_INTERPRET_SIMPLE, ext );
+        REG_CMDL_OPTION_EXT( OPTION_EXT_ATTACHNAMECONSOS2, "an-con-sos2", 1, 1, CMDL_OPTION_NEG_NO_ARG, true, id, m, EXT_CMDLOPT_INTERPRET_SIMPLE, ext );
     }
 
     /**
@@ -156,6 +154,7 @@ namespace cmpl
         if (RemodelBaseMod::parseOption(ref, prio, opt))
             return true;
 
+        parseOptString(opt);
         switch (ref) {
             case OPTION_EXT_FUNCTION_NAMESPACE:
                 _namespace.clear();
@@ -183,59 +182,6 @@ namespace cmpl
                     _useForSos = sosTypeOnlySos2;
                 else
                     ERRHANDLER.error(ERROR_LVL_NORMAL, "argument for option 'sos-type-only' must be 1 or 2", opt->argPos(0));
-                return true;
-
-            case OPTION_EXT_SOSNATIVE:
-                if (prio >= _sos2NativeOptPrio) {
-                    prio = _sos2NativeOptPrio;
-                    if (!opt->neg())
-                        _sosNative = sosTypeBoth;
-                    else
-                        _sosNative = sosTypeNone;
-                }
-                else {
-                    if (!opt->neg())
-                        _sosNative = (_sosNative == sosTypeNone || _sosNative == sosTypeOnlySos1 ? sosTypeOnlySos1 : sosTypeBoth);
-                    else
-                        _sosNative = (_sosNative == sosTypeNone || _sosNative == sosTypeOnlySos1 ? sosTypeNone : sosTypeOnlySos2);
-                }
-                return true;
-
-            case OPTION_EXT_SOS2NATIVE:
-                if (prio >= _sos2NativeOptPrio) {
-                    prio = _sos2NativeOptPrio;
-                    if (!opt->neg())
-                        _sosNative = (_sosNative == sosTypeNone || _sosNative == sosTypeOnlySos2 ? sosTypeOnlySos2 : sosTypeBoth);
-                    else
-                        _sosNative = (_sosNative == sosTypeNone || _sosNative == sosTypeOnlySos2 ? sosTypeNone : sosTypeOnlySos1);
-                }
-                return true;
-
-            case OPTION_EXT_WARNINVALID:
-                if (!opt->neg())
-                    _warnInvalid = sosTypeBoth;
-                else
-                    _warnInvalid = sosTypeNone;
-                return true;
-
-            case OPTION_EXT_ATTACHNAMEVARSOS:
-                _attachNameVarSos = parseOptString(opt);
-                return true;
-
-            case OPTION_EXT_ATTACHNAMEVARSOSNEG:
-                _attachNameVarSosNeg = parseOptString(opt);
-                return true;
-
-            case OPTION_EXT_ATTACHNAMECONSOS:
-                _attachNameConSos = parseOptString(opt);
-                return true;
-
-            case OPTION_EXT_ATTACHNAMEVARSOS2:
-                _attachNameVarSos2 = parseOptString(opt);
-                return true;
-
-            case OPTION_EXT_ATTACHNAMECONSOS2:
-                _attachNameConSos2 = parseOptString(opt);
                 return true;
         }
 

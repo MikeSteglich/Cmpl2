@@ -36,6 +36,7 @@
 #include <array>
 
 #include "RemodelBase.hh"
+#include "LinearSosMod.hh"
 #include "../../Modules/Interpreter/ValFunction.hh"
 #include "../../Modules/OutModel/OutModelExtData.hh"
 
@@ -57,6 +58,22 @@ namespace cmpl
     class SosContFunctionAdd;
     class SosContFunctionAsVar;
     class SosContFunctionAsString;
+
+
+    /*********** command line options delivered to the extension by run() **********/
+
+    #define OPTION_EXT_SOSNATIVE                81
+    #define OPTION_EXT_SOS2NATIVE               82
+
+    #define OPTION_EXT_WARNINVALID              85
+
+    #define OPTION_EXT_ATTACHNAMEVARSOS         90
+    #define OPTION_EXT_ATTACHNAMEVARSOSNEG      91
+    #define OPTION_EXT_ATTACHNAMECONSOS         92
+
+    #define OPTION_EXT_ATTACHNAMEVARSOS2        95
+    #define OPTION_EXT_ATTACHNAMECONSOS2        96
+
 
     /**
      * <code>LinearSosMod</code> is the extension Module for
@@ -97,7 +114,7 @@ namespace cmpl
             /**
              * constructor
              */
-            SOSStore(bool s2, unsigned se): sos2(s2), syntaxElem(se), vars(), linearized(false), noSolution(false), cntConst(0), posConst()      { }
+            SOSStore(bool s2, unsigned se): sos2(s2), syntaxElem(se), vars(), linearized(false), name(0), name2(0), noSolution(false), cntConst(0), posConst()      { }
 
             /**
              * add optimization variable (or parameter) to SOS
@@ -164,6 +181,9 @@ namespace cmpl
         vector<unsigned> _namespace;		///< namespace parts of the namespace for the functions
         int _baseId;						///< first registration id
 
+        LinearSosMod::SosType _sosNative;   ///< don't linearize this SOS type (let it for native handling by the solver) (only used for evaluating the command line options)
+        int _sos2NativeOptPrio;             ///< priority of given option '-native-sos2' (only used for evaluating the command line options)
+
         bool _useForSos1;                   ///< use extension for SOS
         bool _linForSos1;                   ///< linearize SOS with this extension
         int _idForSos1;                     ///< function registration id for SOS
@@ -208,6 +228,19 @@ namespace cmpl
 		/************** overwritten methods of <code>ExtensionBase</code> **********/
 
     protected:
+        /**
+         * run the extension function for processing a command line option
+         * @param mod			module calling the extension
+         * @param step			execution step within the module
+         * @param id			additional identificator
+         * @param ref           reference number of option registration, should be used for discriminate the options
+         * @param prio          priority value of option
+         * @param opt           command line option
+         * @param par			additional parameter
+         * @return              true if option is used by the extension
+         */
+        bool run(ModuleBase *mod, int step, int id, int ref, int prio, CmdLineOptList::SingleOption *opt, void *par) override;
+
         /**
          * run the extension function
          * @param mod			module calling the extension
