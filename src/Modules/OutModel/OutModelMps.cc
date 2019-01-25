@@ -37,6 +37,7 @@
 #include "../../Control/ModulesConf.hh"
 
 
+
 namespace cmpl
 {
 	/*********** module definition **********/
@@ -67,6 +68,7 @@ namespace cmpl
         _syntaxElems = NULL;
 
         _exportOnly=false;
+        _sosFormatNative=false;
 
         _objName="";
 	}
@@ -98,6 +100,9 @@ namespace cmpl
 
 #define OPTION_OUT_MODEL_MPS_OBJNAME            30
 
+#define OPTION_OUT_MODEL_MPS_SOS_NATIVE         40
+
+
 
 	/**
 	 * register command line options options for delivery to this module
@@ -114,7 +119,9 @@ namespace cmpl
         REG_CMDL_OPTION( OPTION_OUT_MODEL_MPS_REALFORMAT, "f%", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
         REG_CMDL_OPTION( OPTION_OUT_MODEL_MPS_SOLVERNAME, "solver", 1, 1, CMDL_OPTION_NEG_NO_ARG, false );
         REG_CMDL_OPTION( OPTION_OUT_MODEL_MPS_OBJNAME, "obj", 1, 1, CMDL_OPTION_NEG_NO_ARG, false );
-    }
+
+        REG_CMDL_OPTION( OPTION_OUT_MODEL_MPS_SOS_NATIVE, "mps-format-sos-native", 0, 0, CMDL_OPTION_NEG_NO_ARG, false );
+       }
 
 	/**
 	 * parse single option from command line options, this function is called for every delivered option
@@ -189,6 +196,13 @@ namespace cmpl
             }
             return true;
 
+        case OPTION_OUT_MODEL_MPS_SOS_NATIVE:
+            if (opt->neg())
+                _sosFormatNative=false;
+            else
+                _sosFormatNative=true;
+            return true;
+
 
         }
 
@@ -208,6 +222,7 @@ namespace cmpl
         s << "  -f% <format>                  format spezifier (printf format) for real number output" << endl;
         s << "  -solver <name>                name of solver, for special extensions of the MPS format" << endl;
         s << "  -obj <name>                   name of the objective function to be invoked" << endl;
+        s << "  -mps-format-sos-native        exports SOS as MPS extension" << endl;
 	}
 
 
@@ -240,9 +255,15 @@ namespace cmpl
 					_standardMps = NULL;
 				}
 
-                // MPS cannot handle any special extension data
-                map<int, list<OutModelExtDataBase::Info>> mki;
-                OutModelExtDataBase::getInfo(this, mki);
+               if (_sosFormatNative) {
+                    _mki[OutModelExtDataSOS1Key] = list<OutModelExtDataBase::Info>();
+                    //mki[OutModelExtDataSOS1::key] = list<OutModelExtDataBase::Info>();
+
+                    _mki[OutModelExtDataSOS2Key] = list<OutModelExtDataBase::Info>();
+                    //mki[OutModelExtDataSOS2::key] = list<OutModelExtDataBase::Info>();
+
+                    OutModelExtDataBase::getInfo(this, _mki);
+                }
 
 				// write standard MPS
 				if (_standardMps) {
@@ -500,7 +521,85 @@ namespace cmpl
             }
         }
 
+        if (_sosFormatNative) {
+
+            //list<OutModelExtDataBase::Info> &lst = _mki[OutModelExtDataSOS1::key];
+            list<OutModelExtDataBase::Info> &lst = _mki[OutModelExtDataSOS1Key];
+            //list<OutModelExtDataBase::Info> &lst = _mki[OutModelExtDataSOS2::key];
+            list<OutModelExtDataBase::Info> &lst2 = _mki[OutModelExtDataSOS2Key];
+
+            if (!lst.empty() || !lst2.empty())
+                ostr << "SOS" << endl;
+
+            if (!lst.empty()) {
+
+                 for (OutModelExtDataBase::Info info : lst) {
+                     if (info.rows && !info.onlyRem) {
+                         OutModelExtDataSOS1 *infosos = (OutModelExtDataSOS1 *)info.dp;
+                         for (unsigned i = 0; i < info.rows; i++) {
+                             vector<unsigned long> sosvars;
+                             unsigned sosname;
+                             //infosos->getData(info, i, &sosvars, sosname);
+                             infosos->getData(info, i, sosvars, sosname);
+                             string sosName=sstore->at(sosname);
+
+                             writeSos(ostr,1,fm, i, colNames, sosvars, sosName);
+
+                         }
+                     }
+                 }
+             }
+
+            if (!lst2.empty()) {
+
+                 for (OutModelExtDataBase::Info info : lst2) {
+                     if (info.rows && !info.onlyRem) {
+                         OutModelExtDataSOS2 *infosos = (OutModelExtDataSOS2 *)info.dp;
+                         for (unsigned i = 0; i < info.rows; i++) {
+                             vector<unsigned long> sosvars;
+                             unsigned sosname;
+                             //infosos->getData(info, i, &sosvars, sosname);
+                             infosos->getData(info, i, sosvars, sosname);
+                             string sosName=sstore->at(sosname);
+
+                             writeSos(ostr,2,fm, i, colNames, sosvars, sosName);
+                         }
+                     }
+                 }
+             }
+        }
+
         ostr << "ENDATA" << endl;
+    }
+
+    void OutModelMps::writeSos(ostream& ostr, int type, bool fm, unsigned i, string *colNames, vector<unsigned long>& sosvars, string& sosName ) {
+
+        if (sosName.empty()) {
+            string tmpName=colNames[sosvars[0]];
+            vector < string > tmpName1;
+            StringStore::split(tmpName, tmpName1, "[");
+
+            if (tmpName1.size()>0)
+               sosName=tmpName1[0]+"_sos["+to_string(i+1)+"]";
+            else
+               sosName="sos"+to_string(i+1);
+        }
+
+        string sosType = (type==1 ? "S1" : "S2");
+        if (fm)
+            ostr << " " << sosType << " " << sosName <<endl;
+        else
+            ostr << " " << sosType << " " << setw(8) << left << sosName <<endl;
+
+        unsigned long j=1;
+        for (unsigned long idx : sosvars ) {
+            if (fm)
+                ostr << "    "  << colNames[idx-1] << " " << j << endl;
+            else
+                ostr << "  " << setw(8) << left << colNames[idx] << setw(8) << left <<j << endl;
+            j++;
+        }
+
     }
 
     /**

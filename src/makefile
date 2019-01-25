@@ -29,7 +29,7 @@ SUBDIRS2 := Modules Extensions
 
 
 $(OUTPUT) : $(OBJS) subobjs
-	$(CXX) -o $(OUTPUT) $(OBJS) $(SUBDIRS1:%=%/*.o) $(SUBDIRS2:%=%/*/*.o) $(LIBS) -lpthread
+	$(CXX) -o $(OUTPUT) $(OBJS) $(SUBDIRS1:%=%/*.o) $(SUBDIRS2:%=%/*/*.o) $(LIBS) -lpthread  
 
 all : $(OUTPUT)
 

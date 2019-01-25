@@ -33,6 +33,75 @@ default			run cmpl with default modules
     solutionReportCsv
 	solutionReportXml
 
+
+
+cplex			run cmpl with cplex
+	compatSymbols
+	mathFunctions
+	inputFunctions
+	classFunctions
+	externDataFile
+	boundRow
+	linearSos -warn-invalid-sos -native-sos  -native-sos2  
+	linearVarProd
+	linearConstantRow
+	linearLogCon
+	precompile
+	transferToServer
+	compile -no-warn-insert-eos -compat-linenamepref -compat-cbsymbols -compat-cbh-assign
+    interpret
+    writeMps	-mps-format-sos-native
+    writeMatrix
+    solverCplex -solver cplex
+    solutionReportAscii -solStdOut
+    solutionReportCsv
+	solutionReportXml
+
+gurobi			run cmpl with gurobi
+	compatSymbols
+	mathFunctions
+	inputFunctions
+	classFunctions
+	externDataFile
+	boundRow
+	linearSos -warn-invalid-sos -native-sos  -native-sos2  
+	linearVarProd
+	linearConstantRow
+	linearLogCon
+	precompile
+	transferToServer
+	compile -no-warn-insert-eos -compat-linenamepref -compat-cbsymbols -compat-cbh-assign
+    interpret
+    writeMps -mps-format-sos-native
+    writeMatrix
+    solverGurobi -solver gurobi
+    solutionReportAscii -solStdOut
+    solutionReportCsv
+	solutionReportXml
+
+scip			run cmpl with scip
+	compatSymbols
+	mathFunctions
+	inputFunctions
+	classFunctions
+	externDataFile
+	boundRow
+	linearSos -warn-invalid-sos -native-sos  -native-sos2  
+	linearVarProd
+	linearConstantRow
+	linearLogCon
+	precompile
+	transferToServer
+	compile -no-warn-insert-eos -compat-linenamepref -compat-cbsymbols -compat-cbh-assign
+    interpret
+    writeMps -mps-format-sos-native
+    writeMatrix
+    solverScip -solver scip
+    solutionReportAscii -solStdOut
+    solutionReportCsv
+	solutionReportXml
+
+
 script			run cmpl in script mode without writing and solving the instance 	
 	compatSymbols 
 	mathFunctions

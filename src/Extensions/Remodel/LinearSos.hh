@@ -89,10 +89,13 @@ namespace cmpl
         friend class SosContFunctionAsVar;
         friend class SosContFunctionAsString;
 
+
+
     private:
         /**
          * store for one SOS or SOS2
          */
+
         struct SOSStore
         {
             bool sos2;                      ///< true: SOS2 / false: SOS
@@ -131,6 +134,10 @@ namespace cmpl
              */
             void write(ostream& ostr, Interpreter *modp);
         };
+
+        private:
+            SOSStore *sos;
+
 
         /**
          * info object for one component of SOS or SOS2, used only in linearization
@@ -173,7 +180,8 @@ namespace cmpl
              * @param name          name for SOS / 0: no name given
              * @return              identity number of SOS/SOS2
              */
-            unsigned getData(Info& info, unsigned row, vector<unsigned long> *vars, unsigned& name) override;
+            //unsigned getData(Info& info, unsigned row, vector<unsigned long> *vars, unsigned& name) override;
+            unsigned getData(Info& info, unsigned row, vector<unsigned long>& vars, unsigned& name) override;
         };
 
 
