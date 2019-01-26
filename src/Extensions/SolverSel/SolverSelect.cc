@@ -71,7 +71,6 @@ namespace cmpl
                 return true;
 
             case OPTION_EXT_EXEC_SOLVERSEL_SOLVERNAME:
-            //case OPTION_EXT_EXEC_SOLVERSEL_OPTSOLVER:
                 _solver.clear();
                 if (!opt->neg() && opt->size() == 1) {
                     _solver = StringStore::upperCase((*opt)[0]);

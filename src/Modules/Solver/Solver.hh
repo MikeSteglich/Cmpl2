@@ -110,7 +110,7 @@ protected:
     void readOptFile();
     void setBinFullName();
 
-    void writeInstanceFile();
+    void writeInstanceFile(string opts);
 
     int solve();
 

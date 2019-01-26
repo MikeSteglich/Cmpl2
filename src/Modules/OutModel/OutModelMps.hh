@@ -55,6 +55,20 @@ namespace cmpl
 	 */
 	class OutModelMps : public ModuleBase
 	{
+    private:
+        /**
+         * type for an extension of the MPS format
+         */
+        enum FormatExtension {
+            FormatExtensionNone,                ///< don't use extension
+
+            FormatExtensionDefault,             ///< change value to default (only used while parsing command line options)
+            FormatExtensionError,               ///< unknown type name (only used while parsing command line options)
+
+            FormatExtensionCplex,               ///< format used by solver CPLEX
+            FormatExtensionGurobi,              ///< format used by solver GUROBI
+            FormatExtensionScip,                ///< format used by solver SCIP
+        };
 
 		/************** command line options **********/
 
@@ -62,15 +76,17 @@ namespace cmpl
 		FileOutput *_standardMps;				///< write model as standard MPS to this file / NULL: no standard MPS output
 		FileOutput *_freeMps;					///< write model as free MPS to this file / NULL: no free MPS output
 
+        FormatExtension _formatDefault;         ///< default for subsequent format selection options
+        FormatExtension _formatHeader;          ///< format of header lines in MPS
+        FormatExtension _formatSOS;             ///< format of MPS extension for SOS
+        //TODO: more format extensions
+
         string _realFormat;						///< printf format for output of real values
-        string _solverName;						///< name of solver, for special extensions of the MPS format
 
         SyntaxElement *_syntaxStructure;				///< root element of syntax structure of cmpl input
         map<unsigned, const SyntaxElement *> *_syntaxElems;	///< syntax elements by id, only filled for error output
 
         bool _exportOnly;
-        bool _sosFormatNative;
-
         string _objName;
 
         map<int, list<OutModelExtDataBase::Info> > _mki;
@@ -124,7 +140,19 @@ namespace cmpl
 		/************** module functionality **********/
 
 	private:
-		/**
+        /**
+         * parse argument of command line option for name of MPS format extension
+         * @param opt           command line option
+         * @return              format extension type
+         */
+        FormatExtension parseFormatExtName(CmdLineOptList::SingleOption *opt);
+
+        /**
+         * initialize use of MPS format extensions
+         */
+        void initFormatExtFromDefault();
+
+        /**
          * write generated model to file
 		 * @param om			generated model
 		 * @param file			output to this file

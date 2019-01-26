@@ -87,13 +87,13 @@ void SolverScip::run()
         setBinFullName();
 
         PROTO_OUTL("SolverScip: writing instance file " << moduleName());
-        writeInstanceFile();
+        writeInstanceFile("-mps-format scip -mps-format-sos cplex");
 
         PROTO_OUTL("SolverScip: solving instance" << moduleName());
 
-        GET_DATA(Solution,sol);
-        if (!sol)
-            GET_NEW_DATA(Solution,sol);
+        //GET_DATA(Solution,sol);
+        //if (!sol)
+        GET_NEW_DATA(Solution,sol);
 
         string probName = string( modp()->data()->cmplFileBase() )+".cmpl";
         sol->prepareSolutionData(probName, _solverName,_data,this);

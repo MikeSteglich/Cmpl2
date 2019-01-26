@@ -87,13 +87,13 @@ void SolverCplex::run()
         setBinFullName();
 
         PROTO_OUTL("SolverCplex: writing instance file " << moduleName());
-        writeInstanceFile();
+        writeInstanceFile("-mps-format cplex");
 
         PROTO_OUTL("SolverCplex: solving instance" << moduleName());
 
-        GET_DATA(Solution,sol);
-        if (!sol)
-            GET_NEW_DATA(Solution,sol);
+        //GET_DATA(Solution,sol);
+        //if (!sol)
+        GET_NEW_DATA(Solution,sol);
 
         string probName = string( modp()->data()->cmplFileBase() )+".cmpl";
         sol->prepareSolutionData(probName, _solverName,_data,this);
@@ -317,7 +317,7 @@ void SolverCplex::readSolFile(Solution* sol,  OptModel* om) {
                 vector<string> varXmlVals;
                 StringStore::split(line,varXmlVals);
 
-                for (int i=0; i<varXmlVals.size();i++) {
+                for (unsigned i=0; i<varXmlVals.size();i++) {
                     if (StringStore::startsWith(varXmlVals[i],"value"))
                         actPos=i;
                     if (StringStore::startsWith(varXmlVals[i],"reducedCost"))
@@ -359,7 +359,7 @@ void SolverCplex::readSolFile(Solution* sol,  OptModel* om) {
                 vector<string> conXmlVals;
                 StringStore::split(line,conXmlVals);
 
-                for (int i=0; i<conXmlVals.size();i++) {
+                for (unsigned i=0; i<conXmlVals.size();i++) {
                     if (StringStore::startsWith(conXmlVals[i],"slack"))
                         actPos=i;
                     if (StringStore::startsWith(conXmlVals[i],"dual"))

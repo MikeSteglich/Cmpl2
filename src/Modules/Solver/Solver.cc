@@ -208,19 +208,16 @@ bool Solver::isImplemented(string solverName){
 }
 
 
-void Solver::writeInstanceFile() {
+void Solver::writeInstanceFile(string opts) {
     deleteTmpFiles();
 
     CmdLineOptList clOpts;
     PositionInfo pos(POSITION_TYPE_DESCR, "(internal)");
-    string opts;
-    if (!_isSilent)
-        opts = _ctrl->printBuffer("-fms %s -solver %s", _instanceFileName.c_str(), _solverName.c_str());
-    else
-        opts = _ctrl->printBuffer("-fms %s -solver %s -silent", _instanceFileName.c_str(), _solverName.c_str());
 
-    if (_solverModule=="CPLEX" || _solverModule=="GUROBI" || _solverModule=="SCIP")
-        opts+=" -mps-format-sos-native";
+    if (!_isSilent)
+        opts += _ctrl->printBuffer(" -fms %s", _instanceFileName.c_str());
+    else
+        opts += _ctrl->printBuffer(" -fms %s -silent", _instanceFileName.c_str());
 
     clOpts.addOption(opts, pos);
     _ctrl->runModuleFunc("writeMps", &clOpts);

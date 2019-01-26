@@ -1,4 +1,9 @@
 
 []
-: -native-sos
+linear: -solver CBC
+no-linear: ERROR solution of non-linear problems not implemented
+
+[cplex]
+: -native-sos -mps-format cplex
+
 

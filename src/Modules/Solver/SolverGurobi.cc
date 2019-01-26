@@ -88,13 +88,13 @@ void SolverGurobi::run()
         setBinFullName();
 
         PROTO_OUTL("SolverGurobi: writing instance file " << moduleName());
-        writeInstanceFile();
+        writeInstanceFile("-mps-format gurobi -mps-format-sos cplex");
 
         PROTO_OUTL("SolverGurobi: solving instance" << moduleName());
 
-        GET_DATA(Solution,sol);
-        if (!sol)
-            GET_NEW_DATA(Solution,sol);
+        //GET_DATA(Solution,sol);
+        //if (!sol)
+        GET_NEW_DATA(Solution,sol);
 
         string probName = string( modp()->data()->cmplFileBase() )+".cmpl";
         sol->prepareSolutionData(probName, _solverName,_data,this);

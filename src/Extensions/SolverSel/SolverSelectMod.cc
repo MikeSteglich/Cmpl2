@@ -51,7 +51,9 @@ namespace cmpl
         PROTO_OUTL("Start run solverSelect module " << moduleName());
 
         SolverSelect *ext = new SolverSelect(this);
-        _ctrl->registerExtension((_registerMods.size() > 0 ? _registerMods[0].c_str() : "interpret"), EXT_STEP_INTERPRET_SOLVERSEL, ext);
+        int id = _ctrl->registerExtension((_registerMods.size() > 0 ? _registerMods[0].c_str() : "interpret"), EXT_STEP_INTERPRET_SOLVERSEL, ext);
+
+        regExtOptions(ext, id);
 
         PROTO_OUTL("End run solverSelect module " << moduleName());
     }
@@ -69,7 +71,6 @@ namespace cmpl
         const char *m = (_registerMods.size() > 0 ? _registerMods[0].c_str() : "interpret");
         REG_CMDL_OPTION_EXT( OPTION_EXT_EXEC_SOLVERSEL_CONFIG_FILE, "solversel-config", 1, 1, CMDL_OPTION_NEG_NO_ARG, true, id, m, EXT_CMDLOPT_INTERPRET_SIMPLE, ext );
         REG_CMDL_OPTION_EXT( OPTION_EXT_EXEC_SOLVERSEL_SOLVERNAME, "solver", 1, 1, CMDL_OPTION_NEG_NO_ARG, true, id, m, EXT_CMDLOPT_INTERPRET_SIMPLE, ext );
-        //REG_CMDL_OPTION_EXT( OPTION_EXT_EXEC_SOLVERSEL_OPTSOLVER, "opt", 1, -1, CMDL_OPTION_NEG_NO_ARG, true, id, m, EXT_CMDLOPT_INTERPRET_SIMPLE, ext );
     }
 
     /**
@@ -82,7 +83,6 @@ namespace cmpl
 
         s << "  -solversel-config <file>      use this config file for solver selection instead of default '" << defaultConfigFile() << "'" << endl;
         s << "  -solver <name>                name of explicit selected solver" << endl;
-        //s << "  -opt <name> ...               name of explicit selected solver" << endl;
     }
 
 

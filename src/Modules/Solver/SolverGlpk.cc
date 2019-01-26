@@ -89,13 +89,13 @@ void SolverGlpk::run()
         setBinFullName();
 
         PROTO_OUTL("SolverGlpk: writing instance file " << moduleName());
-        writeInstanceFile();
+        writeInstanceFile("");
 
         PROTO_OUTL("SolverGlpk: solving instance" << moduleName());
 
-        GET_DATA(Solution,sol);
-        if (!sol)
-            GET_NEW_DATA(Solution,sol);
+        //GET_DATA(Solution,sol);
+        //if (!sol)
+        GET_NEW_DATA(Solution,sol);
 
         string probName = string( modp()->data()->cmplFileBase() )+".cmpl";
         sol->prepareSolutionData(probName, _solverName,_data,this);

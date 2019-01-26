@@ -64,11 +64,14 @@ namespace cmpl
 		_freeMps = NULL;
         _realFormat = CMPLREAL_STDFORMAT;
 
+        _formatDefault = FormatExtensionNone;
+        _formatHeader = FormatExtensionDefault;
+        _formatSOS = FormatExtensionDefault;
+
         _syntaxStructure = NULL;
         _syntaxElems = NULL;
 
         _exportOnly=false;
-        _sosFormatNative=false;
 
         _objName="";
 	}
@@ -96,11 +99,12 @@ namespace cmpl
 #define OPTION_OUT_MODEL_MPS_FREE_FOR_SOLVER	12
 
 #define OPTION_OUT_MODEL_MPS_REALFORMAT         20
-#define OPTION_OUT_MODEL_MPS_SOLVERNAME         25
 
 #define OPTION_OUT_MODEL_MPS_OBJNAME            30
 
-#define OPTION_OUT_MODEL_MPS_SOS_NATIVE         40
+#define OPTION_OUT_MODEL_MPS_FORMAT_DEFAULT     40
+#define OPTION_OUT_MODEL_MPS_FORMAT_HEADER      41
+#define OPTION_OUT_MODEL_MPS_FORMAT_SOS         42
 
 
 
@@ -117,11 +121,12 @@ namespace cmpl
         REG_CMDL_OPTION( OPTION_OUT_MODEL_MPS_FREE_FOR_SOLVER, "fms", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
 
         REG_CMDL_OPTION( OPTION_OUT_MODEL_MPS_REALFORMAT, "f%", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
-        REG_CMDL_OPTION( OPTION_OUT_MODEL_MPS_SOLVERNAME, "solver", 1, 1, CMDL_OPTION_NEG_NO_ARG, false );
         REG_CMDL_OPTION( OPTION_OUT_MODEL_MPS_OBJNAME, "obj", 1, 1, CMDL_OPTION_NEG_NO_ARG, false );
 
-        REG_CMDL_OPTION( OPTION_OUT_MODEL_MPS_SOS_NATIVE, "mps-format-sos-native", 0, 0, CMDL_OPTION_NEG_NO_ARG, false );
-       }
+        REG_CMDL_OPTION( OPTION_OUT_MODEL_MPS_FORMAT_DEFAULT, "mps-format", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
+        REG_CMDL_OPTION( OPTION_OUT_MODEL_MPS_FORMAT_HEADER, "mps-format-header", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
+        REG_CMDL_OPTION( OPTION_OUT_MODEL_MPS_FORMAT_SOS, "mps-format-sos", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
+    }
 
 	/**
 	 * parse single option from command line options, this function is called for every delivered option
@@ -179,15 +184,6 @@ namespace cmpl
                 _realFormat = (*opt)[0];
             return true;
 
-        case OPTION_OUT_MODEL_MPS_SOLVERNAME:
-            if (opt->neg())
-                _solverName.clear();
-            else {
-                _solverName = (*opt)[0];
-                _solverName = StringStore::upperCase(_solverName);
-            }
-            return true;
-
         case OPTION_OUT_MODEL_MPS_OBJNAME:
             if (opt->neg())
                 _objName.clear();
@@ -196,13 +192,29 @@ namespace cmpl
             }
             return true;
 
-        case OPTION_OUT_MODEL_MPS_SOS_NATIVE:
-            if (opt->neg())
-                _sosFormatNative=false;
-            else
-                _sosFormatNative=true;
+        case OPTION_OUT_MODEL_MPS_FORMAT_DEFAULT:
+            _formatDefault = parseFormatExtName(opt);
+            if (_formatDefault == FormatExtensionDefault || _formatDefault == FormatExtensionError) {
+                _ctrl->errHandler().error(ERROR_LVL_EASY, "invalid name for default format of MPS extensions", opt->loc(true));
+                _formatDefault = FormatExtensionNone;
+            }
             return true;
 
+        case OPTION_OUT_MODEL_MPS_FORMAT_HEADER:
+            _formatHeader = parseFormatExtName(opt);
+            if (_formatHeader != FormatExtensionNone && _formatHeader != FormatExtensionDefault && _formatHeader != FormatExtensionCplex && _formatHeader != FormatExtensionGurobi && _formatHeader != FormatExtensionScip) {
+                _ctrl->errHandler().error(ERROR_LVL_EASY, "invalid name for format of MPS header lines", opt->loc(true));
+                _formatHeader = FormatExtensionDefault;
+            }
+            return true;
+
+        case OPTION_OUT_MODEL_MPS_FORMAT_SOS:
+            _formatSOS = parseFormatExtName(opt);
+            if (_formatSOS != FormatExtensionNone && _formatSOS != FormatExtensionDefault && _formatSOS != FormatExtensionCplex) {
+                _ctrl->errHandler().error(ERROR_LVL_EASY, "invalid name for format of MPS extension for SOS", opt->loc(true));
+                _formatSOS = FormatExtensionDefault;
+            }
+            return true;
 
         }
 
@@ -220,10 +232,62 @@ namespace cmpl
 		s << "  -m [<file>]                   export model in standard MPS format in a file or stdout" << endl;
 		s << "  -fm [<file>]                  export model in Free MPS format in a file or stdout" << endl;
         s << "  -f% <format>                  format spezifier (printf format) for real number output" << endl;
-        s << "  -solver <name>                name of solver, for special extensions of the MPS format" << endl;
         s << "  -obj <name>                   name of the objective function to be invoked" << endl;
-        s << "  -mps-format-sos-native        exports SOS as MPS extension" << endl;
-	}
+
+        s << "  -mps-format <name>            default for subsequent format selection options" << endl;
+        s << "  -mps-format-header <name>     format of header lines in MPS (one of: none, cplex, gurobi, scip)" << endl;
+        s << "  -mps-format-sos <name>        format of MPS extension for SOS (one of: none, cplex)" << endl;
+        //TODO: more format extensions
+    }
+
+    /**
+     * parse argument of command line option for name of MPS format extension
+     * @param opt           command line option
+     * @return              format extension type
+     */
+    OutModelMps::FormatExtension OutModelMps::parseFormatExtName(CmdLineOptList::SingleOption *opt)
+    {
+        if (opt->neg())
+            return FormatExtensionNone;
+
+        string name = StringStore::lowerCase((*opt)[0]);
+        if (name == "none")
+            return FormatExtensionNone;
+        else if (name == "default")
+            return FormatExtensionDefault;
+        else if (name == "cplex")
+            return FormatExtensionCplex;
+        else if (name == "gurobi")
+            return FormatExtensionGurobi;
+        else if (name == "scip")
+            return FormatExtensionScip;
+
+        return FormatExtensionError;
+    }
+
+    /**
+     * initialize use of MPS format extensions
+     */
+    void OutModelMps::initFormatExtFromDefault()
+    {
+        // format of header lines in MPS
+        if (_formatHeader == FormatExtensionDefault) {
+            if (_formatDefault == FormatExtensionCplex || _formatDefault == FormatExtensionGurobi || _formatDefault == FormatExtensionScip)
+                _formatHeader = _formatDefault;
+            else
+                _formatHeader = FormatExtensionNone;
+        }
+
+        // format of MPS extension for SOS
+        if (_formatSOS == FormatExtensionDefault) {
+            if (_formatDefault == FormatExtensionCplex)
+                _formatSOS = _formatDefault;
+            else
+                _formatSOS = FormatExtensionNone;
+        }
+
+        //TODO: more format extensions
+    }
 
 
 	/**
@@ -234,6 +298,8 @@ namespace cmpl
 		_ctrl->errHandler().setExecStep("run");
 
 		PROTO_OUTL("Start run module " << moduleName());
+
+        initFormatExtFromDefault();
 
 		if (_standardMps || _freeMps) {
 			// get model data
@@ -255,15 +321,15 @@ namespace cmpl
 					_standardMps = NULL;
 				}
 
-               if (_sosFormatNative) {
+                if (_formatSOS != FormatExtensionNone) {
                     _mki[OutModelExtDataSOS1Key] = list<OutModelExtDataBase::Info>();
                     //mki[OutModelExtDataSOS1::key] = list<OutModelExtDataBase::Info>();
 
                     _mki[OutModelExtDataSOS2Key] = list<OutModelExtDataBase::Info>();
                     //mki[OutModelExtDataSOS2::key] = list<OutModelExtDataBase::Info>();
-
-                    OutModelExtDataBase::getInfo(this, _mki);
                 }
+
+                OutModelExtDataBase::getInfo(this, _mki);
 
 				// write standard MPS
 				if (_standardMps) {
@@ -373,19 +439,19 @@ namespace cmpl
 
             if ( (*mode == '+' || *mode == '-' || *mode == 'N') && (_objName.empty() || rowNames[i]==_objName) ) {
             //if (*mode == '+' || *mode == '-') {
-                if (_solverName == "GUROBI") {
+                if (_formatHeader == FormatExtensionGurobi) {
                     ostr << "* OBJNAME " << rowNames[i] << endl;
                     ostr << "OBJSENSE" << endl << "\t" << (*mode == '+' ? "max" : "min") << endl;
                 }
-                else if (_solverName == "CPLEX") {
+                else if (_formatHeader == FormatExtensionCplex) {
                     ostr << "OBJSENSE" << endl << "\t" << (*mode == '+' ? "MAX" : "MIN") << endl;
                     ostr << "OBJNAME" << endl << "\t" << rowNames[i] << endl;
                 }
-                else if (_solverName == "SCIP") {
+                else if (_formatHeader == FormatExtensionScip) {
                     ostr << "* OBJNAME " << rowNames[i] << endl;
                     ostr << "OBJSENSE" << endl << "\t" << (*mode == '+' ? "MAX" : "MIN") << endl;
                 }
-                else {
+                else if (fm) {
                     ostr << "* OBJNAME " << rowNames[i] << endl << "* OBJSENSE " << (*mode == '+' ? "MAX" : "MIN") << endl;
                 }
 
@@ -521,7 +587,7 @@ namespace cmpl
             }
         }
 
-        if (_sosFormatNative) {
+        if (_formatSOS == FormatExtensionCplex) {
 
             //list<OutModelExtDataBase::Info> &lst = _mki[OutModelExtDataSOS1::key];
             list<OutModelExtDataBase::Info> &lst = _mki[OutModelExtDataSOS1Key];
