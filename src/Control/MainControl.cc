@@ -593,7 +593,7 @@ namespace cmpl
 	{
         // read module config file
         parseControlOpts(_startOpts, false, false, false, true, false);
-		_modConf = new ModulesConf(this, &_modConfigFile, _modConfLoc);
+        ModulesConf modConf(this, &_modConfigFile, _modConfLoc);
 
 		if (_usageModule.empty()) {
 			s << endl << "usage info: cmpl [options ...]" << endl;
@@ -615,7 +615,7 @@ namespace cmpl
 				else
 					s << endl << "following module aggregations are configured in file \"" << modConfigFileDefault() << "\":" << endl;
 
-				for (vector<ModulesConf::ModDescr>::iterator it = _modConf->_modDescr.begin(); it != _modConf->_modDescr.end(); it++) {
+                for (vector<ModulesConf::ModDescr>::iterator it = modConf._modDescr.begin(); it != modConf._modDescr.end(); it++) {
 					if ((ma==1) == it->modAggr) {
 						string a(it->name);
 						string b((a.size() > 27 ? 3 : (30 - a.size())), ' ');
@@ -629,12 +629,12 @@ namespace cmpl
 		}
 		else
 		{
-			const char *mod = _modConf->_modNames.store(_usageModule);
-			if (_modConf->_modules.count(mod) > 0) {
-				ModuleBase *modObj = _modConf->constructModule(mod, mod);
+            const char *mod = modConf._modNames.store(_usageModule);
+            if (modConf._modules.count(mod) > 0) {
+                ModuleBase *modObj = modConf.constructModule(mod, mod);
 
 				s << endl << "module '" << mod << "'";
-				for (vector<ModulesConf::ModDescr>::iterator it = _modConf->_modDescr.begin(); it != _modConf->_modDescr.end(); it++) {
+                for (vector<ModulesConf::ModDescr>::iterator it = modConf._modDescr.begin(); it != modConf._modDescr.end(); it++) {
 					if (!it->modAggr && it->name == mod) {
 						s << ": " << it->descr;
 					}
@@ -650,8 +650,6 @@ namespace cmpl
 				cerr << "no module '" << _usageModule << "'" << endl;
 			}
 		}
-
-		delete _modConf;
 	}
 
 
