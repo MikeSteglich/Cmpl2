@@ -66,6 +66,7 @@ protected:
     bool _ignoreZeros;
     bool _ignoreVars;
     bool _ignoreCons;
+    bool _ignoreGeneratedElements;
 
 
     vector <string> _displayVarList;

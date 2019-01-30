@@ -68,6 +68,7 @@ namespace cmpl
             FormatExtensionCplex,               ///< format used by solver CPLEX
             FormatExtensionGurobi,              ///< format used by solver GUROBI
             FormatExtensionScip,                ///< format used by solver SCIP
+
         };
 
 		/************** command line options **********/

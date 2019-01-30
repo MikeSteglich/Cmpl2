@@ -1,11 +1,12 @@
 
 .DS_Store
 *.o
-cmpl2.creator.user
-*.user
+cmpl2.creator.*
 bin/cmpl
-cmpl2.creator.user
 *.user
 bin/cmpl.opt
-bin/cmpl.opt
-src/makefile
+bin/cmpl
+*.d
+*.d
+bin/cmpl
+cmpl-Entwicklung.odt

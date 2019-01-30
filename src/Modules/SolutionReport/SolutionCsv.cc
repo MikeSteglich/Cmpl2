@@ -24,7 +24,7 @@ MODULE_CLASS( solutionReportCsv, SolutionCsv )
      */
 void SolutionCsv::init(MainControl *ctrl, MainData *data, const char *name)
 {
-    ModuleBase::init(ctrl, data, name);
+    SolutionReport::init(ctrl, data, name);
 
     _SolutionCsv=NULL;
 }
@@ -170,6 +170,10 @@ void SolutionCsv::writeSolReport(Solution *sol, ostream& ostr) {
                 ostr << _displayVarList[j];
             }
         }
+
+        if (!_ignoreGeneratedElements)
+            ostr << " generatedElements";
+
         ostr << ")";
     }
 
@@ -193,6 +197,10 @@ void SolutionCsv::writeSolReport(Solution *sol, ostream& ostr) {
                 ostr << _displayConList[j];
             }
         }
+
+        if (!_ignoreGeneratedElements)
+            ostr << " generatedElements";
+
         ostr << ")";
     }
 
@@ -285,33 +293,40 @@ void SolutionCsv::writeSolReport(Solution *sol, ostream& ostr) {
 
 void SolutionCsv::writeVarValues(Solution *sol, unsigned long i, unsigned long j , ostream& ostr) {
 
-    ostr <<  sol->solution(i)->variable(j)->name() << ";";
-    ostr << sol->solution(i)->variable(j)->type() << ";";
-    ostr << ( sol->solution(i)->variable(j)->type()=="C" ? sol->solution(i)->variable(j)->activity() : round(sol->solution(i)->variable(j)->activity() )) << ";";
+    if ( !_ignoreGeneratedElements || (_ignoreGeneratedElements && !StringStore::startsWith(sol->solution(i)->variable(j)->name(), "__") ) ) {
 
-    ostr << sol->solution(i)->variable(j)->lowerBound() << ";";
-    ostr << sol->solution(i)->variable(j)->upperBound() << ";";
-    if (sol->hasMarginal())
-        ostr <<  right<< sol->solution(i)->variable(j)->marginal() << ";";
-    else
-        ostr  << "-" ;
-    ostr << endl;
+        ostr <<  sol->solution(i)->variable(j)->name() << ";";
+        ostr << sol->solution(i)->variable(j)->type() << ";";
+        ostr << ( sol->solution(i)->variable(j)->type()=="C" ? sol->solution(i)->variable(j)->activity() : round(sol->solution(i)->variable(j)->activity() )) << ";";
+
+        ostr << sol->solution(i)->variable(j)->lowerBound() << ";";
+        ostr << sol->solution(i)->variable(j)->upperBound() << ";";
+        if (sol->hasMarginal())
+            ostr <<  right<< sol->solution(i)->variable(j)->marginal() << ";";
+        else
+            ostr  << "-" ;
+        ostr << endl;
+    }
 }
 
 void SolutionCsv::writeConValues(Solution *sol, unsigned long i, unsigned long j , ostream& ostr) {
-    ostr << sol->solution(i)->constraint(j)->name() << ";";
-    ostr << sol->solution(i)->constraint(j)->type() << ";";
-    ostr << sol->solution(i)->constraint(j)->activity() << ";" ;
+
+    if ( !_ignoreGeneratedElements || (_ignoreGeneratedElements && !StringStore::startsWith(sol->solution(i)->constraint(j)->name(), "__") ) ) {
+
+        ostr << sol->solution(i)->constraint(j)->name() << ";";
+        ostr << sol->solution(i)->constraint(j)->type() << ";";
+        ostr << sol->solution(i)->constraint(j)->activity() << ";" ;
 
 
-    ostr  << sol->solution(i)->constraint(j)->lowerBound() << ";";
+        ostr  << sol->solution(i)->constraint(j)->lowerBound() << ";";
 
-    ostr  << sol->solution(i)->constraint(j)->upperBound() << ";";
-    if (sol->hasMarginal())
-        ostr << sol->solution(i)->constraint(j)->marginal() << ";";
-    else
-        ostr  << "-" ;
-    ostr << endl;
+        ostr  << sol->solution(i)->constraint(j)->upperBound() << ";";
+        if (sol->hasMarginal())
+            ostr << sol->solution(i)->constraint(j)->marginal() << ";";
+        else
+            ostr  << "-" ;
+        ostr << endl;
+    }
 }
 
 

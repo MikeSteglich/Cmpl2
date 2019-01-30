@@ -280,7 +280,7 @@ namespace cmpl
 
         // format of MPS extension for SOS
         if (_formatSOS == FormatExtensionDefault) {
-            if (_formatDefault == FormatExtensionCplex)
+            if (_formatDefault == FormatExtensionCplex || _formatDefault == FormatExtensionGurobi || _formatDefault == FormatExtensionScip)
                 _formatSOS = _formatDefault;
             else
                 _formatSOS = FormatExtensionNone;
@@ -587,7 +587,7 @@ namespace cmpl
             }
         }
 
-        if (_formatSOS == FormatExtensionCplex) {
+        if (_formatSOS == FormatExtensionCplex || _formatSOS == FormatExtensionGurobi || _formatSOS == FormatExtensionScip) {
 
             //list<OutModelExtDataBase::Info> &lst = _mki[OutModelExtDataSOS1::key];
             list<OutModelExtDataBase::Info> &lst = _mki[OutModelExtDataSOS1Key];

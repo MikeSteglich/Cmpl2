@@ -223,6 +223,9 @@ void SolutionAscii::writeSolReport(Solution *sol, ostream& ostr) {
                 ostr << _displayVarList[j];
             }
         }
+        if (!_ignoreGeneratedElements)
+            ostr << ",generatedElements";
+
         ostr << ")";
     }
 
@@ -246,6 +249,8 @@ void SolutionAscii::writeSolReport(Solution *sol, ostream& ostr) {
                 ostr << _displayConList[j];
             }
         }
+        if (!_ignoreGeneratedElements)
+            ostr << ",generatedElements";
         ostr << ")";
     }
 
@@ -367,33 +372,38 @@ void SolutionAscii::writeSolReport(Solution *sol, ostream& ostr) {
 
 void SolutionAscii::writeVarValues(Solution *sol, unsigned long i, unsigned long j , ostream& ostr) {
 
-    ostr << setw(20) <<   left <<  sol->solution(i)->variable(j)->name();
-    ostr << setw(5) <<  right << sol->solution(i)->variable(j)->type();
-    ostr << setw(20) << right << ( sol->solution(i)->variable(j)->type()=="C" ? sol->solution(i)->variable(j)->activity() : round(sol->solution(i)->variable(j)->activity() ));
+    if ( !_ignoreGeneratedElements || (_ignoreGeneratedElements && !StringStore::startsWith(sol->solution(i)->variable(j)->name(), "__") ) ) {
+        ostr << setw(20) <<   left <<  sol->solution(i)->variable(j)->name();
+        ostr << setw(5) <<  right << sol->solution(i)->variable(j)->type();
+        ostr << setw(20) << right << ( sol->solution(i)->variable(j)->type()=="C" ? sol->solution(i)->variable(j)->activity() : round(sol->solution(i)->variable(j)->activity() ));
 
-    ostr << setw(20) << right << sol->solution(i)->variable(j)->lowerBound();
-    ostr << setw(20) << right << sol->solution(i)->variable(j)->upperBound();
-    if (sol->hasMarginal())
-        ostr << setw(20)  << right<< sol->solution(i)->variable(j)->marginal();
-    else
-        ostr << setw(20) << right << "-" ;
-    ostr << endl;
+        ostr << setw(20) << right << sol->solution(i)->variable(j)->lowerBound();
+        ostr << setw(20) << right << sol->solution(i)->variable(j)->upperBound();
+        if (sol->hasMarginal())
+            ostr << setw(20)  << right<< sol->solution(i)->variable(j)->marginal();
+        else
+            ostr << setw(20) << right << "-" ;
+        ostr << endl;
+    }
 }
 
 void SolutionAscii::writeConValues(Solution *sol, unsigned long i, unsigned long j , ostream& ostr) {
-    ostr << setw(20) <<   left <<  sol->solution(i)->constraint(j)->name();
-    ostr << setw(5) <<  right << sol->solution(i)->constraint(j)->type();
-    ostr << setw(20) << right << sol->solution(i)->constraint(j)->activity() ;
+
+    if ( !_ignoreGeneratedElements || (_ignoreGeneratedElements && !StringStore::startsWith(sol->solution(i)->constraint(j)->name(), "__") ) ) {
+        ostr << setw(20) <<   left <<  sol->solution(i)->constraint(j)->name();
+        ostr << setw(5) <<  right << sol->solution(i)->constraint(j)->type();
+        ostr << setw(20) << right << sol->solution(i)->constraint(j)->activity() ;
 
 
-    ostr << setw(20) << right << sol->solution(i)->constraint(j)->lowerBound();
+        ostr << setw(20) << right << sol->solution(i)->constraint(j)->lowerBound();
 
-    ostr << setw(20) << right << sol->solution(i)->constraint(j)->upperBound();
-    if (sol->hasMarginal())
-        ostr << setw(20)  << right<< sol->solution(i)->constraint(j)->marginal();
-    else
-        ostr << setw(20) << right << "-" ;
-    ostr << endl;
+        ostr << setw(20) << right << sol->solution(i)->constraint(j)->upperBound();
+        if (sol->hasMarginal())
+            ostr << setw(20)  << right<< sol->solution(i)->constraint(j)->marginal();
+        else
+            ostr << setw(20) << right << "-" ;
+        ostr << endl;
+    }
 }
 
 

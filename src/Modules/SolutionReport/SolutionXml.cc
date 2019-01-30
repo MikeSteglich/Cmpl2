@@ -24,7 +24,7 @@ MODULE_CLASS( solutionReportXml, SolutionXml )
      */
 void SolutionXml::init(MainControl *ctrl, MainData *data, const char *name)
 {
-    ModuleBase::init(ctrl, data, name);
+    SolutionReport::init(ctrl, data, name);
 
     _SolutionXml=NULL;
 }
@@ -177,6 +177,10 @@ void SolutionXml::writeSolReport(Solution *sol, ostream& ostr) {
                 ostr << _displayVarList[j];
             }
         }
+
+        if (!_ignoreGeneratedElements)
+            ostr << ",generatedElements";
+
         ostr << ")";
     }
     ostr  << "</variablesDisplayOptions>" << endl;
@@ -196,6 +200,10 @@ void SolutionXml::writeSolReport(Solution *sol, ostream& ostr) {
                 ostr << _displayConList[j];
             }
         }
+
+        if (!_ignoreGeneratedElements)
+            ostr << ",generatedElements";
+
         ostr << ")";
     }
     ostr << "</constraintsDisplayOptions>" <<endl;
@@ -302,40 +310,49 @@ void SolutionXml::writeSolReport(Solution *sol, ostream& ostr) {
 
 void SolutionXml::writeVarValues(Solution *sol, unsigned long i, unsigned long j , ostream& ostr) {
 
+    if ( !_ignoreGeneratedElements || (_ignoreGeneratedElements && !StringStore::startsWith(sol->solution(i)->variable(j)->name(), "__") ) ) {
 
-    ostr << "           <variable idx=\""<< i << "\" name=\""<< sol->solution(i)->variable(j)->name() <<
-                        "\" type=\"" << sol->solution(i)->variable(j)->type() <<
-                        "\" activity=\"" << ( sol->solution(i)->variable(j)->type()=="C" ? sol->solution(i)->variable(j)->activity() : round(sol->solution(i)->variable(j)->activity() )) << "\"";
 
-    ostr <<  " lowerBound=\"" << sol->solution(i)->variable(j)->lowerBound() ;
-    ostr << "\" upperBound=\"" << sol->solution(i)->variable(j)->upperBound() ;
+        ostr << "           <variable idx=\""<< i << "\" name=\""<< sol->solution(i)->variable(j)->name() <<
+                "\" type=\"" << sol->solution(i)->variable(j)->type() <<
+                "\" activity=\"" << ( sol->solution(i)->variable(j)->type()=="C" ? sol->solution(i)->variable(j)->activity() : round(sol->solution(i)->variable(j)->activity() )) << "\"";
 
-    ostr << "\" marginal=\"" ;
-    if (sol->hasMarginal())
-        ostr <<  right << sol->solution(i)->variable(j)->marginal()  ;
-    else
-        ostr  << "-" ;
-    ostr  << "\"/>" << endl;
+        ostr <<  " lowerBound=\"" << sol->solution(i)->variable(j)->lowerBound() ;
+        ostr << "\" upperBound=\"" << sol->solution(i)->variable(j)->upperBound() ;
+
+        ostr << "\" marginal=\"" ;
+        if (sol->hasMarginal())
+            ostr <<  right << sol->solution(i)->variable(j)->marginal()  ;
+        else
+            ostr  << "-" ;
+        ostr  << "\"/>" << endl;
+
+    }
 
 
 }
 
 void SolutionXml::writeConValues(Solution *sol, unsigned long i, unsigned long j , ostream& ostr) {
 
-    ostr << "           <constraint idx=\""<< i << "\" name=\""<< sol->solution(i)->constraint(j)->name() <<
-                        "\" type=\"" << sol->solution(i)->constraint(j)->type()  <<
-                        "\" activity=\"" << sol->solution(i)->constraint(j)->activity() << "\"";
+    if ( !_ignoreGeneratedElements || (_ignoreGeneratedElements && !StringStore::startsWith(sol->solution(i)->constraint(j)->name(), "__") ) ) {
 
-    ostr <<  " lowerBound=\"" << sol->solution(i)->constraint(j)->lowerBound();
-    ostr << "\" upperBound=\"" << sol->solution(i)->constraint(j)->upperBound();
 
-    ostr << "\" marginal=\"";
+        ostr << "           <constraint idx=\""<< i << "\" name=\""<< sol->solution(i)->constraint(j)->name() <<
+                "\" type=\"" << sol->solution(i)->constraint(j)->type()  <<
+                "\" activity=\"" << sol->solution(i)->constraint(j)->activity() << "\"";
 
-    if (sol->hasMarginal())
-        ostr << sol->solution(i)->constraint(j)->marginal() ;
-    else
-        ostr  << "-" ;
-    ostr  << "\"/>" << endl;
+        ostr <<  " lowerBound=\"" << sol->solution(i)->constraint(j)->lowerBound();
+        ostr << "\" upperBound=\"" << sol->solution(i)->constraint(j)->upperBound();
+
+        ostr << "\" marginal=\"";
+
+        if (sol->hasMarginal())
+            ostr << sol->solution(i)->constraint(j)->marginal() ;
+        else
+            ostr  << "-" ;
+        ostr  << "\"/>" << endl;
+
+    }
 }
 
 
