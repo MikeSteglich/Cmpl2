@@ -61,6 +61,7 @@ namespace cmpl
         unsigned _maxThreads;       ///< max number of worker threads (0: no threading)
         realType _bigM;             ///< huge number used for linearization
 
+        unsigned _namePref;         ///< prefix string for names of generated constraints or variables / 0: no prefix
         unsigned _nameSep;          ///< separator string between original constraint or variable name and postfix / 0: no separator
 
 

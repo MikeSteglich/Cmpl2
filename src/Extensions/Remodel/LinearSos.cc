@@ -360,7 +360,7 @@ namespace cmpl
 	{
         // write instance variables
 		//TODO
-        (*si.ostr) << ';' << _maxThreads << ';' << _nameSep << endl;
+        (*si.ostr) << ';' << _maxThreads << ';' << _namePref << ';' << _nameSep << endl;
     }
 
 	/**
@@ -376,6 +376,7 @@ namespace cmpl
         // read instance variables
 		//TODO
         _maxThreads = MainData::getNextLong(rline, si.pos);
+        _namePref = MainData::getNextLong(rline, si.pos);
         _nameSep = MainData::getNextLong(rline, si.pos);
 
         si.pos->addLines();

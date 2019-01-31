@@ -67,6 +67,7 @@ namespace cmpl
 
         _maxThreads = 0;
         _bigM = 1e+10;
+        _namePref = data->globStrings()->storeInd("__");
         _nameSep = data->globStrings()->storeInd("_");
     }
 
@@ -86,6 +87,7 @@ namespace cmpl
         }
 
         if (useNameSep()) {
+            REG_CMDL_OPTION_EXT( OPTION_EXT_NAMEPREF, "nameprefix", 1, 1, CMDL_OPTION_NEG_NO_ARG, true, id, m, EXT_CMDLOPT_INTERPRET_SIMPLE, ext );
             REG_CMDL_OPTION_EXT( OPTION_EXT_NAMESEP, "namesep", 1, 1, CMDL_OPTION_NEG_NO_ARG, true, id, m, EXT_CMDLOPT_INTERPRET_SIMPLE, ext );
         }
     }
@@ -116,6 +118,7 @@ namespace cmpl
             s << "  -big-M <number>               huge number used for linearization (default is " << _bigM << ")" << endl;
         }
         if (useNameSep()) {
+            s << "  -nameprefix <string>          prefix string for names of generated constraints or variables (default is '" << data()->globStrings()->at(_namePref) << "')" << endl;
             s << "  -namesep <string>             separator string between original constraint or variable name and postfix (default is '" << data()->globStrings()->at(_nameSep) << "')" << endl;
         }
     }

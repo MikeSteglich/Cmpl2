@@ -61,6 +61,7 @@ namespace cmpl
     #define OPTION_EXT_THREADS          20
     #define OPTION_EXT_REMODEL_BIGM     21
     #define OPTION_EXT_NAMESEP          30
+    #define OPTION_EXT_NAMEPREF         31
 
 
 
@@ -72,6 +73,7 @@ namespace cmpl
 	{
     protected:
         unsigned _maxThreads;           ///< max number of worker threads (0: no threading)
+        unsigned _namePref;             ///< prefix string for names of generated constraints or variables / 0: no separator
         unsigned _nameSep;              ///< separator string between original constraint or variable name and postfix / 0: no separator
         realType _bigM;                 ///< huge number used for linearization
 
@@ -198,6 +200,16 @@ namespace cmpl
          * @return          constraint (has counted reference within OptModel)
          */
         OptCon *newOptCon(Interpreter *modp, OptModel *om, OptCon *oc, unsigned se, CmplVal& f, string *nm = NULL, CmplVal *tpl = NULL);
+
+        /**
+         * add prefix string to name and store result name in global string store
+         * @param modp      intepreter module calling the extension
+         * @param nm        name without prefix / NULL: no one
+         * @param cur       current number to use if no name
+         * @param lc        true: constraint / false: variable
+         * @return          index number of result name / 0: no one
+         */
+        unsigned addStorePrefixString(Interpreter *modp, string *nm, unsigned long cur, bool lc);
 
         /**
          * get base name and tuple of a source variable or constraint

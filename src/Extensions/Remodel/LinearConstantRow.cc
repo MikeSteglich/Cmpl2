@@ -94,7 +94,7 @@ namespace cmpl
 	void LinearConstantRow::serializeTo(MainData::SerializeInfo& si, const MainData *data)
 	{
         // write instance variables
-        (*si.ostr) << ';' << _maxThreads << ';' << _nameSep << ';' << _attachNameVar << ';' << (_delConstRow ? 1 : 0) << ';' << (_falseAsError ? 1 : 0) << endl;
+        (*si.ostr) << ';' << _maxThreads << ';' << _namePref << ';' << _nameSep << ';' << _attachNameVar << ';' << (_delConstRow ? 1 : 0) << ';' << (_falseAsError ? 1 : 0) << endl;
     }
 
 	/**
@@ -109,6 +109,7 @@ namespace cmpl
 	{
         // read instance variables
         _maxThreads = MainData::getNextLong(rline, si.pos);
+        _namePref = MainData::getNextLong(rline, si.pos);
         _nameSep = MainData::getNextLong(rline, si.pos);
         _attachNameVar = MainData::getNextLong(rline, si.pos);
         _delConstRow = (MainData::getNextLong(rline, si.pos) != 0);

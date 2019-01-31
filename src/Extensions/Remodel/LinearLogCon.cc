@@ -104,7 +104,7 @@ namespace cmpl
 	void LinearLogCon::serializeTo(MainData::SerializeInfo& si, const MainData *data)
 	{
         // write instance variables
-        (*si.ostr) << ';' << _maxThreads << ';' << _bigM << ';' << _nameSep << ';' << _attachNameConAnd << ';' << _attachNameConOr << ';' << _attachNameVarOr << ';' << _attachNameConDltNeg << ';' << _attachNameVarDltNeg << endl;
+        (*si.ostr) << ';' << _maxThreads << ';' << _bigM << ';' << _namePref << ';' << _nameSep << ';' << _attachNameConAnd << ';' << _attachNameConOr << ';' << _attachNameVarOr << ';' << _attachNameConDltNeg << ';' << _attachNameVarDltNeg << endl;
     }
 
 	/**
@@ -120,6 +120,7 @@ namespace cmpl
         // read instance variables
         _maxThreads = MainData::getNextLong(rline, si.pos);
         _bigM = MainData::getNextDouble(rline, si.pos);
+        _namePref = MainData::getNextLong(rline, si.pos);
         _nameSep = MainData::getNextLong(rline, si.pos);
         _attachNameConAnd = MainData::getNextLong(rline, si.pos);
         _attachNameConOr = MainData::getNextLong(rline, si.pos);

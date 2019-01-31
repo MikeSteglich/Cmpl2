@@ -51,6 +51,7 @@ namespace cmpl
     {
         _maxThreads = mod->_maxThreads;
         _bigM = mod->_bigM;
+        _namePref = mod->_namePref;
         _nameSep = mod->_nameSep;
     }
 
@@ -74,6 +75,10 @@ namespace cmpl
 
             case OPTION_EXT_REMODEL_BIGM:
                 _bigM = STR_TO_CMPLREAL((*opt)[0].c_str());
+                return true;
+
+            case OPTION_EXT_NAMEPREF:
+                _namePref = RemodelBaseMod::parseOptString(mod, opt);
                 return true;
 
             case OPTION_EXT_NAMESEP:
@@ -239,15 +244,18 @@ namespace cmpl
         if (ub && *ub)
             v->setUppBound(*ub);
 
+        // add prefix string
+        unsigned nmi = addStorePrefixString(modp, nm, om->cols().size(), false);
+
         // set name and tuple
-        if (nm && !nm->empty()) {
-            CmplVal cn(TP_STR, (intType)(modp->data()->globStrings()->storeInd(*nm)));
+        if (nmi) {
+            CmplVal cn(TP_STR, (intType)nmi);
             if (tpl && *tpl) {
-                v->setInValueTree(&(om->rows()), cn, *tpl);
+                v->setInValueTree(&(om->cols()), cn, *tpl);
             }
             else {
                 CmplVal tp(TP_ITUPLE_NULL);
-                v->setInValueTree(&(om->rows()), cn, tp);
+                v->setInValueTree(&(om->cols()), cn, tp);
             }
         }
 
@@ -271,8 +279,10 @@ namespace cmpl
             LockGuard<mutex> lck(needLock(), _conMtx);
 
             OptCon *c = new OptCon(om, f, false, se);
-            if (nm && !nm->empty()) {
-                CmplVal cn(TP_STR, (intType)(modp->data()->globStrings()->storeInd(*nm)));
+
+            unsigned nmi = addStorePrefixString(modp, nm, om->rows().size(), true);
+            if (nmi) {
+                CmplVal cn(TP_STR, (intType)nmi);
                 if (tpl && *tpl) {
                     c->setInValueTree(&(om->rows()), cn, *tpl);
                 }
@@ -289,6 +299,35 @@ namespace cmpl
         }
     }
 
+
+    /**
+     * add prefix string to name and store result name in global string store
+     * @param modp      intepreter module calling the extension
+     * @param nm        name without prefix / NULL: no one
+     * @param cur       current number to use if no name
+     * @param lc        true: constraint / false: variable
+     * @return          index number of result name / 0: no one
+     */
+    unsigned RemodelBase::addStorePrefixString(Interpreter *modp, string *nm, unsigned long cur, bool lc)
+    {
+        unsigned nmi = 0;
+
+        if (_namePref) {
+            string n(modp->data()->globStrings()->at(_namePref));
+            if (nm && !nm->empty())
+                n += *nm;
+            else
+                n = n + (lc ? "line" : "var") + to_string(cur);
+
+            nmi = modp->data()->globStrings()->storeInd(n);
+        }
+
+        else if (nm && !nm->empty()) {
+            nmi = modp->data()->globStrings()->storeInd(*nm);
+        }
+
+        return nmi;
+    }
 
     /**
      * get base name and tuple of a source variable or constraint
