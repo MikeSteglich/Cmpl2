@@ -31,6 +31,9 @@
 #include "OptModel.hh"
 #include "ValFormula.hh"
 
+#include "../Control/MainControl.hh"
+#include "ExtensionSteps.hh"
+
 
 using namespace std;
 
@@ -194,6 +197,7 @@ namespace cmpl
 
     /****** OptModel ****/
 
+
     /**
      * get array of names for usage on formatted outputs of the columns or rows of the model
      * @param col				true for column names or false for row names
@@ -279,25 +283,26 @@ namespace cmpl
 
 
     /**
-     * sets  whether the model is integer or not
-     * @param isInt				true for integer
+     * set model properties
+     * @param modp          calling module
      */
-    bool OptModel::isLinearModel() {
+    void OptModel::setModelProperties(ModuleBase *modp)
+    {
+        _prop.reset();
 
-        if (!_linearModelChecked) {
-            unsigned long rowCnt = _rows.size();
-
-            for (unsigned long i = 0; i < rowCnt; i++) {
-                OptCon *oc = dynamic_cast<OptCon *>(_rows[i]);
-                if (oc) {
-                    if (!oc->linearConstraint())
-                        _isLinearModel=false;
-                }
+        for (unsigned long i = 0; i < _rows.size(); i++) {
+            OptCon *oc = dynamic_cast<OptCon *>(_rows[i]);
+            if (oc) {
+                ValFormula *frm = oc->formula();
+                if (frm)
+                    frm->setModelProperties(_prop);
             }
-
-           _linearModelChecked=true;
         }
-        return _isLinearModel;
+
+        modp->ctrl()->runExtension(modp, EXT_STEP_INTERPRET_MODELPROP, &_prop);
+
+        _prop.init = true;
+        PROTO_MOD_OUTL(modp, "Model type: " << _prop.modelType() << " (vartypes:" << _prop.vartypes << ", conditions:" << _prop.conditions << ", varprodInt:" << _prop.varprodInt << ", varprodReal:" << _prop.varprodReal << ", sos:" << _prop.sos << ")");
     }
 
 }

@@ -574,6 +574,11 @@ namespace cmpl
 
         ctx.run(0, false, NULL);
 
+        // set model properties
+        _resModel->setModelProperties(this);
+        unsigned long mcr = _resModel->rows().size();
+        unsigned long mcc = _resModel->cols().size();
+
         // solver selection
         _ctrl->errHandler().setExecStep("solver selection");
         _ctrl->runExtension(this, EXT_STEP_INTERPRET_SOLVERSEL, _resModel);
@@ -581,6 +586,10 @@ namespace cmpl
         // linearization or other remodeling
         _ctrl->errHandler().setExecStep("remodeling");
         _ctrl->runExtension(this, EXT_STEP_INTERPRET_REMODEL, _resModel);
+
+        // if model size changed by remodeling, then set model properties anew
+        if (mcr != _resModel->rows().size() || mcc != _resModel->cols().size())
+            _resModel->setModelProperties(this);
 
         _baseExecCtx = NULL;
     }

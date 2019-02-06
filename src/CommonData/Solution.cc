@@ -223,7 +223,7 @@ void Solution::prepareSolutionData(string probName, string solver, MainData *md,
 
     if (hasInt) {
 
-        om->setIsInteger(true);
+        //om->setIsInteger(true);
 
         for (unsigned long i = 0; i < colCnt; i++) {
             OptVar *ov = dynamic_cast<OptVar *>(om->cols()[i]);

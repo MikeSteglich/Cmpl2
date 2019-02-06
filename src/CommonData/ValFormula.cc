@@ -104,7 +104,70 @@ namespace cmpl
 
 
 
+    /************** ValFormulaVarProd **********/
+
+    /**
+     * set model properties from this constraint
+     * @param prop          properties of optimization model
+     */
+    void ValFormulaVarProd::setModelProperties(OptModel::Properties& prop) const
+    {
+        unsigned cr = 0, ci = 0, cb = 0;
+        for (unsigned i = 0; i < _optVars.size(); i++) {
+            OptVar *v = _optVars[i].optVar();
+            if (v->binVar())
+                cb++;
+            else if (v->intVar())
+                ci++;
+            else
+                cr++;
+        }
+
+        if ((cb && prop.vartypes == 0) || (ci && prop.vartypes < 2))
+            prop.vartypes = (ci ? 2 : 1);
+
+        if (_optVars.size() > 1) {
+            if (cr >= 2 && !prop.varprodReal)
+                prop.varprodReal = 1;
+
+            if ((cb || ci) && prop.varprodInt < 2) {
+                if (ci && cr + ci >= 2)
+                    prop.varprodInt = 2;
+                else if (prop.varprodInt == 0)
+                    prop.varprodInt = 1;
+            }
+        }
+    }
+
+
+
     /************** ValFormulaLinearComb **********/
+
+    /**
+     * set model properties from this constraint
+     * @param prop          properties of optimization model
+     */
+    void ValFormulaLinearComb::setModelProperties(OptModel::Properties& prop) const
+    {
+        for (unsigned i = 1; i < _terms.size(); i += 2) {
+            if (!_terms[i-1].isNumNull()) {
+                if (_terms[i].t == TP_OPT_VAR) {
+                    if (prop.vartypes < 2) {
+                        OptVar *v = _terms[i].optVar();
+                        if (v->binVar() && prop.vartypes == 0)
+                            prop.vartypes = 1;
+                        else if (v->intVar())
+                            prop.vartypes = 2;
+                    }
+                }
+                else if (_terms[i].t == TP_FORMULA) {
+                    ValFormula *f = _terms[i].valFormula();
+                    f->setModelProperties(prop);
+                }
+            }
+        }
+    }
+
 
     /**
      * return whether this formula can be expressed by a single binary variable (only implemented for formulas with isBool() == true)
@@ -195,6 +258,20 @@ namespace cmpl
 
 
     /************** ValFormulaCompare **********/
+
+    /**
+     * set model properties from this constraint
+     * @param prop          properties of optimization model
+     */
+    void ValFormulaCompare::setModelProperties(OptModel::Properties& prop) const
+    {
+        if (_leftSide.t == TP_FORMULA)
+            _leftSide.valFormula()->setModelProperties(prop);
+
+        if (_rightSide.t == TP_FORMULA)
+            _rightSide.valFormula()->setModelProperties(prop);
+    }
+
 
     /**
      * return whether this formula can be expressed by a single binary variable (only implemented for formulas with isBool() == true)
@@ -392,6 +469,24 @@ namespace cmpl
 
 
     /************** ValFormulaLogCon **********/
+
+    /**
+     * set model properties from this constraint
+     * @param prop          properties of optimization model
+     */
+    void ValFormulaLogCon::setModelProperties(OptModel::Properties& prop) const
+    {
+        int pcp = prop.conditions;
+
+        for (unsigned i = 0; i < _formulas.size(); i++) {
+            _formulas[i].valFormula()->setModelProperties(prop);
+        }
+
+        if (_logNeg || _logOr || (!pcp && prop.conditions == -1))
+            prop.conditions = 1;
+        else if (!prop.conditions)
+            prop.conditions = -1;
+    }
 
     /**
      * return whether this formula can be expressed by a single binary variable (only implemented for formulas with isBool() == true)

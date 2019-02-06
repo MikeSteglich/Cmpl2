@@ -190,6 +190,7 @@ namespace cmpl
          */
         virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const     { ostr << (_objective ? "<obj#" : "<con#") << _id << ": "; _formula.write(ostr, modp, 1); ostr << '>'; }
 
+
         /**
 		 * get whether this is a linear constraint or objective
 		 */
@@ -370,9 +371,59 @@ namespace cmpl
      */
     class OptModel : public MainData::DataBase
 	{
+    public:
+        /**
+         * type of the optimization model (save extensions)
+         */
+        enum ModelType {
+            modelTypeUnknown,           ///< model type not yet computed
+
+            modelTypeLP,                ///< continuos linear
+            modelTypeMIP,               ///< mixed integer linear
+            modelTypeQP,                ///< continuos quadratic
+            modelTypeMIQP,              ///< mixed integer quadratic
+
+            //TODO: non-linear types
+            modelTypeNL,                ///< other non-linear type
+        };
+
+        /**
+         * properties of the optimization model
+         */
+        struct Properties {
+            bool init = false;                  ///< properties are initialized
+            int vartypes = 0;                   ///< type of variables in model: 0:only continuos / 1:also binary / 2:also integer other than binary
+            int conditions = 0;                 ///< logical conditions or operations between optimization constraints: 0:no / -1:only trivial (i.e. logical And) / 1:other
+            int varprodInt = 0;                 ///< products of optimization variables with one integer operand: 0:no / 1:only with one binary / 2:also with integer other than binary
+            int varprodReal = 0;                ///< products of optimization variables with both continuos variables: 0:no / 1:yes
+            // TODO: other non-linear properties
+
+            // properties from extension modules (for each such property: 0:extension not used / <0:used but already linearized / >0:used and handling still necessary
+            int sos = 0;                        ///< SOS or SOS2
+
+            /**
+             * reset all properties
+             */
+            void reset()            { init = false; vartypes = 0; conditions = 0; varprodInt = 0; varprodReal = 0; sos = 0; }
+
+            /**
+             * get whether model is linear
+             */
+            bool linear()           { return (init && !conditions && !varprodInt && !varprodReal && sos <= 0); }
+
+            /**
+             * get model type (type with least linearizations)
+             */
+            ModelType modelType()   { return (!init ? modelTypeUnknown : (vartypes > 0 || conditions > 0 || varprodInt > 0 || sos > 0 ? (varprodInt || varprodReal ? modelTypeMIQP : modelTypeMIP) : (varprodReal ? modelTypeQP : modelTypeLP))); }
+        };
+
+
+
 	private:
 		ValueTreeRoot _cols;							///< optimization variables (elements are OptVar)
 		ValueTreeRoot _rows;							///< optimization constraints and objectives (elements are OptCon)
+
+        Properties _prop;                               ///< properties of optimization model
 
         LinearModel *_modCol;							///< linear model per column; only filled from _cols and _rows if needed for output
         LinearModel *_modRow;							///< linear model per row; only filled from _cols and _rows if needed for output
@@ -381,10 +432,10 @@ namespace cmpl
         string _objName;
         string _objSense;
 
-        bool _linearModelChecked;                       ///< to prevent to repeat the test for linearity
-        bool _isLinearModel;                            ///< indicator whether the model is linear
+        //bool _linearModelChecked;                       ///< to prevent to repeat the test for linearity
+        //bool _isLinearModel;                            ///< indicator whether the model is linear
 
-        bool _isInteger;                                ///< indicator whether the model is integer
+        //bool _isInteger;                                ///< indicator whether the model is integer
 
         bool _exportOnly;                               ///< indicator for export mode (true) or solving mode (false)
 
@@ -398,8 +449,7 @@ namespace cmpl
          * @param data      main data object
          */
         OptModel(const char *m, MainData *data): MainData::DataBase(m, data), _cols(TP_OPT_VAR), _rows(TP_OPT_CON), _modCol(NULL), _modRow(NULL)
-              { _linearModelChecked=false; _isLinearModel=true; _isInteger=false;
-                _exportOnly=false;}
+              { _prop.reset(); _exportOnly=false; }
 
         /**
          * destructor
@@ -431,22 +481,33 @@ namespace cmpl
 
 
         /**
+         * set model properties
+         * @param modp          calling module
+         */
+        void setModelProperties(ModuleBase *modp);
+
+        /**
+         * get model properties
+         */
+        Properties& modelProp()                                 { return _prop; }
+
+        /**
          * gets indicator whether the model is linear
          * * @return        true if model is linear
          */
-        bool isLinearModel();
+        bool isLinearModel()                                    { return _prop.linear(); }
 
         /**
          * sets  whether the model is integer or not
          * @param isInt				true for integer
          */
-        inline void setIsInteger(bool isInt) {_isInteger=isInt;}
+        //inline void setIsInteger(bool isInt) {_isInteger=isInt;}
 
         /**
          * gets indicator whether the model is integer
          * * @return        true if model is integer
          */
-        inline bool isInteger() {return _isInteger;}
+        inline bool isInteger()                                 { return (_prop.vartypes > 0); }
 
         /**
          * sets whether the model runs in export or solving mode

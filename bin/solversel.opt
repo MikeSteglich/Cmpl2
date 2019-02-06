@@ -1,7 +1,13 @@
 
 []
-linear: -solver CBC
-no-linear: ERROR solution of non-linear problems not implemented
+# Wenn LP oder MIP, mit beliebigen Erweiterungen und vorhandenen SOS, dann CPLEX verwenden
+LP[..., sos!] || MIP[..., sos!]: -solver cplex
+last: GOTO cplex
+
+# Sonst LP oder MIP, dann CBC verwenden
+LP || MIP: -solver CBC
+else: ERROR solution of non-linear problems not implemented
+
 
 [cplex]
 : -native-sos -mps-format cplex

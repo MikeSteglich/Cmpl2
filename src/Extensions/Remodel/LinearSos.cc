@@ -339,6 +339,11 @@ namespace cmpl
             initTransferInfo((Interpreter *)mod);
         }
 
+        else if (step == EXT_STEP_INTERPRET_MODELPROP) {
+            OptModel::Properties *prop = (OptModel::Properties *)par;
+            prop->sos = getModelProp();
+        }
+
         else if (step == EXT_STEP_OUTMODEL_SPECIAL_INFO) {
             if (!_storeSos.empty())
                 fillTransferInfo(mod, (list<OutModelExtDataBase::Info> *)par);
@@ -815,6 +820,26 @@ namespace cmpl
 
             newOptCon(modp, om, NULL, sos->syntaxElem, f, &nmc, &tplc);
         }
+    }
+
+
+    /**
+     * get value for model properties
+     * @return          0:extension not used / <0:used but already linearized / >0:used and handling still necessary
+     */
+    int LinearSos::getModelProp()
+    {
+        int res = 0;
+
+        for (unsigned i = 0; i < _storeSos.size(); i++) {
+            const SOSStore& sos = _storeSos[i];
+            if (sos.vars.size()) {
+                if (!res || (res == -1 && !sos.linearized))
+                    res = (sos.linearized ? -1 : 1);
+            }
+        }
+
+        return res;
     }
 
 

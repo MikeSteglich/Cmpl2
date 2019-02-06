@@ -398,7 +398,13 @@ namespace cmpl
         void linearizeZeroSOS(Interpreter *modp, OptModel *om, SOSStore *sos, bool addNoSol);
 
 
-        /************** data transfer to model output **********/
+        /************** model properties and data transfer to model output **********/
+
+        /**
+         * get value for model properties
+         * @return          0:extension not used / <0:used but already linearized / >0:used and handling still necessary
+         */
+        int getModelProp();
 
         /**
          * initialize info for data transfer to model output

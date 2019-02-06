@@ -63,11 +63,14 @@ namespace cmpl
         // register for final initialization in module "interpret"
         _ctrl->registerExtension((_registerMods.size() > 2 ? _registerMods[2].c_str() : "interpret"), EXT_STEP_INTERPRET_INIT_FINAL, id, ext);
 
+        // register setting of model extension flags in module "interpret"
+        _ctrl->registerExtension((_registerMods.size() > 3 ? _registerMods[3].c_str() : "interpret"), EXT_STEP_INTERPRET_MODELPROP, id, ext);
+
         // register for remodelation in module "interpret"
-        _ctrl->registerExtension((_registerMods.size() > 3 ? _registerMods[3].c_str() : "interpret"), EXT_STEP_INTERPRET_REMODEL, id, ext);
+        _ctrl->registerExtension((_registerMods.size() > 4 ? _registerMods[4].c_str() : "interpret"), EXT_STEP_INTERPRET_REMODEL, id, ext);
 
         // register for special data for model output
-        _ctrl->registerExtension((_registerMods.size() > 4 ? _registerMods[4].c_str() : NULL), EXT_STEP_OUTMODEL_SPECIAL_INFO, id, ext);
+        _ctrl->registerExtension((_registerMods.size() > 5 ? _registerMods[5].c_str() : NULL), EXT_STEP_OUTMODEL_SPECIAL_INFO, id, ext);
 
         regExtOptions(ext, id);
 

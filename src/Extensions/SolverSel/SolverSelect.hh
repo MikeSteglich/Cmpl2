@@ -32,13 +32,14 @@
 #ifndef SOLVERSELECT_HH
 #define SOLVERSELECT_HH
 
+#include <map>
+#include <array>
 
 #include "../../Control/ExtensionBase.hh"
 #include "../../CommonData/ExtensionSteps.hh"
 
 
 using namespace std;
-
 
 
 namespace cmpl
@@ -52,7 +53,6 @@ namespace cmpl
 
     #define OPTION_EXT_EXEC_SOLVERSEL_CONFIG_FILE           101
     #define OPTION_EXT_EXEC_SOLVERSEL_SOLVERNAME            201
-    //#define OPTION_EXT_EXEC_SOLVERSEL_OPTSOLVER             202
 
 
 
@@ -63,10 +63,37 @@ namespace cmpl
 	class SolverSelect : public ExtensionBase
 	{
     private:
+        /**
+         * extensions within the optimization model
+         */
+        enum ModelExtension {
+            modelExtCondition,          ///< logical conditions or operations between optimization constraints
+            modelExtConditionTriv,      ///< trivial logical operations between optimization constraints (i.e. only logical And)
+            modelExtIntVarProd,         ///< products of variables, all at least with one integer operand
+            modelExtIntVarProdBin,      ///< products of variables, all at least with one binary operand
+            modelExtSOS,                ///< SOS or SOS2
+            //TODO: other extensions
+
+            modelExt_Size               ///< count of possible model extensions
+        };
+
+    private:
         unsigned _configFile;					///< filename of solver select config file / 0: no config file (nothing to do)
         LocationInfo _configFileLoc;			///< location of filename for config file
 
         string _solver;                         ///< explicit selected solver / empty: no one
+        string _section;                        ///< name of section to read
+
+        map<string, bool> _cache;               ///< cache for already evaluated expressions
+
+        map<string, int> _modelTypes;           ///< Names of model types, value is OptModel::ModelType
+        map<string, int> _modelExt;             ///< Names of model extensions, value is ModelExtension
+
+        const string _kwlast = "last";          ///< key word "last"
+        const string _kwelse = "else";          ///< key word "else"
+
+        int _omType;                            ///< type of optimization model (save extensions) (type is OptModel::ModelType)
+        array<int, modelExt_Size> _omExt;       ///< model extensions: 1: extension itself is present / -1: subset of the extension is present / otherwise 0
 
 
 	public:
@@ -159,19 +186,57 @@ namespace cmpl
          * execute for a line within the solver section of the config file
          * @param modp      intepreter module calling the extension
          * @param om        optimization model
-         * @param line      line from config file
          * @param pos       position within config file
+         * @param line      line from config file
+         * @param begin     start of non-whitespace within <code>line</code>
+         * @return          true: break execution of current config file section
          */
-        void execLine(Interpreter *modp, OptModel *om, string line, PositionInfo& pos);
+        bool execLine(Interpreter *modp, OptModel *om, PositionInfo& pos, string line, size_t begin);
 
         /**
-         * evaluate boolean condition about optimization model
-         * @param cond      condition string
+         * evaluate logical expression about boolean conditions about optimization model
          * @param modp      intepreter module calling the extension
          * @param om        optimization model
-         * @param lc        location info within config file
+         * @param pos       position within config file
+         * @param line      line from config file
+         * @param begin     start of expression within <code>line</code>
+         * @param end       after end of expression within <code>line</code>
          */
-        bool evalCondition(string cond, Interpreter *modp, OptModel *om, LocationInfo& lc);
+        bool evalBoolExpr(Interpreter *modp, OptModel *om, PositionInfo& pos, string line, size_t begin, size_t end);
+
+        /**
+         * evaluate single boolean condition about optimization model
+         * @param modp      intepreter module calling the extension
+         * @param om        optimization model
+         * @param pos       position within config file
+         * @param line      line from config file
+         * @param begin     start of condition name within <code>line</code>
+         * @param end       after end of condition name within <code>line</code>
+         */
+        bool evalCondition(Interpreter *modp, OptModel *om, PositionInfo& pos, string line, size_t begin, size_t end);
+
+        /**
+         * evaluate condition about model type with specified model extensions
+         * @param modp      intepreter module calling the extension
+         * @param om        optimization model
+         * @param pos       position within config file
+         * @param line      line from config file
+         * @param begin     start of names of model extensions within <code>line</code>
+         * @param end       after end of names of model extensions within <code>line</code>
+         * @param mtp       given model type (is OptModel::ModelType)
+         */
+        bool evalModelTypeAndExt(Interpreter *modp, OptModel *om, PositionInfo& pos, string line, size_t begin, size_t end, int mtp);
+
+        /**
+         * search matching closing bracket for given opening bracket
+         * @param modp      intepreter module calling the extension
+         * @param pos       position within config file
+         * @param line      line from config file
+         * @param begin     position of opening bracket within <code>line</code>
+         * @param end       end of search range within <code>line</code>
+         * @return          position of closing bracket
+         */
+        size_t findMatchBracket(Interpreter *modp, PositionInfo& pos, string line, size_t begin, size_t end);
 
         /**
          * add command line options
@@ -181,6 +246,21 @@ namespace cmpl
          */
         void addCmdLineOpts(Interpreter *modp, string& opts, PositionInfo& pos);
 
+
+        /**
+         * init model type and extensions
+         * @param om        optimization model
+         */
+        void initModelType(OptModel *om);
+
+        /**
+         * get model extensions if model is considered to have a given type
+         * @param om        optimization model
+         * @param itp       given model type (OptModel::ModelType)
+         * @param ext       return of model extensions / NULL: check if model type is compatible without any extension
+         * @return          false if given type is incompatible with model
+         */
+        bool getModelExtForType(OptModel *om, int itp, array<int, modelExt_Size> *ext);
 	};
 }
 

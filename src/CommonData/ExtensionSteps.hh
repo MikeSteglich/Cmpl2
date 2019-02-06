@@ -49,6 +49,7 @@
 #define EXT_STEP_INTERPRET_PSEUDO_SYMBOL_OBJ        302         ///< get new instance of class for functionality of a pseudo symbol (additional parameter is ValSpecialBase**)
 #define EXT_STEP_INTERPRET_INIT_FINAL               311         ///< finish of initialization, before execution of intermediary code starts
 #define EXT_STEP_INTERPRET_EXTDATA_IMPORT           321         ///< import data from an external data source
+#define EXT_STEP_INTERPRET_MODELPROP                361         ///< set optimization model properties (additional parameter is OptModel::Properties*)
 #define EXT_STEP_INTERPRET_SOLVERSEL                371         ///< setting command line options for solver selection based on properties of the generated optimization model
 #define EXT_STEP_INTERPRET_REMODEL                  391         ///< linearisation or other remodeling of constraints and objectives
 

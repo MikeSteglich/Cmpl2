@@ -65,11 +65,6 @@ namespace cmpl
         unsigned syntaxElem() const                 { return _syntaxElem; }
 
         /**
-         * get whether this formula is suitable for linear constraint or objective
-         */
-        virtual bool linearConstraint() const   	{ return false; }
-
-        /**
          * get whether this formula is an expression with boolean value
          */
         virtual bool isBool() const                 { return false; }
@@ -80,13 +75,6 @@ namespace cmpl
          * @return              binary variable / NULL: other formula
          */
         virtual OptVar* asSingleBin(bool& neg)      { return NULL; }
-
-        /**
-         * get whether this formula is suitable for optimization row (linear or non-linear)
-         * @param obj			true: as objective / false: as constraint
-         * @return
-         */
-        virtual bool canOptRow(bool obj) const		{ return false; }
 
         /**
          * get count of direct parts of the formula
@@ -101,8 +89,30 @@ namespace cmpl
         virtual CmplVal *getPart(unsigned i)        { return NULL; }
 
 
-        /************** functions for filling linear model **********/
     public:
+        /************** functions for model properties **********/
+
+        /**
+         * get whether this formula is suitable for optimization row (linear or non-linear)
+         * @param obj			true: as objective / false: as constraint
+         * @return
+         */
+        virtual bool canOptRow(bool obj) const		{ return false; }
+
+        /**
+         * get whether this formula is suitable for linear constraint or objective
+         */
+        virtual bool linearConstraint() const   	{ return false; }
+
+        /**
+         * set model properties from this constraint
+         * @param prop          properties of optimization model
+         */
+        virtual void setModelProperties(OptModel::Properties& prop) const                   { }
+
+
+        /************** functions for filling linear model **********/
+
         /**
          * fills coefficients from this constraint for linear model per column
          * @param row			identity number of this row
@@ -326,7 +336,6 @@ namespace cmpl
          */
         CmplVal *termVar(unsigned i) override           { return (i == 0 ? &_optVar : NULL); }
 
-
         /**
          * write contents of the object to a stream
          * @param modp			calling module
@@ -405,6 +414,12 @@ namespace cmpl
         CmplVal *getPart(unsigned i) override           { return (i == 0 ? &_factor : (i <= _optVars.size() ? &(_optVars[i-1]) : NULL)); }
 
         /**
+         * set model properties from this constraint
+         * @param prop          properties of optimization model
+         */
+        void setModelProperties(OptModel::Properties& prop) const override;
+
+        /**
          * write contents of the object to a stream
          * @param modp			calling module
          * @param mode			mode for output: 0=direct; 1=part of other value
@@ -460,6 +475,12 @@ namespace cmpl
          * get whether this formula is suitable for linear constraint or objective
          */
         bool linearConstraint() const override          { return _linear; }
+
+        /**
+         * set model properties from this constraint
+         * @param prop          properties of optimization model
+         */
+        void setModelProperties(OptModel::Properties& prop) const override;
 
         /**
          * get count of direct parts of the formula
@@ -585,6 +606,12 @@ namespace cmpl
         bool linearConstraint()	const override		{ return (!_compNeg && (_leftSide.t == TP_REAL || _leftSide.t == TP_INT || (_leftSide.t == TP_FORMULA && _leftSide.valFormula()->linearConstraint())) && (_rightSide.t == TP_REAL || _rightSide.t == TP_INT || (_rightSide.t == TP_FORMULA && _rightSide.valFormula()->linearConstraint())) && (_leftSide.t == TP_FORMULA || _rightSide.t == TP_FORMULA)); }
 
         /**
+         * set model properties from this constraint
+         * @param prop          properties of optimization model
+         */
+        void setModelProperties(OptModel::Properties& prop) const override;
+
+        /**
          * get whether this formula is an expression with boolean value
          */
         bool isBool() const override                { return true; }
@@ -705,6 +732,12 @@ namespace cmpl
          * get whether this formula is suitable for linear constraint or objective
          */
         bool linearConstraint() const override		{ return (_formula.t == TP_FORMULA && _formula.valFormula()->linearConstraint()); }
+
+        /**
+         * set model properties from this constraint
+         * @param prop          properties of optimization model
+         */
+        void setModelProperties(OptModel::Properties& prop) const override       { if (_formula.t == TP_FORMULA) { _formula.valFormula()->setModelProperties(prop); } }
 
         /**
          * get whether this formula is suitable for optimization row (linear or non-linear)
@@ -832,6 +865,12 @@ namespace cmpl
          * @return
          */
         bool canOptRow(bool obj) const override		{ return !obj; }
+
+        /**
+         * set model properties from this constraint
+         * @param prop          properties of optimization model
+         */
+        void setModelProperties(OptModel::Properties& prop) const override;
 
         /**
          * get whether this formula is an expression with boolean value
