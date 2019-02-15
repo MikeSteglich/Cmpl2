@@ -310,6 +310,20 @@ namespace cmpl
         inline ValFormulaVarProdOp(unsigned se, ValFormulaVar *f): ValFormulaVarProd(se, f)      	{ }
 
         /**
+         * constructor
+         * @param se        id of syntax element in the cmpl text creating this formula value
+         */
+        inline ValFormulaVarProdOp(unsigned se, OptVar *v1, OptVar *v2): ValFormulaVarProd(se)      { setNewVarProd(v1, v2, true); }
+
+        /**
+         * removes variables from product and replace by product of the two given variables
+         * @param v1        first variable
+         * @param v2        second variable
+         * @param keepF     true: keep factor unchanged / false: remove factor
+         */
+        void setNewVarProd(OptVar *v1, OptVar *v2, bool keepF);
+
+        /**
          * append variable product to terms of ValFormulaLinearComb
          * @param terms     terms of ValFormulaLinearComb
          * @param neg       negate term

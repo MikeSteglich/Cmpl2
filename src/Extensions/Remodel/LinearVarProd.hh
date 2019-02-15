@@ -49,15 +49,16 @@ namespace cmpl
     class CmplVal;
     class LinearVarProdMod;
     class ValFormulaVarProd;
+    class ValFormulaVarProdOp;
 
 
     /*********** command line options delivered to the extension by run() **********/
 
     #define OPTION_EXT_USEBIGMBOUND             70
 
-    #define OPTION_EXT_PRODREALERR              80
-    #define OPTION_EXT_PRODREALWARN             81
-    #define OPTION_EXT_PRODREALWARNONCE         82
+    #define OPTION_EXT_VARPRODLINEARLVL         80
+    #define OPTION_EXT_PRODREALWARNLVL          81
+    #define OPTION_EXT_VARPRODDECOMP            82
 
     #define OPTION_EXT_ATTACHNAMEVARDECOMP      90
     #define OPTION_EXT_ATTACHNAMEVARNORM        91
@@ -110,15 +111,15 @@ namespace cmpl
 
 
     private:
+        int _prodLinearLvl;                     ///< level of lineariztion of products of variables (0:no / 1:only bin variable / 2:also int variable / 3:also approximation for real variables)
+        int _prodRealWarn;                      ///< only for _prodLvl == 3: show warning if approximating a product of real variables (0:no / 1:yes for first such product / 2:yes for each such product)
+        bool _hasWarnedProdReal;                ///< warning is already shown
+
+        bool _prodDecomp;                       ///< for non-linearized products of more than two variables decomposite to products each with only two variables
         bool _useBigMBound;                     ///< use bigM as bound if a variable within a product has no bounds
 
         unsigned _attachNameVarDecomp;          ///< postfix for binary variable name for decomposition of an integer variable
         unsigned _attachNameVarNorm;            ///< postfix for variable name for normalization of a real variable
-
-        bool _prodRealErr;                      ///< don't approximate product of real variables but throw an error
-        bool _prodRealWarn;                     ///< show warning if approximating a product of real variables
-        bool _warnOnlyOnceProdReal;             ///< show only one warning for products of real variables
-        bool _hasWarnedProdReal;                ///< warning is already shown
 
         RemodelCache<unordered_map<VarPair, unsigned long, VarPairHash>> _varProdCache;     ///< cache for product of two optimization variables
         RemodelCache<unordered_map<unsigned long, IntVarDecomp>> _intBinCache;              ///< cache for binary decomposition of an integer variable
@@ -182,6 +183,18 @@ namespace cmpl
         /************** linearization **********/
     private:
         /**
+         * get whether remodeling is enabled
+         */
+        bool remodelEnabled() override                              { return (_remodelEnabled && (_prodLinearLvl || _prodDecomp)); }
+
+        /**
+         * initialization before remodeling
+         * @param modp      intepreter module calling the extension
+         * @param om		optimization model
+         */
+        void remodelInit(Interpreter *modp, OptModel *om) override  { _hasWarnedProdReal = false; }
+
+        /**
          * remodel one constraint and objective
          * @param modp      intepreter module calling the extension
          * @param om		optimization model
@@ -212,20 +225,22 @@ namespace cmpl
          * @param modp      intepreter module calling the extension
          * @param om        optimization model
          * @param vvp       formula with product of optimization variables
-         * @return          new optimization variable representing the product
+         * @param cnt       count for linearizations
+         * @return          new optimization variable representing the product / NULL: don't replace product
          */
-        OptVar *linearizeVarProds(Interpreter *modp, OptModel *om, ValFormulaVarProd *vvp);
+        OptVar *linearizeVarProds(Interpreter *modp, OptModel *om, ValFormulaVarProdOp *vvp, unsigned& cnt);
 
         /**
-         * linearize product of two optimization variables
+         * linearize or decomposite product of two optimization variables
          * @param modp      intepreter module calling the extension
          * @param om        optimization model
          * @param v1        first optimization variable
          * @param v2        second optimization variable
          * @param se        id of syntax element in the cmpl text creating the product of variables
+         * @param lin       linearize product
          * @return          new optimization variable representing the product
          */
-        OptVar *linearizeVarProd(Interpreter *modp, OptModel *om, OptVar *v1, OptVar *v2, unsigned se);
+        OptVar *linearizeVarProd(Interpreter *modp, OptModel *om, OptVar *v1, OptVar *v2, unsigned se, bool lin);
 
         /**
          * check if one variable for the product is fixed (or invalid) by its bounds, and make the product then
@@ -237,6 +252,17 @@ namespace cmpl
          * @return          if one variable is fixed, then new optimization variable representing the product, else NULL
          */
         OptVar *checkLinearizeFixedProd(Interpreter *modp, OptModel *om, OptVar *v1, OptVar *v2, unsigned se);
+
+        /**
+         * decomposite product of two optimization variables by setting a new variable for the product
+         * @param modp      intepreter module calling the extension
+         * @param om        optimization model
+         * @param v1        first optimization variable
+         * @param v2        second optimization variable
+         * @param se        id of syntax element in the cmpl text creating the product of variables
+         * @return          new optimization variable representing the product
+         */
+        OptVar *decompositeProd(Interpreter *modp, OptModel *om, OptVar *v1, OptVar *v2, unsigned se);
 
         /**
          * linearize product of a binary variable and another variable

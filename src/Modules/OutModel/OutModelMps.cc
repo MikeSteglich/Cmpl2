@@ -67,6 +67,7 @@ namespace cmpl
         _formatDefault = FormatExtensionNone;
         _formatHeader = FormatExtensionDefault;
         _formatSOS = FormatExtensionDefault;
+        _formatQP = FormatExtensionDefault;
 
         _syntaxStructure = NULL;
         _syntaxElems = NULL;
@@ -105,6 +106,7 @@ namespace cmpl
 #define OPTION_OUT_MODEL_MPS_FORMAT_DEFAULT     40
 #define OPTION_OUT_MODEL_MPS_FORMAT_HEADER      41
 #define OPTION_OUT_MODEL_MPS_FORMAT_SOS         42
+#define OPTION_OUT_MODEL_MPS_FORMAT_QP          43
 
 
 
@@ -126,6 +128,7 @@ namespace cmpl
         REG_CMDL_OPTION( OPTION_OUT_MODEL_MPS_FORMAT_DEFAULT, "mps-format", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
         REG_CMDL_OPTION( OPTION_OUT_MODEL_MPS_FORMAT_HEADER, "mps-format-header", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
         REG_CMDL_OPTION( OPTION_OUT_MODEL_MPS_FORMAT_SOS, "mps-format-sos", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
+        REG_CMDL_OPTION( OPTION_OUT_MODEL_MPS_FORMAT_QP, "mps-format-qp", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
     }
 
 	/**
@@ -216,6 +219,14 @@ namespace cmpl
             }
             return true;
 
+        case OPTION_OUT_MODEL_MPS_FORMAT_QP:
+            _formatQP = parseFormatExtName(opt);
+            if (_formatQP != FormatExtensionNone && _formatQP != FormatExtensionDefault && _formatQP != FormatExtensionCplex) {
+                _ctrl->errHandler().error(ERROR_LVL_EASY, "invalid name for format of MPS extension for quadratic problems", opt->loc(true));
+                _formatQP = FormatExtensionDefault;
+            }
+            return true;
+
         }
 
 		return false;
@@ -237,6 +248,7 @@ namespace cmpl
         s << "  -mps-format <name>            default for subsequent format selection options" << endl;
         s << "  -mps-format-header <name>     format of header lines in MPS (one of: none, cplex, gurobi, scip)" << endl;
         s << "  -mps-format-sos <name>        format of MPS extension for SOS (one of: none, cplex)" << endl;
+        s << "  -mps-format-qp <name>         format of MPS extension for quadratic problems (one of: none, cplex)" << endl;
         //TODO: more format extensions
     }
 
@@ -280,10 +292,18 @@ namespace cmpl
 
         // format of MPS extension for SOS
         if (_formatSOS == FormatExtensionDefault) {
-            if (_formatDefault == FormatExtensionCplex || _formatDefault == FormatExtensionGurobi || _formatDefault == FormatExtensionScip)
+            if (_formatDefault == FormatExtensionCplex)
                 _formatSOS = _formatDefault;
             else
                 _formatSOS = FormatExtensionNone;
+        }
+
+        // format of MPS extension for quadratic problems
+        if (_formatQP == FormatExtensionDefault) {
+            if (_formatDefault == FormatExtensionCplex)
+                _formatQP = _formatDefault;
+            else
+                _formatQP = FormatExtensionNone;
         }
 
         //TODO: more format extensions
@@ -409,7 +429,7 @@ namespace cmpl
         PROTO_OUTL("get linear model");
         unsigned long colCnt = om->cols().size();
         unsigned long rowCnt = om->rows().size();
-        LinearModel *lm = om->getColModel();
+        LinearModel *lm = om->getColModel((_formatQP != FormatExtensionNone));
         const vector<LinearModel::Coefficient> *coeffs = lm->coeffs();
 
         PROTO_OUTL("get row and column names");
@@ -435,6 +455,8 @@ namespace cmpl
 
         mode = lm->mode();
         bool objFound=false;
+        unsigned long objRowNr;
+
         for (unsigned long i = 0; i < rowCnt; i++, mode++) {
 
             if ( (*mode == '+' || *mode == '-' || *mode == 'N') && (_objName.empty() || rowNames[i]==_objName) ) {
@@ -463,6 +485,7 @@ namespace cmpl
                 om->setObjSense(objSense);
 
                 objFound=true;
+                objRowNr = i + 1;
                 break;
             }
         }
@@ -587,7 +610,12 @@ namespace cmpl
             }
         }
 
-        if (_formatSOS == FormatExtensionCplex || _formatSOS == FormatExtensionGurobi || _formatSOS == FormatExtensionScip) {
+        if (lm->quadratic()) {
+            writeQuadratics(ostr, fm, (QLinearModel *)lm, rowNames, colNames, true, objRowNr);
+            writeQuadratics(ostr, fm, (QLinearModel *)lm, rowNames, colNames, false, objRowNr);
+        }
+
+        if (_formatSOS == FormatExtensionCplex) {
 
             //list<OutModelExtDataBase::Info> &lst = _mki[OutModelExtDataSOS1::key];
             list<OutModelExtDataBase::Info> &lst = _mki[OutModelExtDataSOS1Key];
@@ -638,6 +666,85 @@ namespace cmpl
         ostr << "ENDATA" << endl;
     }
 
+
+    /**
+     * write mps sections for quadratic problems
+     * @param ostr          output to this stream
+     * @param fm            use free MPS format
+     * @param qm            linear model with quadratic extension
+     * @param rowNames      array of all row names
+     * @param colNames      array of all column names
+     * @param obj           true: write mps for quadratic objective / false: write mps for quadratic constraints
+     * @param objRowNr      row number of objective
+     */
+    void OutModelMps::writeQuadratics(ostream& ostr, bool fm, QLinearModel *qm, string *rowNames, string *colNames, bool obj, unsigned long objRowNr)
+    {
+        map<unsigned long, map<unsigned long, LinearModel::Coefficient>> pm;
+
+        for (QLinearModel::CoefficientVarProdList& vpl : qm->prods()) {
+            if ((vpl.idR == objRowNr) == obj) {
+                fillQuadraticMap(pm, vpl.cvp);
+
+                if (!pm.empty()) {
+                    if (_formatQP == FormatExtensionCplex) {
+                        if (obj)
+                            ostr << "QMATRIX" << endl;
+                        else if (fm)
+                            ostr << "QCMATRIX " << rowNames[vpl.idR - 1] << endl;
+                        else
+                            ostr << "QCMATRIX  " << left << setw(8) << rowNames[vpl.idR - 1] << endl;
+
+                        for (auto& m1 : pm) {
+                            for (auto& m2 : m1.second) {
+                                if (!m2.second.isNumNull())
+                                {
+                                    if (fm)
+                                        ostr << ' ' << colNames[m1.first - 1] << ' ' << colNames[m2.first - 1] << ' ' << m2.second.outString(_realFormat.c_str(), 100) << endl;
+                                    else
+                                        ostr << setw(4) << " " << setw(8) << left << colNames[m1.first - 1] << "  " << setw(8) << left << colNames[m2.first - 1] << "  " << right << setw(12) << m2.second.outString(_realFormat.c_str(), 12) << endl;
+                                }
+                            }
+                        }
+                    }
+
+                    pm.clear();
+                }
+            }
+        }
+    }
+
+    /**
+     * fill mapping with quadratic coefficients for one row
+     * @param pm            mapping to fill coefficients in
+     * @param cvp           list of quadratic terms
+     */
+    void OutModelMps::fillQuadraticMap(map<unsigned long, map<unsigned long, LinearModel::Coefficient>>& pm, list<QLinearModel::CoefficientVarProd>& cvp)
+    {
+        for (QLinearModel::CoefficientVarProd& pr : cvp) {
+            if (!pr.isNumNull()) {
+                for (unsigned dir = 0; dir < 2; dir++) {
+                    unsigned c1 = (dir ? pr.idC2 : pr.idRC);
+                    unsigned c2 = (dir ? pr.idRC : pr.idC2);
+
+                    map<unsigned long, LinearModel::Coefficient>& m1 = pm[c1];
+                    LinearModel::Coefficient& m2 = m1[c2];
+                    m2.add(pr);
+                }
+            }
+        }
+    }
+
+
+    /**
+     * write mps section for SOS
+     * @param ostr          output to this stream
+     * @param type          type of SOS (1 or 2)
+     * @param fm            use free MPS format
+     * @param i             internal SOS index
+     * @param colNames      array of all column names
+     * @param sosvars       variables in SOS
+     * @param sosName       name of SOS
+     */
     void OutModelMps::writeSos(ostream& ostr, int type, bool fm, unsigned i, string *colNames, vector<unsigned long>& sosvars, string& sosName ) {
 
         if (sosName.empty()) {

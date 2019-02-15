@@ -114,51 +114,57 @@ namespace cmpl
         /************** functions for filling linear model **********/
 
         /**
-         * fills coefficients from this constraint for linear model per column
+         * fills coefficients from this constraint for linear or quadratic model per column
          * @param row			identity number of this row
          * @param coeffs		array to fill with vector of coefficients per column
+         * @param vpl           list to fill with products of variables / NULL: no quadratic rows allowed
          */
-        virtual void fillCoeffInLinearModelCol(unsigned long row, vector<LinearModel::Coefficient> *coeffs)					{ throw NonLinearModelException(row); }
+        virtual void fillCoeffInLinearModelCol(unsigned long row, vector<LinearModel::Coefficient> *coeffs, QLinearModel::CoefficientVarProdList *vpl)					{ throw NonLinearModelException(row); }
 
         /**
-         * fills coefficients from this constraint for linear model per row
+         * fills coefficients from this constraint for linear or quadratic model per row
          * @param row			identity number of this row
          * @param coeffs		vector to fill of coefficients for this row
+         * @param vpl           list to fill with products of variables / NULL: no quadratic rows allowed
          */
-        virtual void fillCoeffInLinearModelRow(unsigned long row, vector<LinearModel::Coefficient> *coeffs)					{ throw NonLinearModelException(row); }
+        virtual void fillCoeffInLinearModelRow(unsigned long row, vector<LinearModel::Coefficient> *coeffs, QLinearModel::CoefficientVarProdList *vpl)					{ throw NonLinearModelException(row); }
 
         /**
          * fills mode and right hand side of this constraint for linear model
          * @param row			identity number of this row
          * @param mode			mode to fill (valid are: 'N', 'L', 'G', 'E': like in MPS; or '+': maximize, or '-': minimize)
          * @param rhs			right hand side to fill
+         * @param qp            quadratic rows allowed
          */
-        virtual void fillModeRhsInLinearModel(unsigned long row, char *mode, LinearModel::Coefficient *rhs)					{ throw NonLinearModelException(row); }
+        virtual void fillModeRhsInLinearModel(unsigned long row, char *mode, LinearModel::Coefficient *rhs, bool qp)                                                    { throw NonLinearModelException(row); }
 
         /**
-         * fills coefficients from this constraint for linear model per column
+         * fills coefficients from this constraint for linear or quadratic model per column
          * @param row			identity number of this row
          * @param coeffs		array to fill with vector of coefficients per column
          * @param lhs			this formula is left hand side of comparison
+         * @param vpl           list to fill with products of variables / NULL: no quadratic rows allowed
          */
-        virtual void fillCoeffInLinearModelColIntern(unsigned long row, vector<LinearModel::Coefficient> *coeffs, bool lhs)		{ throw NonLinearModelException(row); }
+        virtual void fillCoeffInLinearModelColIntern(unsigned long row, vector<LinearModel::Coefficient> *coeffs, bool lhs, QLinearModel::CoefficientVarProdList *vpl)  { throw NonLinearModelException(row); }
 
         /**
-         * fills coefficients from this constraint for linear model per row
+         * fills coefficients from this constraint for linear or quadratic model per row
          * @param row			identity number of this row
          * @param coeffs		vector to fill of coefficients for this row
          * @param colMap		map number of column to index in vector coeffs
          * @param lhs			this formula is left hand side of comparison
+         * @param vpl           list to fill with products of variables / NULL: no quadratic rows allowed
          */
-        virtual void fillCoeffInLinearModelRowIntern(unsigned long row, vector<LinearModel::Coefficient> *coeffs, map<unsigned long, unsigned long>& colMap, bool lhs)		{ throw NonLinearModelException(row); }
+        virtual void fillCoeffInLinearModelRowIntern(unsigned long row, vector<LinearModel::Coefficient> *coeffs, map<unsigned long, unsigned long>& colMap, bool lhs, QLinearModel::CoefficientVarProdList *vpl)		{ throw NonLinearModelException(row); }
 
         /**
          * fills right hand side of this constraint for linear model
          * @param row			identity number of this row
          * @param rhs			right hand side to fill
          * @param lhs			this formula is left hand side of comparison
+         * @param qp            quadratic rows allowed
          */
-        virtual void fillRhsInLinearModelIntern(unsigned long row, LinearModel::Coefficient *rhs, bool lhs)					{ throw NonLinearModelException(row); }
+        virtual void fillRhsInLinearModelIntern(unsigned long row, LinearModel::Coefficient *rhs, bool lhs, bool qp)					{ throw NonLinearModelException(row); }
 
 
         //TODO: andere virtuelle Funktionen fuer Zugriff, soweit ausserhalb Interpreter-Modul benoetigt
@@ -217,26 +223,29 @@ namespace cmpl
         /************** filling linear model **********/
     public:
         /**
-         * fills coefficients from this constraint for linear model per column
+         * fills coefficients from this constraint for linear or quadratic model per column
          * @param row			identity number of this row
          * @param coeffs		array to fill with vector of coefficients per column
+         * @param vpl           list to fill with products of variables / NULL: no quadratic rows allowed
          */
-        void fillCoeffInLinearModelCol(unsigned long row, vector<LinearModel::Coefficient> *coeffs) override		{ fillCoeffInLinearModelColIntern(row, coeffs, true); }
+        void fillCoeffInLinearModelCol(unsigned long row, vector<LinearModel::Coefficient> *coeffs, QLinearModel::CoefficientVarProdList *vpl) override		{ fillCoeffInLinearModelColIntern(row, coeffs, true, vpl); }
 
         /**
-         * fills coefficients from this constraint for linear model per row
+         * fills coefficients from this constraint for linear or quadratic model per row
          * @param row			identity number of this row
          * @param coeffs		vector to fill of coefficients for this row
+         * @param vpl           list to fill with products of variables / NULL: no quadratic rows allowed
          */
-        void fillCoeffInLinearModelRow(unsigned long row, vector<LinearModel::Coefficient> *coeffs)	override		{ map<unsigned long, unsigned long> colMap; fillCoeffInLinearModelRowIntern(row, coeffs, colMap, true); }
+        void fillCoeffInLinearModelRow(unsigned long row, vector<LinearModel::Coefficient> *coeffs, QLinearModel::CoefficientVarProdList *vpl)	override		{ map<unsigned long, unsigned long> colMap; fillCoeffInLinearModelRowIntern(row, coeffs, colMap, true, vpl); }
 
         /**
          * fills mode and right hand side of this constraint for linear model
          * @param row			identity number of this row
          * @param mode			mode to fill (valid are: 'N', 'L', 'G', 'E': like in MPS; or '+': maximize, or '-': minimize)
          * @param rhs			right hand side to fill
+         * @param qp            quadratic rows allowed
          */
-        void fillModeRhsInLinearModel(unsigned long row, char *mode, LinearModel::Coefficient *rhs)	override		{ *mode = 'N'; fillRhsInLinearModelIntern(row, rhs, true); }
+        void fillModeRhsInLinearModel(unsigned long row, char *mode, LinearModel::Coefficient *rhs, bool qp) override           { *mode = 'N'; fillRhsInLinearModelIntern(row, rhs, true, qp); }
     };
 
 
@@ -347,29 +356,32 @@ namespace cmpl
         /************** filling linear model **********/
     public:
         /**
-         * fills coefficients from this constraint for linear model per column
+         * fills coefficients from this constraint for linear or quadratic model per column
          * @param row			identity number of this row
          * @param coeffs		array to fill with vector of coefficients per column
          * @param lhs			this formula is left hand side of comparison
+         * @param vpl           list to fill with products of variables / NULL: no quadratic rows allowed
          */
-        void fillCoeffInLinearModelColIntern(unsigned long row, vector<LinearModel::Coefficient> *coeffs, bool lhs) override;
+        void fillCoeffInLinearModelColIntern(unsigned long row, vector<LinearModel::Coefficient> *coeffs, bool lhs, QLinearModel::CoefficientVarProdList *vpl) override;
 
         /**
-         * fills coefficients from this constraint for linear model per row
+         * fills coefficients from this constraint for linear or quadratic model per row
          * @param row			identity number of this row
          * @param coeffs		vector to fill of coefficients for this row
          * @param colMap		map number of column to index in vector coeffs
          * @param lhs			this formula is left hand side of comparison
+         * @param vpl           list to fill with products of variables / NULL: no quadratic rows allowed
          */
-        void fillCoeffInLinearModelRowIntern(unsigned long row, vector<LinearModel::Coefficient> *coeffs, map<unsigned long, unsigned long>& colMap, bool lhs) override;
+        void fillCoeffInLinearModelRowIntern(unsigned long row, vector<LinearModel::Coefficient> *coeffs, map<unsigned long, unsigned long>& colMap, bool lhs, QLinearModel::CoefficientVarProdList *vpl) override;
 
         /**
          * fills right hand side of this constraint for linear model
          * @param row			identity number of this row
          * @param rhs			right hand side to fill
          * @param lhs			this formula is left hand side of comparison
+         * @param qp            quadratic rows allowed
          */
-        void fillRhsInLinearModelIntern(unsigned long row, LinearModel::Coefficient *rhs, bool lhs)	override							{ /* leave rhs unchanged, nothing to do */ }
+        void fillRhsInLinearModelIntern(unsigned long row, LinearModel::Coefficient *rhs, bool lhs, bool qp) override							{ /* leave rhs unchanged, nothing to do */ }
     };
 
 
@@ -395,6 +407,12 @@ namespace cmpl
          * @param f			formula for variable
          */
         inline ValFormulaVarProd(unsigned se, ValFormulaVar *f): ValFormula(se)      { if(f->termFac(0)) _factor.copyFrom(f->termFac(0)); _optVars.push_back(CmplVal(f->termVar(0))); }
+
+        /**
+         * constructor
+         * @param se        id of syntax element in the cmpl text creating this formula value
+         */
+        inline ValFormulaVarProd(unsigned se): ValFormula(se), _factor()             { }
 
         /**
          * destructor
@@ -425,6 +443,46 @@ namespace cmpl
          * @param mode			mode for output: 0=direct; 1=part of other value
          */
         void write(ostream& ostr, ModuleBase *modp, int mode = 0) const override    { ostr << "<f-vp: "; if (_factor) { _factor.write(ostr, modp, 1); } for (unsigned i = 0; i < _optVars.size(); i++) { ostr << '*'; _optVars[i].write(ostr, modp, 1); } ostr << '>'; }
+
+
+        /************** filling linear model **********/
+    public:
+        /**
+         * fills coefficients from this constraint for linear or quadratic model per column
+         * @param row			identity number of this row
+         * @param coeffs		array to fill with vector of coefficients per column
+         * @param lhs			this formula is left hand side of comparison
+         * @param vpl           list to fill with products of variables / NULL: no quadratic rows allowed
+         */
+        void fillCoeffInLinearModelColIntern(unsigned long row, vector<LinearModel::Coefficient> *coeffs, bool lhs, QLinearModel::CoefficientVarProdList *vpl) override;
+
+        /**
+         * fills coefficients from this constraint for linear or quadratic model per row
+         * @param row			identity number of this row
+         * @param coeffs		vector to fill of coefficients for this row
+         * @param colMap		map number of column to index in vector coeffs
+         * @param lhs			this formula is left hand side of comparison
+         * @param vpl           list to fill with products of variables / NULL: no quadratic rows allowed
+         */
+        void fillCoeffInLinearModelRowIntern(unsigned long row, vector<LinearModel::Coefficient> *coeffs, map<unsigned long, unsigned long>& colMap, bool lhs, QLinearModel::CoefficientVarProdList *vpl) override;
+
+        /**
+         * fills right hand side of this constraint for linear model
+         * @param row			identity number of this row
+         * @param rhs			right hand side to fill
+         * @param lhs			this formula is left hand side of comparison
+         * @param qp            quadratic rows allowed
+         */
+        void fillRhsInLinearModelIntern(unsigned long row, LinearModel::Coefficient *rhs, bool lhs, bool qp) override							{ /* leave rhs unchanged, nothing to do */ }
+
+        /**
+         * fill product of two optimization variables in list
+         * @param vpl           list to fill in
+         * @param row           identity number of row within the optimization model
+         * @param fact          additional factor / NULL: no one
+         * @param neg           negate coefficient
+         */
+        void fillVarProdList(QLinearModel::CoefficientVarProdList *vpl, unsigned long row, CmplVal *fact, bool neg);
     };
 
 
@@ -534,29 +592,38 @@ namespace cmpl
         /************** filling linear model **********/
     public:
         /**
-         * fills coefficients from this constraint for linear model per column
+         * fills coefficients from this constraint for linear or quadratic model per column
          * @param row			identity number of this row
          * @param coeffs		array to fill with vector of coefficients per column
          * @param lhs			this formula is left hand side of comparison
+         * @param vpl           list to fill with products of variables / NULL: no quadratic rows allowed
          */
-        void fillCoeffInLinearModelColIntern(unsigned long row, vector<LinearModel::Coefficient> *coeffs, bool lhs) override;
+        void fillCoeffInLinearModelColIntern(unsigned long row, vector<LinearModel::Coefficient> *coeffs, bool lhs, QLinearModel::CoefficientVarProdList *vpl) override;
 
         /**
-         * fills coefficients from this constraint for linear model per row
+         * fills coefficients from this constraint for linear or quadratic model per row
          * @param row			identity number of this row
          * @param coeffs		vector to fill of coefficients for this row
          * @param colMap		map number of column to index in vector coeffs
          * @param lhs			this formula is left hand side of comparison
+         * @param vpl           list to fill with products of variables / NULL: no quadratic rows allowed
          */
-        void fillCoeffInLinearModelRowIntern(unsigned long row, vector<LinearModel::Coefficient> *coeffs, map<unsigned long, unsigned long>& colMap, bool lhs) override;
+        void fillCoeffInLinearModelRowIntern(unsigned long row, vector<LinearModel::Coefficient> *coeffs, map<unsigned long, unsigned long>& colMap, bool lhs, QLinearModel::CoefficientVarProdList *vpl) override;
 
         /**
          * fills right hand side of this constraint for linear model
          * @param row			identity number of this row
          * @param rhs			right hand side to fill
          * @param lhs			this formula is left hand side of comparison
+         * @param qp            quadratic rows allowed
          */
-        void fillRhsInLinearModelIntern(unsigned long row, LinearModel::Coefficient *rhs, bool lhs) override;
+        void fillRhsInLinearModelIntern(unsigned long row, LinearModel::Coefficient *rhs, bool lhs, bool qp) override;
+
+    private:
+        /**
+         * check if this row is quadratic, with no other non-linearities
+         */
+        bool checkQP();
     };
 
 
@@ -658,26 +725,29 @@ namespace cmpl
         /************** filling linear model **********/
     public:
         /**
-         * fills coefficients from this constraint for linear model per column
+         * fills coefficients from this constraint for linear or quadratic model per column
          * @param row			identity number of this row
          * @param coeffs		array to fill with vector of coefficients per column
+         * @param vpl           list to fill with products of variables / NULL: no quadratic rows allowed
          */
-        void fillCoeffInLinearModelCol(unsigned long row, vector<LinearModel::Coefficient> *coeffs) override;
+        void fillCoeffInLinearModelCol(unsigned long row, vector<LinearModel::Coefficient> *coeffs, QLinearModel::CoefficientVarProdList *vpl) override;
 
         /**
-         * fills coefficients from this constraint for linear model per row
+         * fills coefficients from this constraint for linear or quadratic model per row
          * @param row			identity number of this row
          * @param coeffs		vector to fill of coefficients for this row
+         * @param vpl           list to fill with products of variables / NULL: no quadratic rows allowed
          */
-        void fillCoeffInLinearModelRow(unsigned long row, vector<LinearModel::Coefficient> *coeffs) override;
+        void fillCoeffInLinearModelRow(unsigned long row, vector<LinearModel::Coefficient> *coeffs, QLinearModel::CoefficientVarProdList *vpl) override;
 
         /**
          * fills mode and right hand side of this constraint for linear model
          * @param row			identity number of this row
          * @param mode			mode to fill (valid are: 'N', 'L', 'G', 'E': like in MPS; or '+': maximize, or '-': minimize)
          * @param rhs			right hand side to fill
+         * @param qp            quadratic rows allowed
          */
-        void fillModeRhsInLinearModel(unsigned long row, char *mode, LinearModel::Coefficient *rhs) override;
+        void fillModeRhsInLinearModel(unsigned long row, char *mode, LinearModel::Coefficient *rhs, bool qp) override;
 
     public:
         /**
@@ -774,26 +844,29 @@ namespace cmpl
         /************** filling linear model **********/
     public:
         /**
-         * fills coefficients from this constraint for linear model per column
+         * fills coefficients from this constraint for linear or quadratic model per column
          * @param row			identity number of this row
          * @param coeffs		array to fill with vector of coefficients per column
+         * @param vpl           list to fill with products of variables / NULL: no quadratic rows allowed
          */
-        void fillCoeffInLinearModelCol(unsigned long row, vector<LinearModel::Coefficient> *coeffs) override;
+        void fillCoeffInLinearModelCol(unsigned long row, vector<LinearModel::Coefficient> *coeffs, QLinearModel::CoefficientVarProdList *vpl) override;
 
         /**
-         * fills coefficients from this constraint for linear model per row
+         * fills coefficients from this constraint for linear or quadratic model per row
          * @param row			identity number of this row
          * @param coeffs		vector to fill of coefficients for this row
+         * @param vpl           list to fill with products of variables / NULL: no quadratic rows allowed
          */
-        void fillCoeffInLinearModelRow(unsigned long row, vector<LinearModel::Coefficient> *coeffs) override;
+        void fillCoeffInLinearModelRow(unsigned long row, vector<LinearModel::Coefficient> *coeffs, QLinearModel::CoefficientVarProdList *vpl) override;
 
         /**
          * fills mode and right hand side of this constraint for linear model
          * @param row			identity number of this row
          * @param mode			mode to fill (valid are: 'N', 'L', 'G', 'E': like in MPS; or '+': maximize, or '-': minimize)
          * @param rhs			right hand side to fill
+         * @param qp            quadratic rows allowed
          */
-        void fillModeRhsInLinearModel(unsigned long row, char *mode, LinearModel::Coefficient *rhs) override;
+        void fillModeRhsInLinearModel(unsigned long row, char *mode, LinearModel::Coefficient *rhs, bool qp) override;
     };
 
 

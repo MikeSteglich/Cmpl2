@@ -1,12 +1,12 @@
-
 []
 # Wenn LP oder MIP, mit beliebigen Erweiterungen und vorhandenen SOS, dann CPLEX verwenden
-LP[..., sos!] || MIP[..., sos!]: -solver cplex
+# ebenfalls fuer QP
+LP[..., sos!] || MIP[..., sos!] || QP: -solver cplex
 last: GOTO cplex
 
 # Sonst LP oder MIP, dann CBC verwenden
 LP || MIP: -solver CBC
-else: ERROR solution of non-linear problems not implemented
+#else: ERROR solution of non-linear problems not implemented
 
 
 [cplex]

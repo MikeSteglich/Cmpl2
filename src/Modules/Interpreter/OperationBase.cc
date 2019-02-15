@@ -1881,6 +1881,26 @@ namespace cmpl
     /************** ValFormulaVarProdOp **********/
 
     /**
+     * removes variables from product and replace by product of the two given variables
+     * @param v1        first variable
+     * @param v2        second variable
+     * @param keepF     true: keep factor unchanged / false: remove factor
+     */
+    void ValFormulaVarProdOp::setNewVarProd(OptVar *v1, OptVar *v2, bool keepF)
+    {
+        if (!keepF)
+            _factor.dispUnset();
+
+        for (unsigned i = 0; i < _optVars.size(); i++)
+            _optVars[i].dispose();
+
+        _optVars.clear();
+
+        _optVars.push_back(CmplVal(TP_OPT_VAR, v1));
+        _optVars.push_back(CmplVal(TP_OPT_VAR, v2));
+    }
+
+    /**
      * append variable product to terms of ValFormulaLinearComb
      * @param terms     terms of ValFormulaLinearComb
      * @param neg       negate term

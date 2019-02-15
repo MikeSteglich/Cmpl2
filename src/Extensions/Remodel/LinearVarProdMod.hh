@@ -57,11 +57,11 @@ namespace cmpl
         /************** command line options **********/
 
     private:
-        bool _useBigMBound;                     ///< use bigM as bound if a variable within a product has no bounds
+        int _prodLinearLvl;                           ///< level of lineariztion of products of variables (0:no / 1:only bin variable / 2:also int variable / 3:also approximation for real variables)
+        int _prodRealWarn;                      ///< only for _prodLvl == 3: show warning if approximating a product of real variables (0:no / 1:yes for first such product / 2:yes for each such product)
 
-        bool _prodRealErr;                      ///< don't approximate product of real variables but throw an error
-        bool _prodRealWarn;                     ///< show warning if approximating a product of real variables
-        bool _warnOnlyOnceProdReal;             ///< show only one warning for products of real variables
+        bool _prodDecomp;                       ///< for non-linearized products of more than two variables decomposite to products each with only two variables
+        bool _useBigMBound;                     ///< use bigM as bound if a variable within a product has no bounds
 
         unsigned _attachNameVarDecomp;          ///< postfix for binary variable name for decomposition of an integer variable
         unsigned _attachNameVarNorm;            ///< postfix for variable name for normalization of a real variable

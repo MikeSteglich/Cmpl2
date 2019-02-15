@@ -58,8 +58,9 @@ namespace cmpl
 
     /*********** command line options delivered to the extension by run() **********/
 
-    #define OPTION_EXT_THREADS          20
-    #define OPTION_EXT_REMODEL_BIGM     21
+    #define OPTION_EXT_REMODEL_ENABLE   20
+    #define OPTION_EXT_THREADS          25
+    #define OPTION_EXT_REMODEL_BIGM     26
     #define OPTION_EXT_NAMESEP          30
     #define OPTION_EXT_NAMEPREF         31
 
@@ -72,6 +73,7 @@ namespace cmpl
 	class RemodelBase : public ExtensionBase
 	{
     protected:
+        bool _remodelEnabled;           ///< remodeling with this extension is enabled
         unsigned _maxThreads;           ///< max number of worker threads (0: no threading)
         unsigned _namePref;             ///< prefix string for names of generated constraints or variables / 0: no separator
         unsigned _nameSep;              ///< separator string between original constraint or variable name and postfix / 0: no separator
@@ -129,6 +131,18 @@ namespace cmpl
 
         /************** remodeling **********/
     protected:
+        /**
+         * get whether remodeling is enabled
+         */
+        virtual bool remodelEnabled()                           { return _remodelEnabled; }
+
+        /**
+         * initialization before remodeling
+         * @param modp      intepreter module calling the extension
+         * @param om		optimization model
+         */
+        virtual void remodelInit(Interpreter *modp, OptModel *om)   { }
+
         /**
          * remodel all constraints and objectives
          * @param modp      intepreter module calling the extension

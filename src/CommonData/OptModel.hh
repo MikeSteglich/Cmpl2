@@ -33,6 +33,7 @@
 #define OPTMATRIX_HH
 
 #include <unordered_map>
+#include <list>
 
 #include "../Control/MainData.hh"
 #include "CmplVal.hh"
@@ -224,7 +225,11 @@ namespace cmpl
         friend class OptModel;
 
     public:
-        struct Coefficient {
+        /**
+         * coefficient for one row or column
+         */
+        struct Coefficient
+        {
             unsigned long idRC;							///< identy number of row or column
             intType iCoeff;								///< integer coefficient / 0: if real number coefficient is used
             realType rCoeff;							///< real number coefficient
@@ -273,6 +278,18 @@ namespace cmpl
             void add(CmplVal& v, bool neg = false);
 
             /**
+             * add another value to the coefficient
+             * @param v			other value
+             */
+            void add(Coefficient& v);
+
+            /**
+             * multiply another value to the coefficient
+             * @param v         other value
+             */
+            void mult(CmplVal& v);
+
+            /**
              * check if this coefficient is a numeric 0
              * @return			true if numberic 0
              */
@@ -287,7 +304,7 @@ namespace cmpl
             string outString(const char *rf, unsigned ms) const;
         };
 
-    private:
+    protected:
         OptModel *_om;									///< sourve optimization model for this linear model
         bool _byCol;									///< linear model is filled by column (as needed for instance for MPS format) / false: filled by row
 
@@ -298,18 +315,18 @@ namespace cmpl
         /**
          * fill _coeffs, _rhs and _mode from sourve optimization model _om
          */
-        void fill();
+        virtual void fill();
 
         /**
          * constructor
          */
-        LinearModel(OptModel *om, bool byCol): _om(om), _byCol(byCol), _coeffs(NULL), _rhs(NULL), _mode(NULL)		{ fill(); }
+        LinearModel(OptModel *om, bool byCol, bool fil = true): _om(om), _byCol(byCol), _coeffs(NULL), _rhs(NULL), _mode(NULL)		{ if (fil) fill(); }
 
     public:
         /**
          * destructor
          */
-        ~LinearModel()		{ if (_coeffs) delete[] _coeffs; if (_rhs) delete[] _rhs; if (_mode) delete[] _mode; }
+        virtual ~LinearModel()          { if (_coeffs) delete[] _coeffs; if (_rhs) delete[] _rhs; if (_mode) delete[] _mode; }
 
 
         /**
@@ -331,10 +348,78 @@ namespace cmpl
          * get array of mode per row (size of array is number of rows) (valid are: 'N', 'L', 'G', 'E': like in MPS; or '+': maximize, or '-': minimize)
          */
         const char *mode() const								{ return _mode; }
+
+        /**
+         * model is quadratic
+         */
+        virtual bool quadratic() const                          { return false; }
     };
 
+
     /**
-     * <code>NonLinearModelException</code> is thrown if tried to fill <code>LinearModel</code> for an <code>OptModel</code> object containing non linear constraints
+     * class for quadratic model, as extension to linear model
+     */
+    class QLinearModel : public LinearModel
+    {
+        friend class OptModel;
+
+    public:
+        /**
+         * coefficient for product of two optimization variables
+         */
+        struct CoefficientVarProd : public Coefficient
+        {
+            unsigned long idC2;							///< identy number of second column
+
+            /**
+             * constructor
+             */
+            inline CoefficientVarProd(unsigned long id1, unsigned long id2, CmplVal& v, bool neg = false): Coefficient(id1, v, neg), idC2(id2)		{ }
+        };
+
+        /**
+         * list of coefficient for products belonging to one row
+         */
+        struct CoefficientVarProdList
+        {
+            unsigned long idR;                          ///< identy number of row
+            list<CoefficientVarProd> cvp;               ///< coefficients for products of the row
+
+            /**
+             * constructor
+             */
+            CoefficientVarProdList(): idR(0)            { }
+        };
+
+    protected:
+        list<CoefficientVarProdList> _prods;            ///< list for all rows with products of optimization variables
+
+        /**
+         * fill _coeffs, _rhs and _mode from sourve optimization model _om
+         */
+        void fill() override;
+
+        /**
+         * constructor
+         */
+        QLinearModel(OptModel *om, bool byCol, bool fil = true): LinearModel(om, byCol, false)      { if (fil) fill(); }
+
+    public:
+        /**
+         * model is quadratic
+         */
+        bool quadratic() const override             { return true; }
+
+        /**
+         * get list for all rows with products of optimization variables
+         */
+        list<CoefficientVarProdList>& prods()       { return _prods; }
+    };
+
+
+    /**
+     * <code>NonLinearModelException</code> is thrown if tried to fill <code>LinearModel</code> for an <code>OptModel</code> object containing non linear constraints.
+     * if a quadratic model is allowed, then thrown if the model ist also no quadratic model.
      */
     class NonLinearModelException : public exception        //TODO: besser von runtime_error ableiten?
     {
@@ -412,6 +497,11 @@ namespace cmpl
             bool linear()           { return (init && !conditions && !varprodInt && !varprodReal && sos <= 0); }
 
             /**
+             * get whether model has products of optimization variables
+             */
+            bool hasVarProd()       { return (init && (varprodInt || varprodReal)); }
+
+            /**
              * get model type (type with least linearizations)
              */
             ModelType modelType()   { return (!init ? modelTypeUnknown : (vartypes > 0 || conditions > 0 || varprodInt > 0 || sos > 0 ? (varprodInt || varprodReal ? modelTypeMIQP : modelTypeMIP) : (varprodReal ? modelTypeQP : modelTypeLP))); }
@@ -471,13 +561,15 @@ namespace cmpl
 
         /**
          * get linear model per column
+         * @param qp            allow also quadratic model (returned as QLinearModel)
          */
-        LinearModel *getColModel()								{ if (!_modCol) { _modCol = new LinearModel(this, true); } return _modCol; }
+        LinearModel *getColModel(bool qp = false)               { if (!_modCol) { _modCol = (qp && _prop.hasVarProd() ? new QLinearModel(this, true) : new LinearModel(this, true)); } return _modCol; }
 
         /**
          * get linear model per row
+         * @param qp            allow also quadratic model (returned as QLinearModel)
          */
-        LinearModel *getRowModel()								{ if (!_modRow) { _modRow = new LinearModel(this, false); } return _modRow; }
+        LinearModel *getRowModel(bool qp = false)				{ if (!_modRow) { _modRow = (qp && _prop.hasVarProd() ? new QLinearModel(this, false) : new LinearModel(this, false)); } return _modRow; }
 
 
         /**

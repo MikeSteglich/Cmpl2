@@ -322,6 +322,11 @@ namespace cmpl
         /************** linearization **********/
     protected:
         /**
+         * get whether remodeling is enabled
+         */
+        bool remodelEnabled() override                              { return (_remodelEnabled && (_linForSos1 || _linForSos2)); }
+
+        /**
          * return next potential workstep for remodeling
          * @param modp      intepreter module calling the extension
          * @param om        optimization model

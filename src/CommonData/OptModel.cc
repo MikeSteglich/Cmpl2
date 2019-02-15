@@ -127,6 +127,45 @@ namespace cmpl
         }
     }
 
+    /**
+     * add another value to the coefficient
+     * @param v			other value
+     */
+    void LinearModel::Coefficient::add(Coefficient& v)
+    {
+        if (rCoeff == 0 && v.rCoeff == 0) {
+            iCoeff += v.iCoeff;
+        }
+        else if (rCoeff != 0) {
+            rCoeff += (realType)v.iCoeff;
+        }
+        else {
+            rCoeff = (realType)iCoeff + v.rCoeff;
+            iCoeff = 0;
+        }
+    }
+
+    /**
+     * multiply another value to the coefficient
+     * @param v         other value
+     */
+    void LinearModel::Coefficient::mult(CmplVal& v)
+    {
+        if (!v.isNumOne(true)) {
+            if (iCoeff != 0 && (v.t == TP_INT || v.t == TP_BIN)) {
+                iCoeff *= v.v.i;
+            }
+            else {
+                if (iCoeff != 0) {
+                    rCoeff = (realType)iCoeff;
+                    iCoeff = 0;
+                }
+
+                rCoeff *= (v.t == TP_REAL ? v.v.r : (realType)(v.t == TP_INT || v.t == TP_BIN ? v.v.i : 0));
+            }
+        }
+    }
+
 
     /**
      * get coefficient value as string suitable for output
@@ -179,18 +218,72 @@ namespace cmpl
                     throw NonLinearModelException(r);
 
                 if (_byCol)
-                    frm->fillCoeffInLinearModelCol(r, _coeffs);
+                    frm->fillCoeffInLinearModelCol(r, _coeffs, NULL);
                 else
-                    frm->fillCoeffInLinearModelRow(r, _coeffs+r-1);
+                    frm->fillCoeffInLinearModelRow(r, _coeffs+r-1, NULL);
 
                 *modep = 'N';
                 rhsp->init(r);
-                frm->fillModeRhsInLinearModel(r, modep, rhsp);
+                frm->fillModeRhsInLinearModel(r, modep, rhsp, false);
             }
             else {
                 *modep = 0;
             }
         }
+    }
+
+
+    /****** QLinearModel ****/
+
+    /**
+     * fill _coeffs, _rhs and _mode from sourve optimization matrix _om
+     */
+    void QLinearModel::fill()
+    {
+        ValueTreeRoot& vtr = (_byCol ? _om->cols() : _om->rows());
+        ValueTreeRoot& rw = _om->rows();
+
+        _coeffs = new vector<Coefficient>[vtr.size()];
+        _rhs = new Coefficient[rw.size()];
+        _mode = new char[rw.size()];
+
+        _prods.emplace_back();
+        CoefficientVarProdList *vpl = &(_prods.back());
+
+        Coefficient *rhsp = _rhs;
+        char *modep = _mode;
+
+        for (unsigned long r = 1; r <= rw.size(); r++, rhsp++, modep++) {
+            ValueTreeElem *vte = rw.getElem(r);
+            if (vte) {
+                OptCon *oc = dynamic_cast<OptCon *>(vte);
+                if (!oc)
+                    throw NonLinearModelException(r);
+
+                ValFormula *frm = oc->formula();
+                if (!frm)
+                    throw NonLinearModelException(r);
+
+                if (_byCol)
+                    frm->fillCoeffInLinearModelCol(r, _coeffs, vpl);
+                else
+                    frm->fillCoeffInLinearModelRow(r, _coeffs+r-1, vpl);
+
+                if (vpl->idR) {
+                    _prods.emplace_back();
+                    vpl = &(_prods.back());
+                }
+
+                *modep = 'N';
+                rhsp->init(r);
+                frm->fillModeRhsInLinearModel(r, modep, rhsp, true);
+            }
+            else {
+                *modep = 0;
+            }
+        }
+
+        _prods.pop_back();
     }
 
 

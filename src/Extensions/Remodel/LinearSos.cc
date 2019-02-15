@@ -333,7 +333,7 @@ namespace cmpl
             _linForSos1 = (_sosNative != LinearSosMod::sosTypeOnlySos1 && _sosNative != LinearSosMod::sosTypeBoth);
             _linForSos2 = (_sosNative != LinearSosMod::sosTypeOnlySos2 && _sosNative != LinearSosMod::sosTypeBoth);
 
-            if (!_storeSos.empty())
+            if (!_storeSos.empty() && remodelEnabled())
                 remodelAll((Interpreter *)mod, (OptModel *)par, _storeSos.size());
 
             initTransferInfo((Interpreter *)mod);

@@ -80,6 +80,7 @@ namespace cmpl
     {
         const char *m = modNameRemodel();
 
+        REG_CMDL_OPTION_EXT( OPTION_EXT_REMODEL_ENABLE, "remodel", 0, 0, CMDL_OPTION_NEG_NO_ARG, true, id, m, EXT_CMDLOPT_INTERPRET_SIMPLE, ext );
         REG_CMDL_OPTION_EXT( OPTION_EXT_THREADS, "threads", 1, 1, CMDL_OPTION_NEG_NO_ARG, true, id, m, EXT_CMDLOPT_INTERPRET_SIMPLE, ext );
 
         if (useBigM()) {
@@ -113,6 +114,7 @@ namespace cmpl
     {
         ExtensionModule::usage(s);
 
+        s << "  -remodel                      enable remodeling with this extension (default is true)" << endl;
         s << "  -threads <n>                  use maximal n concurrently running worker threads (0: no threading)" << endl;
         if (useBigM()) {
             s << "  -big-M <number>               huge number used for linearization (default is " << _bigM << ")" << endl;

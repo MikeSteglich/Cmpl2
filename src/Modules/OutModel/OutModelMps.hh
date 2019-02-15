@@ -68,7 +68,6 @@ namespace cmpl
             FormatExtensionCplex,               ///< format used by solver CPLEX
             FormatExtensionGurobi,              ///< format used by solver GUROBI
             FormatExtensionScip,                ///< format used by solver SCIP
-
         };
 
 		/************** command line options **********/
@@ -80,6 +79,7 @@ namespace cmpl
         FormatExtension _formatDefault;         ///< default for subsequent format selection options
         FormatExtension _formatHeader;          ///< format of header lines in MPS
         FormatExtension _formatSOS;             ///< format of MPS extension for SOS
+        FormatExtension _formatQP;              ///< format of MPS extension for quadratic problems
         //TODO: more format extensions
 
         string _realFormat;						///< printf format for output of real values
@@ -90,7 +90,7 @@ namespace cmpl
         bool _exportOnly;
         string _objName;
 
-        map<int, list<OutModelExtDataBase::Info> > _mki;
+        map<int, list<OutModelExtDataBase::Info>> _mki;
 
 	public:
 		/**
@@ -169,8 +169,35 @@ namespace cmpl
          */
         void writeModel(OptModel *om, ostream& ostr, bool fm);
 
+        /**
+         * write mps sections for quadratic problems
+         * @param ostr          output to this stream
+         * @param fm            use free MPS format
+         * @param qm            linear model with quadratic extension
+         * @param rowNames      array of all row names
+         * @param colNames      array of all column names
+         * @param obj           true: write mps for quadratic objective / false: write mps for quadratic constraints
+         * @param objRowNr      row number of objective
+         */
+        void writeQuadratics(ostream& ostr, bool fm, QLinearModel *qm, string *rowNames, string *colNames, bool obj, unsigned long objRowNr);
 
+        /**
+         * fill mapping with quadratic coefficients for one row
+         * @param pm            mapping to fill coefficients in
+         * @param cvp           list of quadratic terms
+         */
+        void fillQuadraticMap(map<unsigned long, map<unsigned long, LinearModel::Coefficient>>& pm, list<QLinearModel::CoefficientVarProd>& cvp);
 
+        /**
+         * write mps section for SOS
+         * @param ostr          output to this stream
+         * @param type          type of SOS (1 or 2)
+         * @param fm            use free MPS format
+         * @param i             internal SOS index
+         * @param colNames      array of all column names
+         * @param sosvars       variables in SOS
+         * @param sosName       name of SOS
+         */
         void writeSos(ostream& ostr, int type, bool fm, unsigned i, string *colNames, vector<unsigned long>& sosvars, string& sosName) ;
 
         /**

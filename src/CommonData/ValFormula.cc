@@ -58,12 +58,13 @@ namespace cmpl
     }
 
     /**
-     * fills coefficients from this constraint for linear model per column
+     * fills coefficients from this constraint for linear or quadratic model per column
      * @param row			identity number of this row
      * @param coeffs		array to fill with vector of coefficients per column
      * @param lhs			this formula is left hand side of comparison
+     * @param vpl           list to fill with products of variables / NULL: no quadratic rows allowed
      */
-    void ValFormulaVar::fillCoeffInLinearModelColIntern(unsigned long row, vector<LinearModel::Coefficient> *coeffs, bool lhs)
+    void ValFormulaVar::fillCoeffInLinearModelColIntern(unsigned long row, vector<LinearModel::Coefficient> *coeffs, bool lhs, QLinearModel::CoefficientVarProdList *vpl)
     {
         if (_optVar.t == TP_OPT_VAR) {
             if (!_factor.isNumNull()) {
@@ -80,13 +81,14 @@ namespace cmpl
 
 
     /**
-     * fills coefficients from this constraint for linear model per row
+     * fills coefficients from this constraint for linear or quadratic model per row
      * @param row			identity number of this row
      * @param coeffs		vector to fill of coefficients for this row
      * @param colMap		map number of column to index in vector coeffs
      * @param lhs			this formula is left hand side of comparison
+     * @param vpl           list to fill with products of variables / NULL: no quadratic rows allowed
      */
-    void ValFormulaVar::fillCoeffInLinearModelRowIntern(unsigned long row, vector<LinearModel::Coefficient> *coeffs, map<unsigned long, unsigned long>& colMap, bool lhs)
+    void ValFormulaVar::fillCoeffInLinearModelRowIntern(unsigned long row, vector<LinearModel::Coefficient> *coeffs, map<unsigned long, unsigned long>& colMap, bool lhs, QLinearModel::CoefficientVarProdList *vpl)
     {
         if (_optVar.t == TP_OPT_VAR) {
             if (!_factor.isNumNull()) {
@@ -140,6 +142,58 @@ namespace cmpl
     }
 
 
+    /**
+     * fills coefficients from this constraint for linear or quadratic model per column
+     * @param row			identity number of this row
+     * @param coeffs		array to fill with vector of coefficients per column
+     * @param lhs			this formula is left hand side of comparison
+     * @param vpl           list to fill with products of variables / NULL: no quadratic rows allowed
+     */
+    void ValFormulaVarProd::fillCoeffInLinearModelColIntern(unsigned long row, vector<LinearModel::Coefficient> *coeffs, bool lhs, QLinearModel::CoefficientVarProdList *vpl)
+    {
+        if (vpl)
+            fillVarProdList(vpl, row, NULL, !lhs);
+        else
+            throw NonLinearModelException(row);
+    }
+
+    /**
+     * fills coefficients from this constraint for linear or quadratic model per row
+     * @param row			identity number of this row
+     * @param coeffs		vector to fill of coefficients for this row
+     * @param colMap		map number of column to index in vector coeffs
+     * @param lhs			this formula is left hand side of comparison
+     * @param vpl           list to fill with products of variables / NULL: no quadratic rows allowed
+     */
+    void ValFormulaVarProd::fillCoeffInLinearModelRowIntern(unsigned long row, vector<LinearModel::Coefficient> *coeffs, map<unsigned long, unsigned long>& colMap, bool lhs, QLinearModel::CoefficientVarProdList *vpl)
+    {
+        if (vpl)
+            fillVarProdList(vpl, row, NULL, !lhs);
+        else
+            throw NonLinearModelException(row);
+    }
+
+    /**
+     * fill product of two optimization variables in list
+     * @param vpl           list to fill in
+     * @param row           identity number of row within the optimization model
+     * @param fact          additional factor / NULL: no one
+     * @param neg           negate coefficient
+     */
+    void ValFormulaVarProd::fillVarProdList(QLinearModel::CoefficientVarProdList *vpl, unsigned long row, CmplVal *fact, bool neg)
+    {
+        if (_optVars.size() != 2)
+            throw NonLinearModelException(row);
+
+        if (!vpl->idR)
+            vpl->idR = row;
+
+        vpl->cvp.emplace_back(_optVars[0].optVar()->id(), _optVars[1].optVar()->id(), _factor, neg);
+        if (fact && !(fact->isNumOne(true)))
+            vpl->cvp.back().mult(*fact);
+    }
+
+
 
     /************** ValFormulaLinearComb **********/
 
@@ -188,51 +242,67 @@ namespace cmpl
     }
 
     /**
-     * fills coefficients from this constraint for linear model per column
+     * fills coefficients from this constraint for linear or quadratic model per column
      * @param row			identity number of this row
      * @param coeffs		array to fill with vector of coefficients per column
      * @param lhs			this formula is left hand side of comparison
+     * @param vpl           list to fill with products of variables / NULL: no quadratic rows allowed
      */
-    void ValFormulaLinearComb::fillCoeffInLinearModelColIntern(unsigned long row, vector<LinearModel::Coefficient> *coeffs, bool lhs)
+    void ValFormulaLinearComb::fillCoeffInLinearModelColIntern(unsigned long row, vector<LinearModel::Coefficient> *coeffs, bool lhs, QLinearModel::CoefficientVarProdList *vpl)
     {
-        if (!_linear)
+        bool qp = (_linear ? false : (vpl ? checkQP() : false));
+        if (!_linear && !qp)
             throw NonLinearModelException(row);
 
         for (unsigned i = 0; i < _terms.size(); i += 2) {
             if (!_terms[i].isNumNull()) {
-                unsigned long n = _terms[i+1].optVar()->id();
-                vector<LinearModel::Coefficient> *cp = coeffs + n - 1;
+                if (_terms[i+1].t == TP_OPT_VAR) {
+                    unsigned long n = _terms[i+1].optVar()->id();
+                    vector<LinearModel::Coefficient> *cp = coeffs + n - 1;
 
-                if (cp->size() && cp->back().idRC == row)
-                    cp->back().add(_terms[i], !lhs);
-                else
-                    cp->push_back(LinearModel::Coefficient(row, _terms[i], !lhs));
+                    if (cp->size() && cp->back().idRC == row)
+                        cp->back().add(_terms[i], !lhs);
+                    else
+                        cp->push_back(LinearModel::Coefficient(row, _terms[i], !lhs));
+                }
+                else if (qp) {
+                    ValFormulaVarProd *vp = dynamic_cast<ValFormulaVarProd *>(_terms[i+1].valFormula());
+                    vp->fillVarProdList(vpl, row, &(_terms[i]), !lhs);
+                }
             }
         }
     }
 
 
     /**
-     * fills coefficients from this constraint for linear model per row
+     * fills coefficients from this constraint for linear or quadratic model per row
      * @param row			identity number of this row
      * @param coeffs		vector to fill of coefficients for this row
      * @param colMap		map number of column to index in vector coeffs
      * @param lhs			this formula is left hand side of comparison
+     * @param vpl           list to fill with products of variables / NULL: no quadratic rows allowed
      */
-    void ValFormulaLinearComb::fillCoeffInLinearModelRowIntern(unsigned long row, vector<LinearModel::Coefficient> *coeffs, map<unsigned long, unsigned long>& colMap, bool lhs)
+    void ValFormulaLinearComb::fillCoeffInLinearModelRowIntern(unsigned long row, vector<LinearModel::Coefficient> *coeffs, map<unsigned long, unsigned long>& colMap, bool lhs, QLinearModel::CoefficientVarProdList *vpl)
     {
-        if (!_linear)
+        bool qp = (_linear ? false : (vpl ? checkQP() : false));
+        if (!_linear && !qp)
             throw NonLinearModelException(row);
 
         for (unsigned i = 0; i < _terms.size(); i += 2) {
             if (!_terms[i].isNumNull()) {
-                unsigned long n = _terms[i+1].optVar()->id();
+                if (_terms[i+1].t == TP_OPT_VAR) {
+                    unsigned long n = _terms[i+1].optVar()->id();
 
-                if (colMap.count(n))
-                    coeffs->at(colMap[n]).add(_terms[i], !lhs);
-                else {
-                    colMap[n] = coeffs->size();
-                    coeffs->push_back(LinearModel::Coefficient(n, _terms[i], !lhs));
+                    if (colMap.count(n))
+                        coeffs->at(colMap[n]).add(_terms[i], !lhs);
+                    else {
+                        colMap[n] = coeffs->size();
+                        coeffs->push_back(LinearModel::Coefficient(n, _terms[i], !lhs));
+                    }
+                }
+                else if (qp) {
+                    ValFormulaVarProd *vp = dynamic_cast<ValFormulaVarProd *>(_terms[i+1].valFormula());
+                    vp->fillVarProdList(vpl, row, &(_terms[i]), !lhs);
                 }
             }
         }
@@ -244,15 +314,40 @@ namespace cmpl
      * @param row			identity number of this row
      * @param rhs			right hand side to fill (valid are only TP_INT and TP_REAL)
      * @param lhs			this formula is left hand side of comparison
+     * @param qp            quadratic rows allowed
      */
-    void ValFormulaLinearComb::fillRhsInLinearModelIntern(unsigned long row, LinearModel::Coefficient *rhs, bool lhs)
+    void ValFormulaLinearComb::fillRhsInLinearModelIntern(unsigned long row, LinearModel::Coefficient *rhs, bool lhs, bool qp)
     {
-        if (!_linear)
+        if (!qp && !_linear)
             throw NonLinearModelException(row);
 
         if (!_constTerm.isNumNull(true)) {
             rhs->add(_constTerm, lhs);
         }
+    }
+
+
+    /**
+     * check if this row is quadratic, with no other non-linearities
+     */
+    bool ValFormulaLinearComb::checkQP()
+    {
+        bool qp = false;
+
+        for (unsigned i = 1; i < _terms.size(); i += 2) {
+            if (!_terms[i-1].isNumNull() && _terms[i].t == TP_FORMULA) {
+                ValFormulaVarProd *vp = dynamic_cast<ValFormulaVarProd *>(_terms[i].valFormula());
+                if (vp) {
+                    // only products of two variables are allowed for quadratic problem
+                    if (vp->partCount() == 3)
+                        qp = true;
+                    else
+                        return false;
+                }
+            }
+        }
+
+        return qp;
     }
 
 
@@ -329,41 +424,43 @@ namespace cmpl
     }
 
     /**
-     * fills coefficients from this constraint for linear model per column
+     * fills coefficients from this constraint for linear or quadratic model per column
      * @param row			identity number of this row
      * @param coeffs		array to fill with vector of coefficients per column
+     * @param vpl           list to fill with products of variables / NULL: no quadratic rows allowed
      */
-    void ValFormulaCompare::fillCoeffInLinearModelCol(unsigned long row, vector<LinearModel::Coefficient> *coeffs)
+    void ValFormulaCompare::fillCoeffInLinearModelCol(unsigned long row, vector<LinearModel::Coefficient> *coeffs, QLinearModel::CoefficientVarProdList *vpl)
     {
         if (_leftSide.t == TP_FORMULA) {
             ValFormula *f = _leftSide.valFormula();
-            f->fillCoeffInLinearModelColIntern(row, coeffs, true);
+            f->fillCoeffInLinearModelColIntern(row, coeffs, true, vpl);
         }
 
         if (_rightSide.t == TP_FORMULA) {
             ValFormula *f = _rightSide.valFormula();
-            f->fillCoeffInLinearModelColIntern(row, coeffs, false);
+            f->fillCoeffInLinearModelColIntern(row, coeffs, false, vpl);
         }
     }
 
 
     /**
-     * fills coefficients from this constraint for linear model per row
+     * fills coefficients from this constraint for linear or quadratic model per row
      * @param row			identity number of this row
      * @param coeffs		vector to fill of coefficients for this row
+     * @param vpl           list to fill with products of variables / NULL: no quadratic rows allowed
      */
-    void ValFormulaCompare::fillCoeffInLinearModelRow(unsigned long row, vector<LinearModel::Coefficient> *coeffs)
+    void ValFormulaCompare::fillCoeffInLinearModelRow(unsigned long row, vector<LinearModel::Coefficient> *coeffs, QLinearModel::CoefficientVarProdList *vpl)
     {
         map<unsigned long, unsigned long> colMap;
 
         if (_leftSide.t == TP_FORMULA) {
             ValFormula *f = _leftSide.valFormula();
-            f->fillCoeffInLinearModelRowIntern(row, coeffs, colMap, true);
+            f->fillCoeffInLinearModelRowIntern(row, coeffs, colMap, true, vpl);
         }
 
         if (_rightSide.t == TP_FORMULA) {
             ValFormula *f = _rightSide.valFormula();
-            f->fillCoeffInLinearModelRowIntern(row, coeffs, colMap, false);
+            f->fillCoeffInLinearModelRowIntern(row, coeffs, colMap, false, vpl);
         }
     }
 
@@ -373,15 +470,16 @@ namespace cmpl
      * @param row			identity number of this row
      * @param mode			mode to fill (valid are: 'N', 'L', 'G', 'E': like in MPS; or '+': maximize, or '-': minimize)
      * @param rhs			right hand side to fill
+     * @param qp            quadratic rows allowed
      */
-    void ValFormulaCompare::fillModeRhsInLinearModel(unsigned long row, char *mode, LinearModel::Coefficient *rhs)
+    void ValFormulaCompare::fillModeRhsInLinearModel(unsigned long row, char *mode, LinearModel::Coefficient *rhs, bool qp)
     {
-        if (!linearConstraint())
+        if (!qp && !linearConstraint())
             throw NonLinearModelException(row);
 
         if (_rightSide.t == TP_FORMULA) {
             ValFormula *f = _rightSide.valFormula();
-            f->fillRhsInLinearModelIntern(row, rhs, false);
+            f->fillRhsInLinearModelIntern(row, rhs, false, qp);
         }
         else if (_rightSide.isScalarNumber()) {
             rhs->add(_rightSide);
@@ -389,7 +487,7 @@ namespace cmpl
 
         if (_leftSide.t == TP_FORMULA) {
             ValFormula *f = _leftSide.valFormula();
-            f->fillRhsInLinearModelIntern(row, rhs, true);
+            f->fillRhsInLinearModelIntern(row, rhs, true, qp);
         }
         else if (_leftSide.isScalarNumber()) {
             rhs->add(_leftSide, true);
@@ -418,31 +516,33 @@ namespace cmpl
     }
 
     /**
-     * fills coefficients from this constraint for linear model per column
+     * fills coefficients from this constraint for linear or quadratic model per column
      * @param row			identity number of this row
      * @param coeffs		array to fill with vector of coefficients per column
+     * @param vpl           list to fill with products of variables / NULL: no quadratic rows allowed
      */
-    void ValFormulaObjective::fillCoeffInLinearModelCol(unsigned long row, vector<LinearModel::Coefficient> *coeffs)
+    void ValFormulaObjective::fillCoeffInLinearModelCol(unsigned long row, vector<LinearModel::Coefficient> *coeffs, QLinearModel::CoefficientVarProdList *vpl)
     {
         if (_formula.t == TP_FORMULA) {
             ValFormula *f = _formula.valFormula();
-            f->fillCoeffInLinearModelColIntern(row, coeffs, true);
+            f->fillCoeffInLinearModelColIntern(row, coeffs, true, vpl);
         }
     }
 
 
     /**
-     * fills coefficients from this constraint for linear model per row
+     * fills coefficients from this constraint for linear or quadratic model per row
      * @param row			identity number of this row
      * @param coeffs		vector to fill of coefficients for this row
+     * @param vpl           list to fill with products of variables / NULL: no quadratic rows allowed
      */
-    void ValFormulaObjective::fillCoeffInLinearModelRow(unsigned long row, vector<LinearModel::Coefficient> *coeffs)
+    void ValFormulaObjective::fillCoeffInLinearModelRow(unsigned long row, vector<LinearModel::Coefficient> *coeffs, QLinearModel::CoefficientVarProdList *vpl)
     {
         map<unsigned long, unsigned long> colMap;
 
         if (_formula.t == TP_FORMULA) {
             ValFormula *f = _formula.valFormula();
-            f->fillCoeffInLinearModelRowIntern(row, coeffs, colMap, true);
+            f->fillCoeffInLinearModelRowIntern(row, coeffs, colMap, true, vpl);
         }
     }
 
@@ -452,15 +552,16 @@ namespace cmpl
      * @param row			identity number of this row
      * @param mode			mode to fill (valid are: 'N', 'L', 'G', 'E': like in MPS; or '+': maximize, or '-': minimize)
      * @param rhs			right hand side to fill
+     * @param qp            quadratic rows allowed
      */
-    void ValFormulaObjective::fillModeRhsInLinearModel(unsigned long row, char *mode, LinearModel::Coefficient *rhs)
+    void ValFormulaObjective::fillModeRhsInLinearModel(unsigned long row, char *mode, LinearModel::Coefficient *rhs, bool qp)
     {
-        if (!linearConstraint())
+        if (!qp && !linearConstraint())
             throw NonLinearModelException(row);
 
         if (_formula.t == TP_FORMULA) {
             ValFormula *f = _formula.valFormula();
-            f->fillModeRhsInLinearModel(row, mode, rhs);
+            f->fillRhsInLinearModelIntern(row, rhs, true, qp);
         }
 
         *mode = (_maximize ? '+' : '-');

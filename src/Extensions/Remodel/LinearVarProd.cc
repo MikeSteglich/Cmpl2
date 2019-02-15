@@ -47,14 +47,14 @@ namespace cmpl
      */
     LinearVarProd::LinearVarProd(LinearVarProdMod *mod): RemodelBase(mod)
     {
+        _prodLinearLvl = mod->_prodLinearLvl;
+        _prodRealWarn = mod->_prodRealWarn;
+        _prodDecomp = mod->_prodDecomp;
+
         _useBigMBound = mod->_useBigMBound;
 
         _attachNameVarDecomp = mod->_attachNameVarDecomp;
         _attachNameVarNorm = mod->_attachNameVarNorm;
-
-        _prodRealErr = mod->_prodRealErr;
-        _prodRealWarn = mod->_prodRealWarn;
-        _warnOnlyOnceProdReal = mod->_warnOnlyOnceProdReal;
 
         _hasWarnedProdReal = false;
     }
@@ -76,20 +76,20 @@ namespace cmpl
             return true;
 
         switch (ref) {
+            case OPTION_EXT_VARPRODLINEARLVL:
+                _prodLinearLvl = (opt->neg() ? 0 : (opt->size() == 0 ? 1 : opt->argAsInt(0, mod->ctrl())));
+                return true;
+
+            case OPTION_EXT_PRODREALWARNLVL:
+                _prodRealWarn = (opt->neg() ? 0 : (opt->size() == 0 ? 1 : opt->argAsInt(0, mod->ctrl())));
+                return true;
+
+            case OPTION_EXT_VARPRODDECOMP:
+                _prodDecomp = !(opt->neg());
+                return true;
+
             case OPTION_EXT_USEBIGMBOUND:
                 _useBigMBound = !(opt->neg());
-                return true;
-
-            case OPTION_EXT_PRODREALERR:
-                _prodRealErr = !(opt->neg());
-                return true;
-
-            case OPTION_EXT_PRODREALWARN:
-                _prodRealWarn = !(opt->neg());
-                return true;
-
-            case OPTION_EXT_PRODREALWARNONCE:
-                _warnOnlyOnceProdReal = !(opt->neg());
                 return true;
 
             case OPTION_EXT_ATTACHNAMEVARDECOMP:
@@ -166,15 +166,15 @@ namespace cmpl
             if (p->t == TP_FORMULA) {
                 ValFormula *pf = p->valFormula();
 
-                ValFormulaVarProd *vvp = dynamic_cast<ValFormulaVarProd *>(pf);
+                ValFormulaVarProdOp *vvp = dynamic_cast<ValFormulaVarProdOp *>(pf);
                 if (vvp) {
                     // linearize product and replace formula part with new variable containing the product
-                    OptVar *prodVar = linearizeVarProds(modp, om, vvp);
-                    cnt += vvp->partCount() - 2;
-
-                    CmplVal *fact = vvp->getPart(0);
-                    ValFormulaVarOp *prodF = new ValFormulaVarOp(vvp->syntaxElem(), prodVar, *fact);
-                    p->dispSet(TP_FORMULA, prodF);
+                    OptVar *prodVar = linearizeVarProds(modp, om, vvp, cnt);
+                    if (prodVar) {
+                        CmplVal *fact = vvp->getPart(0);
+                        ValFormulaVarOp *prodF = new ValFormulaVarOp(vvp->syntaxElem(), prodVar, *fact);
+                        p->dispSet(TP_FORMULA, prodF);
+                    }
                 }
 
                 else {
@@ -204,9 +204,10 @@ namespace cmpl
      * @param modp      intepreter module calling the extension
      * @param om        optimization model
      * @param vvp       formula with product of optimization variables
-     * @return          new optimization variable representing the product
+     * @param cnt       count for linearizations
+     * @return          new optimization variable representing the product / NULL: don't replace product
      */
-    OptVar *LinearVarProd::linearizeVarProds(Interpreter *modp, OptModel *om, ValFormulaVarProd *vvp)
+    OptVar *LinearVarProd::linearizeVarProds(Interpreter *modp, OptModel *om, ValFormulaVarProdOp *vvp, unsigned& cnt)
     {
         unsigned cntVars = vvp->partCount() - 1;
 
@@ -226,41 +227,78 @@ namespace cmpl
                 vset.insert(v);
             }
 
-            // check variable for given bounds
-            // (if !_useBigMBound then all variables must have bounds, otherwise the last may not have bounds, but only when not two real variables)
-            unsigned sz = vset.size();
-            unsigned i = 0;
-            bool r2 = false;
+            unsigned linSteps = 0;
+            if (_prodLinearLvl > 0) {
+                // check variable for given bounds
+                // (if !_useBigMBound then all variables must have bounds for linearization, otherwise the last may not have bounds, but only when not two real variables)
+                unsigned sz = vset.size();
+                unsigned i = 0;
+                unsigned decomp = 0;
+                bool r2 = false;
 
-            for (OptVar *v: vset) {
-                i++;
-                if (!v->binVar() && (!v->lowBound() || !v->uppBound())) {
-                    if (!_useBigMBound || r2 || i < sz) {
-                        ostringstream ostr;
-                        ostr << "optimization variable ";
-                        v->recOutName(ostr, modp->data()->globStrings(), true, true);
-                        ostr << " is used in variable product, but has no bounds defined";
+                for (OptVar *v: vset) {
+                    if (i == 0) {
+                        if (_prodLinearLvl < 3 && !v->binVar() && (_prodLinearLvl == 1 || !v->intVar()))
+                            break;
+                        else
+                            decomp = 1;
+                    }
 
-                        const SyntaxElement *sep = modp->syntaxElement(vvp->syntaxElem());
-                        modp->ctrl()->errHandler().error(ERROR_LVL_NORMAL, ostr.str().c_str(), sep->loc());
+                    i++;
+                    if (i > decomp)
+                        break;
 
-                        // don't linearize in case of error
-                        return v;
+                    if (!v->binVar()) {
+                        if (!v->lowBound() || !v->uppBound()) {
+                            if (!_useBigMBound || r2 || i < sz) {
+                                ostringstream ostr;
+                                ostr << "optimization variable ";
+                                v->recOutName(ostr, modp->data()->globStrings(), true, true);
+                                ostr << " is used in variable product, but has no bounds defined";
+
+                                const SyntaxElement *sep = modp->syntaxElement(vvp->syntaxElem());
+                                modp->ctrl()->errHandler().error(ERROR_LVL_NORMAL, ostr.str().c_str(), sep->loc());
+
+                                // don't linearize in case of error
+                                decomp = i - 1;
+                                break;
+                            }
+                        }
+
+                        if (_prodLinearLvl >= 3 || (_prodLinearLvl == 2 && v->intVar()))
+                            decomp = i + 1;
+
+                        if (i + 1 == sz && !v->intVar())
+                            r2 = true;
+                    }
+                    else {
+                        decomp = i + 1;
                     }
                 }
 
-                if (i + 1 == sz && !v->intVar())
-                    r2 = true;
+                linSteps = (decomp <= 1 ? 0 : (decomp >= sz ? (sz - 1) : (decomp - 1)));
             }
 
-            // linearization of product
+            if (!linSteps && vset.size() == 2)
+                return NULL;
+
+            // linearization or decomposition of product
             while (true) {
-                // linearize product of first and second variable
+                // linearize or decomposite product of first and second variable
                 auto it = vset.begin();
                 OptVar *v1 = *(it++);
                 OptVar *v2 = *(it++);
 
-                OptVar *vp = linearizeVarProd(modp, om, v1, v2, vvp->syntaxElem());
+                if (!linSteps && vset.size() == 2) {
+                    // replace original variable product in vvp by product of v1 and v2
+                    vvp->setNewVarProd(v1, v2, true);
+                    return NULL;
+                }
+
+                OptVar *vp = linearizeVarProd(modp, om, v1, v2, vvp->syntaxElem(), (linSteps > 0));
+                cnt++;
+                if (linSteps)
+                    linSteps--;
 
                 if (vset.size() == 2) {
                     // product is complete
@@ -312,15 +350,16 @@ namespace cmpl
     }
 
     /**
-     * linearize product of two optimization variables
+     * linearize or decomposite product of two optimization variables
      * @param modp      intepreter module calling the extension
      * @param om        optimization model
      * @param v1        first optimization variable
      * @param v2        second optimization variable
      * @param se        id of syntax element in the cmpl text creating the product of variables
+     * @param lin       linearize product
      * @return          new optimization variable representing the product
      */
-    OptVar *LinearVarProd::linearizeVarProd(Interpreter *modp, OptModel *om, OptVar *v1, OptVar *v2, unsigned se)
+    OptVar *LinearVarProd::linearizeVarProd(Interpreter *modp, OptModel *om, OptVar *v1, OptVar *v2, unsigned se, bool lin)
     {
         RemodelCacheGuard cg;
         VarPair v12 { v1->id(), v2->id() };
@@ -331,12 +370,17 @@ namespace cmpl
 
         OptVar *prodvar = checkLinearizeFixedProd(modp, om, v1, v2, se);
         if (!prodvar) {
-            if (v1->binVar())
-                prodvar = linearizeProdBin(modp, om, v1, v2, se);
-            else if (v1->intVar())
-                prodvar = linearizeProdInt(modp, om, v1, v2, se);
-            else
-                prodvar = linearizeProdReal(modp, om, v1, v2, se);
+            if (lin) {
+                if (v1->binVar())
+                    prodvar = linearizeProdBin(modp, om, v1, v2, se);
+                else if (v1->intVar())
+                    prodvar = linearizeProdInt(modp, om, v1, v2, se);
+                else
+                    prodvar = linearizeProdReal(modp, om, v1, v2, se);
+            }
+            else {
+                prodvar = decompositeProd(modp, om, v1, v2, se);
+            }
         }
 
         prodid = prodvar->id();
@@ -390,6 +434,35 @@ namespace cmpl
         }
 
         return NULL;
+    }
+
+    /**
+     * decomposite product of two optimization variables by setting a new variable for the product
+     * @param modp      intepreter module calling the extension
+     * @param om        optimization model
+     * @param v1        first optimization variable
+     * @param v2        second optimization variable
+     * @param se        id of syntax element in the cmpl text creating the product of variables
+     * @return          new optimization variable representing the product
+     */
+    OptVar *LinearVarProd::decompositeProd(Interpreter *modp, OptModel *om, OptVar *v1, OptVar *v2, unsigned se)
+    {
+        // create new product variable
+        CmplValAuto tpl;
+        string nmv = getBaseNameTuple2(modp, v1, v2, tpl);
+
+        OptVar *pv = newOptVar(modp, om, se, v2->dataType(), NULL, NULL, &nmv, &tpl);
+        setBoundsForProduct(modp->baseExecCtx(), pv, v1->lowBound(), v1->uppBound(), v2->lowBound(), v2->uppBound(), se);
+        CmplValAuto pvf(TP_FORMULA, new ValFormulaVarOp(se, pv));
+
+        // product of v1 and v2
+        CmplValAuto vvpf(TP_FORMULA, new ValFormulaVarProdOp(se, v1, v2));
+
+        // prod = v1*v2
+        CmplValAuto f(TP_FORMULA, new ValFormulaCompareOp(se, &pvf, &vvpf, true, true, false));
+        newOptCon(modp, om, NULL, se, f);
+
+        return pv;
     }
 
     /**
@@ -562,7 +635,7 @@ namespace cmpl
      */
     OptVar *LinearVarProd::linearizeProdReal(Interpreter *modp, OptModel *om, OptVar *v1, OptVar *v2, unsigned se)
     {
-        if ((_prodRealErr || _prodRealWarn) && (!_warnOnlyOnceProdReal || !_hasWarnedProdReal)) {
+        if (_prodRealWarn && (_prodRealWarn == 1 || !_hasWarnedProdReal)) {
             _hasWarnedProdReal = true;
 
             ostringstream ostr;
@@ -570,13 +643,10 @@ namespace cmpl
             v1->recOutName(ostr, modp->data()->globStrings(), true, true);
             ostr << " and ";
             v2->recOutName(ostr, modp->data()->globStrings(), true, true);
-            ostr << (_prodRealErr ? " cannot be linearized" : " can only be approximated");
+            ostr << " can only be approximated";
 
             const SyntaxElement *sep = modp->syntaxElement(se);
-            modp->ctrl()->errHandler().error((_prodRealErr ? ERROR_LVL_NORMAL : ERROR_LVL_WARN), ostr.str().c_str(), sep->loc());
-
-            if (_prodRealErr)
-                return v1;
+            modp->ctrl()->errHandler().error(ERROR_LVL_WARN, ostr.str().c_str(), sep->loc());
         }
 
         // normalization of both factor variables
@@ -745,37 +815,6 @@ namespace cmpl
             }
         }
     }
-
-
-            //TODO: Variablenprodukt aus zwei Variablen
-            //  Suche in Cache #1, ob schon vorhanden
-            //      Cache wie? vielleicht hierarchischer Cache, mit Definitionsnummern beider Variablen (geht das?)
-            //      oder Allgemeiner ueber Variablenproduktformel, mit Hash und dann genauem Vergleich (wie genau zu implementieren?)
-            //  Wenn noch nicht im Cache:
-            //      Unterscheidung nach Typ der ersten Variable (in Sortierreihenfolge):
-            //          bin: direkte Produktlinearisierung
-            //          int:
-            //              Suche in Cache #2, ob schon Binaerzerlegung
-            //                  Wert im Cache ist Array der zugehoerigen Binaervariablen
-            //              Wenn noch nicht im Cache:
-            //                  Binaerzerlegung ausfuehren
-            //              Produktlinearisierung fuer jede generierte Binaervariable
-            //              Zusammenfuehrung Teilergebnisse zu Gesamtprodukt
-            //          real:
-            //              Warnung/Fehler
-            //              Fuer erste und zweite Variable:
-            //                  Wenn schon Intervall 0..1:
-            //                      direkt verwenden
-            //                  Sonst:
-            //                      Suche in Cache #3, ob schon normalisierte Variable
-            //                      Wenn noch nicht im Cache:
-            //                          Normalisierung ausfuehren
-            //                      normalisierte Variable verwenden
-            //              Naeherungsweise real-Produktlinearisierung
-            //              Falls erste oder zweite Variable normalisiert:
-            //                  Denormalisierung fuer Produkt
-            //                  Eintragung Normalisierung Produkt in Cache #3
-            //                      kann dort niemals schon enthalten sein, weil Produktvariable neu, und wegen Cache #1 auch parallele Bestimmung dieses Produkts nicht auftreten kann
 
 }
 

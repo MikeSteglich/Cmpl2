@@ -56,11 +56,11 @@ namespace cmpl
     {
         RemodelBaseMod::init(ctrl, data, name);
 
-        _useBigMBound = true;
+        _prodLinearLvl = 1;
+        _prodRealWarn = 1;
 
-        _prodRealErr = false;
-        _prodRealWarn = true;
-        _warnOnlyOnceProdReal = true;
+        _prodDecomp = true;
+        _useBigMBound = true;
 
         _attachNameVarDecomp = data->globStrings()->storeInd("b");
         _attachNameVarNorm = data->globStrings()->storeInd("n");
@@ -77,11 +77,11 @@ namespace cmpl
         RemodelBaseMod::regExtOptions(ext, id);
 
         const char *m = modNameRemodel();
-        REG_CMDL_OPTION_EXT( OPTION_EXT_USEBIGMBOUND, "bigM-bound", 0, 0, CMDL_OPTION_NEG_NO_ARG, true, id, m, EXT_CMDLOPT_INTERPRET_SIMPLE, ext );
+        REG_CMDL_OPTION_EXT( OPTION_EXT_VARPRODLINEARLVL, "var-prod-linear", 0, 1, CMDL_OPTION_NEG_NO_ARG, true, id, m, EXT_CMDLOPT_INTERPRET_SIMPLE, ext );
+        REG_CMDL_OPTION_EXT( OPTION_EXT_PRODREALWARNLVL, "real-prod-warning", 0, 1, CMDL_OPTION_NEG_NO_ARG, true, id, m, EXT_CMDLOPT_INTERPRET_SIMPLE, ext );
 
-        REG_CMDL_OPTION_EXT( OPTION_EXT_PRODREALERR, "real-prod-error", 0, 0, CMDL_OPTION_NEG_NO_ARG, true, id, m, EXT_CMDLOPT_INTERPRET_SIMPLE, ext );
-        REG_CMDL_OPTION_EXT( OPTION_EXT_PRODREALWARN, "real-prod-warning", 0, 0, CMDL_OPTION_NEG_NO_ARG, true, id, m, EXT_CMDLOPT_INTERPRET_SIMPLE, ext );
-        REG_CMDL_OPTION_EXT( OPTION_EXT_PRODREALWARNONCE, "real-prod-warn-once", 0, 0, CMDL_OPTION_NEG_NO_ARG, true, id, m, EXT_CMDLOPT_INTERPRET_SIMPLE, ext );
+        REG_CMDL_OPTION_EXT( OPTION_EXT_VARPRODDECOMP, "var-prod-decomp", 0, 0, CMDL_OPTION_NEG_NO_ARG, true, id, m, EXT_CMDLOPT_INTERPRET_SIMPLE, ext );
+        REG_CMDL_OPTION_EXT( OPTION_EXT_USEBIGMBOUND, "bigM-bound", 0, 0, CMDL_OPTION_NEG_NO_ARG, true, id, m, EXT_CMDLOPT_INTERPRET_SIMPLE, ext );
 
         REG_CMDL_OPTION_EXT( OPTION_EXT_ATTACHNAMEVARDECOMP, "an-var-bin-decomp", 1, 1, CMDL_OPTION_NEG_NO_ARG, true, id, m, EXT_CMDLOPT_INTERPRET_SIMPLE, ext );
         REG_CMDL_OPTION_EXT( OPTION_EXT_ATTACHNAMEVARNORM, "an-var-norm-real", 1, 1, CMDL_OPTION_NEG_NO_ARG, true, id, m, EXT_CMDLOPT_INTERPRET_SIMPLE, ext );
@@ -95,11 +95,12 @@ namespace cmpl
     {
         RemodelBaseMod::usage(s);
 
-        s << "  -bigM-bound                   allow variables without bounds in products using big-M as replacement bound (default is " << (_useBigMBound ? "true" : "false") << ")" << endl;
+        s << "  -var-prod-linear <lvl>        level of lineariztion of products of variables (0:no / 1:only bin variable / 2:also int variable / 3:also approximation for real variables) (default is " << _prodLinearLvl << ")" << endl;
+        s << "  -real-prod-warning <lvl>      show warning if approximating a product of real variables (0:no / 1:yes for first such product / 2:yes for each such product) (default is " << _prodRealWarn << ")" << endl;
 
-        s << "  -real-prod-error              don't approximate product of real variables but throw an error (default is " << (_prodRealErr ? "true" : "false") << ")" << endl;
-        s << "  -real-prod-warning            show warning if approximating a product of real variables (default is " << (_prodRealWarn ? "true" : "false") << ")" << endl;
-        s << "  -real-prod-warn-once          show only one warning for products of real variables (default is " << (_warnOnlyOnceProdReal ? "true" : "false") << ")" << endl;
+        s << "  -var-prod-decomp              for non-linearized products of more than two variables decomposite to products each with only two variables (default is " << (_prodDecomp ? "true" : "false") << ")" << endl;
+
+        s << "  -bigM-bound                   allow variables without bounds in products using big-M as replacement bound (default is " << (_useBigMBound ? "true" : "false") << ")" << endl;
 
         s << "  -an-var-bin-decomp <string>   string attached to name for binary variable name for decomposition of an integer variable (default is '" << data()->globStrings()->at(_attachNameVarDecomp) << "')" << endl;
         s << "  -an-var-norm-real <string>    string attached to name for variable name for normalization of a real variable (default is '" << data()->globStrings()->at(_attachNameVarNorm) << "')" << endl;

@@ -49,6 +49,7 @@ namespace cmpl
      */
     RemodelBase::RemodelBase(RemodelBaseMod *mod): ExtensionBase(mod)
     {
+        _remodelEnabled = true;
         _maxThreads = mod->_maxThreads;
         _bigM = mod->_bigM;
         _namePref = mod->_namePref;
@@ -69,6 +70,10 @@ namespace cmpl
     bool RemodelBase::run(ModuleBase *mod, int step, int id, int ref, int prio, CmdLineOptList::SingleOption *opt, void *par)
     {
         switch (ref) {
+            case OPTION_EXT_REMODEL_ENABLE:
+                _remodelEnabled = !(opt->neg());
+                return true;
+
             case OPTION_EXT_THREADS:
                 _maxThreads = (unsigned)(opt->neg() ? 0 : opt->argAsInt(0, mod->ctrl()));
                 return true;
@@ -100,7 +105,12 @@ namespace cmpl
 	{
         if (step == EXT_STEP_INTERPRET_REMODEL) {
             PROTO_MOD_OUTL(mod, " extension " << extName() << ": matrix remodeling: " << step << " " << id);
-            remodelAll((Interpreter *)mod, (OptModel *)par, ((OptModel *)par)->rows().size());
+            if (remodelEnabled()) {
+                remodelAll((Interpreter *)mod, (OptModel *)par, ((OptModel *)par)->rows().size());
+            }
+            else {
+                PROTO_MOD_OUTL(mod, "   extension " << extName() << " is disabled");
+            }
         }
 
         else {
@@ -119,6 +129,8 @@ namespace cmpl
      */
     void RemodelBase::remodelAll(Interpreter *modp, OptModel *om, unsigned long size)
     {
+        remodelInit(modp, om);
+
         unsigned thrMax = _maxThreads;
         if (thrMax > size / 2)
             thrMax = size / 2;
@@ -314,10 +326,15 @@ namespace cmpl
 
         if (_namePref) {
             string n(modp->data()->globStrings()->at(_namePref));
-            if (nm && !nm->empty())
-                n += *nm;
-            else
+            if (nm && !nm->empty()) {
+                if (nm->find(n) == 0)
+                    n = *nm;
+                else
+                    n += *nm;
+            }
+            else {
                 n = n + (lc ? "line" : "var") + to_string(cur);
+            }
 
             nmi = modp->data()->globStrings()->storeInd(n);
         }
