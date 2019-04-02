@@ -1,7 +1,5 @@
 * CMPL - MPS - Export
 NAME          01_Standardmodell
-* OBJNAME ziel
-* OBJSENSE MAX
 ROWS
  N  ziel    
  L  line_2  

@@ -1,3 +1,5 @@
-error (module compile: parser): unknown pseudo symbol '$2'; at 22_diet.cmpl:26.2-3, called from: command line:$1
-error (module compile: parser): unknown pseudo symbol '$'; at 22_diet.cmpl:26.4, called from: command line:$1
-warning (module compile: parser): multiple modificator of same type, only first is considered; at 22_diet.cmpl:26.4, called from: command line:$1
+error (module interpret: execution): assigment with indexed destination not implemented '<symbol_value>', at 'costs'; at 22_diet.cmpl:7.2-6
+error (module interpret: execution): assigment with indexed destination not implemented '<symbol_value>', at 'vitamin'; at 22_diet.cmpl:10.2-8
+error (module interpret: execution): assigment with indexed destination not implemented '<symbol_value>', at 'vitMin'; at 22_diet.cmpl:17.2-7
+error (module interpret: execution): indizes of arrays for matrix multiplication don't match '<unknown object>', at '*'; at 22_diet.cmpl:22.8-21
+error (module interpret: execution): indizes of arrays for matrix multiplication don't match '<unknown object>', at '*'; at 22_diet.cmpl:26.2-17

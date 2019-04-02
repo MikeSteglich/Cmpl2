@@ -78,8 +78,10 @@ void SolverCplex::run()
     if (_solverName=="CPLEX" && !om->exportOnly()) {
         _ctrl->errHandler().setExecStep("run");
 
-        if (!om->isLinearModel())
-            _ctrl->errHandler().internalError("CPLEX cannot solve a nonlinear model within CMPL"  );
+        if (!om->isLinearModel()  ) {
+            if (om->modelProp().hasConditions())
+                        _ctrl->errHandler().internalError("CPLEX cannot solve a nonlinear model within CMPL"  );
+        }
 
 
         PROTO_OUTL("Start SolverCplex module " << moduleName());
