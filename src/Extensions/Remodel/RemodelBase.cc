@@ -154,6 +154,9 @@ namespace cmpl
                 th.join();
         }
 
+        if (res)
+            om->modelProp().reset();
+
         PROTO_MOD_OUTL(modp, " executed " << res << " remodelations");
     }
 
@@ -177,7 +180,7 @@ namespace cmpl
                 void *ws = rme->getWorkStep(modp, om, rowno);
                 if (ws) {
                     try {
-                        res += rme->remodelWorkStep(modp, om, ws);
+                        *res += rme->remodelWorkStep(modp, om, ws);
                     }
                     catch (exception ex) {
                         rme->outError(modp, ws, ex.what(), ERROR_LVL_NORMAL);

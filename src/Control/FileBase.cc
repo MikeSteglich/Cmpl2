@@ -190,15 +190,18 @@ namespace cmpl
 
         tmpP=getenv("TMPDIR");
 
-        if (tmpP==NULL)
+        if (tmpP==NULL) {
             tmpP=getenv("TEMP");
-            if (tmpP==NULL)
+            if (tmpP==NULL) {
                 tmpP=getenv("TMP");
-                if (tmpP==NULL)
+                if (tmpP==NULL) {
                     tmpP=getenv("TEMPDIR");
-                    if (tmpP==NULL)
+                    if (tmpP==NULL) {
                          tmpP=getenv("XDG_RUNTIME_DIR");
-
+                    }
+                }
+            }
+        }
 
         if (tmpP==NULL)
              tmpPath="";

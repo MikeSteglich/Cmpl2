@@ -522,7 +522,7 @@ namespace cmpl
         struct oneInfo {
             unsigned long _start;	///< this info is valid from the element with this iteration index
             unsigned long _end;		///< this info is not valid from the element with this iteration index / 0: no upper index bound
-            unsigned *_rank;		///< array with rank to assign
+            unsigned *_rank;		///< array with rank to assign (length is CBAssignInfoTuple::_cnt)
 
             /**
              * constructor
@@ -566,8 +566,9 @@ namespace cmpl
          * @param ctx		execution context
          * @param curIter	current tuple within the iteration
          * @param curInd	current index number within the iteration
+         * @return          symbol number (fetch id) of last set symbol + 1
          */
-        virtual void setCBSymbolValues(ExecContext *ctx, CmplVal& curIter, unsigned long curInd);
+        virtual unsigned setCBSymbolValues(ExecContext *ctx, const CmplVal& curIter, unsigned long curInd);
 
         /**
          * get this transformed to CBAssignInfoTuple

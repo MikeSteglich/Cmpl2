@@ -34,6 +34,7 @@
 #include <set>
 
 #include "SetUtil.hh"
+#include "SetInfinite.hh"
 #include "TupleUtil.hh"
 #include "Interval.hh"
 #include "Interpreter.hh"
@@ -491,7 +492,7 @@ namespace cmpl
 
 				if (!eqr) {
 					// construct result set here from the given subsets
-					SetFinite *nsf = new SetFinite(nsb, subs, bRank+sMinR, bRank+sMaxR);
+                    SetFinite *nsf = new SetFinite(nsb, subs, bRank+sMinR, bRank+sMaxR);
 					res->set(TP_SET_FIN, nsf);
 				}
 				else {
@@ -506,7 +507,7 @@ namespace cmpl
 						res->copyFrom(nsb, true, false);			
 					}
 					else {
-						SetFinite *nsf = new SetFinite(nsb, arr, bRank+sMinR, bRank+sMaxR);
+                        SetFinite *nsf = new SetFinite(nsb, arr, bRank+sMinR, bRank+sMaxR);
 						res->set(TP_SET_FIN, nsf);
 					}
 
@@ -661,127 +662,186 @@ namespace cmpl
      * @param ctx			execution context
      * @param seta			set to search the tuple within
      * @param tup			tuple to search (can also be TP_LIST_TUPLE, then it must be the topmost element on the value stack of the execution context)
-     * @param num			return of the index number of the tuple within the set
+     * @param num			return of the index number of the tuple within the set (only if set is a finite set)
      * @param tps			start index of used tuple part
      * @param tpc			max count of indizes of used tuple part (searching for the longest tuple part not longer than tpc) / -1: up to the end of tuple (searching only for the full remaining tuple)
+     * @param fulltp        search only for tuple length tpc
      * @return 				count of indizes of found tuple part + 1
      */
-    unsigned SetUtil::tupleInSet(ExecContext *ctx, const CmplVal &seta, const CmplVal &tup, unsigned long& num, unsigned tps, int tpc)
+    unsigned SetUtil::tupleInSet(ExecContext *ctx, const CmplVal &seta, const CmplVal &tup, unsigned long& num, unsigned tps, int tpc, bool fulltp)
     {
-        //TODO: wenn mit Reihenfolge, dann im enthaltenen Set pruefen
         const CmplVal& set = SET_VAL_WO_ORDER(seta);
 
-        if (set.t != TP_SET_EMPTY) {
-            if (set.isSet() && SetBase::finite(set)) {
-                // tuple rank and set rank
-                unsigned tr = (tpc >= 0 ? (unsigned)tpc : ((tup.t == TP_LIST_TUPLE ? (unsigned)tup.v.i : Tuple::rank(tup)) - tps));
-                unsigned srl, sru;
-                if (!SetBase::rank1(set)) {
-                    srl = SetBase::minRank(set);
-                    sru = (set.t == TP_SET_FIN ? SetBase::maxRank(set) : srl);
+        if (tpc < 0)
+            fulltp = true;
+
+        unsigned tr = (tup.t == TP_LIST_TUPLE ? (unsigned)tup.v.i : Tuple::rank(tup));
+        tr = (tr > tps ? tr - tps : 0);
+        if (tpc >= 0 && tr > (unsigned)tpc)
+            tr = tpc;
+
+        if (set.t == TP_SET_EMPTY || set.t == TP_INTERVAL_EMPTY)
+            return 0;
+
+        if (!set.isSet()) {
+            if (set.isInterval() && !Interval::isSet(set)) {
+                if (tr < 1 || (fulltp && tr > 1))
+                    return 0;
+
+                if (tup.t == TP_ITUPLE || tup.t == TP_LIST_TUPLE) {
+                    const CmplVal *scp = (tup.t == TP_ITUPLE ? tup.tuple()->at(tps) : &((ctx->stackCur() - tup.v.i + tps)->val()));
+                    return (Interval::numInInterval(set, *scp) ? 2 : 0);
                 }
                 else {
-                    srl = sru = 1;
+                    CmplVal sc;
+                    sc.v.i = tup.v.i;
+                    sc.t = (tup.t == TP_ITUPLE_1INT || tup.t == TP_BIN ? TP_INT : (tup.t == TP_ITUPLE_1STR ? TP_STR : tup.t));
+                    return (Interval::numInInterval(set, sc) ? 2 : 0);
                 }
+            }
 
-                if (tr < srl || (tpc < 0 && tr > sru))
+            else {
+                CmplValAuto s1, s2;
+                s1.copyFrom(set);
+                if (SetUtil::convertToSetOrTuple(ctx, s2, s1, typeConversionExact, false))
+                    return tupleInSet(ctx, s2, tup, num, tps, tpc, fulltp);
+                else
                     return 0;
+            }
+        }
 
-                // check for null tuple
-                if (tr == 0 || sru == 0) {
-                    if (srl == 0 && (tr == 0 || tpc >= 0)) {
-                        num = 0;
-                        return 1;
+        // tuple rank and set rank
+        unsigned srl, sru;
+        if (SetBase::rank1(set)) {
+            srl = sru = 1;
+        }
+        else {
+            srl = SetBase::minRank(set);
+            sru = (set.t == TP_SET_FIN || set.isSetInf() ? SetBase::maxRank(set) : srl);
+        }
+
+        if (tr < srl || (fulltp && tr > sru))
+            return 0;
+
+        // check for null tuple
+        if (tr == 0 || sru == 0) {
+            if (srl == 0 && (tr == 0 || !fulltp)) {
+                num = 0;
+                return 1;
+            }
+            return 0;
+        }
+
+        if (set.isSetFin() || ((tr == 1 || sru == 1) && !set.useValP()))
+        {
+            // check for scalar value
+            if (tr == 1 || sru == 1) {
+                if (tr == 1 || !fulltp) {
+                    if (tup.t == TP_ITUPLE || tup.t == TP_LIST_TUPLE) {
+                        const CmplVal *scp = (tup.t == TP_ITUPLE ? tup.tuple()->at(tps) : &((ctx->stackCur() - tup.v.i + tps)->val()));
+                        if (SetIterator::isScalarIn(set, *scp, num))
+                            return 2;
                     }
-                    return 0;
+                    else {
+                        CmplVal sc;
+                        sc.v.i = tup.v.i;
+                        sc.t = (tup.t == TP_ITUPLE_1INT || tup.t == TP_BIN ? TP_INT : (tup.t == TP_ITUPLE_1STR ? TP_STR : tup.t));
+                        if (SetIterator::isScalarIn(set, sc, num))
+                            return 2;
+                    }
                 }
 
-                // check for scalar value
-                if (tr == 1 || sru == 1) {
-                    if (tr == 1 || tpc >= 0) {
-                        if (tup.t == TP_LIST_TUPLE) {
-                            const CmplVal& sc = &((ctx->stackCur() - tup.v.i + tps)->val());
-                            if (SetIterator::isScalarIn(set, sc, num))
-                                return 2;
-                        }
-                        else if (tup.t == TP_ITUPLE) {
-                            const CmplVal *scp = tup.tuple()->at(tps);
-                            if (SetIterator::isScalarIn(set, *scp, num))
-                                return 2;
-                        }
-                        else {
-                            CmplVal sc;
-                            sc.v.i = tup.v.i;
-                            sc.t = (tup.t == TP_ITUPLE_1INT || tup.t == TP_BIN ? TP_INT : (tup.t == TP_ITUPLE_1STR ? TP_STR : tup.t));
-                            if (SetIterator::isScalarIn(set, sc, num))
-                                return 2;
-                        }
-                    }
+                return (!fulltp && srl == 0 ? 1 : 0);
+            }
 
-                    return (tpc >= 0 && srl == 0 ? 1 : 0);
-                }
+            // set can be here only TP_SET_REC_MULT or TP_SET_FIN, because it is a finite set with max rank greater than 1
+            if (set.t == TP_SET_REC_MULT) {
+                // find tuple part in set parts
+                SetRecMult *srm = set.setRecMult();
+                unsigned long nr = 0;
+                unsigned long np;
 
-                // set can be here only TP_SET_REC_MULT or TP_SET_FIN, because sru is greater than 1
-                if (set.t == TP_SET_REC_MULT) {
-                    // find tuple part in set parts
-                    SetRecMult *srm = set.setRecMult();
-                    unsigned long nr = 0;
-                    unsigned long np;
+                for (unsigned r = 0; r < sru; r++) {
+                    const CmplVal *ss = srm->partSet(r);
 
-                    for (unsigned r = 0; r < sru; r++) {
-                        const CmplVal *ss = srm->partSet(r);
-
-                        if (tup.t == TP_LIST_TUPLE) {
-                            const CmplVal& sc = &((ctx->stackCur() - tup.v.i + tps + r)->val());
-                            if (!SetIterator::isScalarIn(*ss, sc, np))
-                                return 0;
-                        }
-                        else if (tup.t == TP_ITUPLE) {
-                            const CmplVal *scp = tup.tuple()->at(tps + r);
-                            if (!SetIterator::isScalarIn(*ss, *scp, np))
-                                return 0;
-                        }
-                        else
+                    if (tup.t == TP_ITUPLE || tup.t == TP_LIST_TUPLE) {
+                        const CmplVal *scp = (tup.t == TP_ITUPLE ? tup.tuple()->at(tps + r) : &((ctx->stackCur() - tup.v.i + tps + r)->val()));
+                        if (!SetIterator::isScalarIn(*ss, *scp, np))
                             return 0;
-
-                        if (r == 0)
-                            nr = np;
-                        else
-                            nr = nr * SetBase::cnt(*ss) + np;
                     }
-
-                    num = nr;
-                    return sru + 1;
-                }
-                else if (set.t == TP_SET_FIN) {
-                    // recursive calls first to find beginning tuple part in the base set, then remaining tuple part in the subset
-                    SetFinite *sf = set.setFinite();
-                    unsigned long nb;
-                    unsigned tpcb = sf->baseRank();
-
-                    if (tupleInSet(ctx, *(sf->baseSet()), tup, nb, tps, tpcb) != tpcb + 1)
-                        return (tpc >= 0 && srl == 0 ? 1 : 0);
-
-                    CmplVal *ss = sf->subSet(nb);
-                    if (tr == tpcb) {
-                        if (ss->t == TP_EMPTY || (ss->t == TP_SET_FIN && ss->setFinite()->minRank() == 0)) {
-                            num = sf->indSubStart(nb);
-                            return tr + 1;
-                        }
+                    else {
                         return 0;
                     }
 
-                    unsigned long ns;
-                    unsigned sstp = tupleInSet(ctx, *ss, tup, ns, tps + tpcb, (tpc >= 0 ? tr - tpcb : -1));
-                    if (sstp) {
-                        num = sf->indSubStart(nb) + ns;
-                        return tpcb + sstp;
+                    if (r == 0)
+                        nr = np;
+                    else
+                        nr = nr * SetBase::cnt(*ss) + np;
+                }
+
+                num = nr;
+                return sru + 1;
+            }
+            else if (set.t == TP_SET_FIN) {
+                // recursive calls first to find beginning tuple part in the base set, then remaining tuple part in the subset
+                SetFinite *sf = set.setFinite();
+                unsigned long nb;
+                unsigned tpcb = sf->baseRank();
+
+                if (tupleInSet(ctx, *(sf->baseSet()), tup, nb, tps, tpcb, true) != tpcb + 1)
+                    return (!fulltp && srl == 0 ? 1 : 0);
+
+                CmplVal *ss = sf->subSet(nb);
+                if (tr == tpcb) {
+                    if (ss->t == TP_EMPTY || (ss->t == TP_SET_FIN && ss->setFinite()->minRank() == 0)) {
+                        num = sf->indSubStart(nb);
+                        return tr + 1;
                     }
                     return 0;
                 }
+
+                unsigned long ns;
+                unsigned sstp = tupleInSet(ctx, *ss, tup, ns, tps + tpcb, tr - tpcb, fulltp);
+                if (sstp) {
+                    num = sf->indSubStart(nb) + ns;
+                    return tpcb + sstp;
+                }
+
+                return 0;
             }
+        }
+
+        else {
+            if (set.useValP()) {
+                // infinite set TP_SET_INF_TPL or TP_SET_INF_SET
+                SetInfinite *inf = set.setInfinite();
+                unsigned r = tr;
+                for (; r > 0; r--) {
+                    if (inf->tupleInSet(ctx, tup, tps, r))
+                        return r + 1;
+                    else if (fulltp)
+                        return 0;
+                }
+
+                return (srl == 0 ? 1 : 0);
+            }
+
             else {
-                //TODO: unendlicher Set
+                // infinite set of arbitrary rank TP_SET_ALL*
+                if (set.t == TP_SET_ALL || set.t == TP_SET_ALL_MNF)
+                    return tr + 1;
+
+                bool intElem = set.elemInt();
+                unsigned r = 0;
+                if (tup.t == TP_ITUPLE || tup.t == TP_LIST_TUPLE) {
+                    for (; r < tr; r++) {
+                        const CmplVal *scp = (tup.t == TP_ITUPLE ? tup.tuple()->at(tps + r) : &((ctx->stackCur() - tup.v.i + tps + r)->val()));
+                        if (!scp->isScalarIndex() || scp->isScalarInt() != intElem)
+                            break;
+                    }
+                }
+
+                return (r == tr || !fulltp ? r + 1 : 0);
             }
         }
 
@@ -795,16 +855,31 @@ namespace cmpl
      * @param set           return result set
      * @param src           source value (right operand in operation "in" or "of")
      * @param opIn          operation "in" (true) or "of" (false)
+     * @param toTuple       allow tuple as result
      * @return              source value is appropriate
      */
-    bool SetUtil::setForInOrOf(ExecContext *ctx, CmplVal& set, CmplVal& src, bool opIn)
+    bool SetUtil::setForInOrOf(ExecContext *ctx, CmplVal& set, CmplVal& src, bool opIn, bool toTuple)
     {
         if (opIn) {
             if (src.isArray() || src.isList())
                 return false;
 
-            if (!SetUtil::convertToSetOrTuple(ctx, set, src, typeConversionValue, false))
+            if (src.isSet() || (toTuple && src.isTuple()))
+                set.copyFrom(src);
+            else if (!SetUtil::convertToSetOrTuple(ctx, set, src, typeConversionValue, toTuple))
                 return false;
+
+            if (toTuple && set.isTuple()) {
+                if (set.t == TP_TUPLE_EMPTY || set.t == TP_ITUPLE_NULL) {
+                    set.set((set.t == TP_TUPLE_EMPTY ? TP_SET_ALL : TP_SET_NULL));
+                }
+                else if (Tuple::rank(set) == 1) {
+                    CmplValAuto t;
+                    t.copyFrom(Tuple::at(set, 0));
+                    if (!SetUtil::convertToSetOrTuple(ctx, set, t, typeConversionValue, false))
+                        return false;
+                }
+            }
         }
         else {
             if (src.isArray()) {
@@ -1013,7 +1088,7 @@ namespace cmpl
                 ins = 0;
             }
             else {
-                SetFinite *fs = new SetFinite(res, false, true);
+                SetFinite *fs = new SetFinite(res, false, 0, true, 0, 0);
                 res.dispose();
                 res.set(TP_SET_FIN, fs);
                 ins = 1;
@@ -1021,7 +1096,7 @@ namespace cmpl
         }
 
         else if (rt == 0) {
-            res.set(TP_SET_FIN, new SetFinite(set, true, true));
+            res.set(TP_SET_FIN, new SetFinite(set, true, 0, true, 0, 0));
             ins = 0;
         }
 
@@ -1208,7 +1283,7 @@ namespace cmpl
         SetFinite *res;
         if (set.t == TP_SET_FIN && set.setFinite()->baseRank() == br && !tpa) {
             // result is direct copy of set
-            res = new SetFinite(set, true);
+            res = new SetFinite(set, true, 0, false, 0, 0);
         }
         else {
             const CmplVal& bsp = (set.t == TP_SET_FIN ? set.setFinite()->baseSet(true) : set);
@@ -1230,7 +1305,7 @@ namespace cmpl
 
             // create new SetFinite
             unsigned long bsnc = SetBase::cnt(bsn);
-            res = new SetFinite(bsn, false, (set.t == TP_SET_FIN && set.setFinite()->minRank() == 0), SetBase::minRank(set), SetBase::maxRank(set));
+            res = new SetFinite(bsn, false, 0, (set.t == TP_SET_FIN && set.setFinite()->minRank() == 0), SetBase::minRank(set), SetBase::maxRank(set));
             bsn.dispose();
 
             // insert subsets
@@ -1243,7 +1318,7 @@ namespace cmpl
                 if (i != num || !tpa) {
                     if (set.t == TP_SET_FIN) {
                         if (ssb) {
-                            SetFinite *ss = new SetFinite(ssb, false);
+                            SetFinite *ss = new SetFinite(ssb, false, 0, false, 0, 0);
                             res->subSet(i)->set(TP_SET_FIN, ss);
                             for (unsigned long j = 0; j < ss->baseCnt(); j++)
                                 ss->subSet(j)->copyFrom(set.setFinite()->subSet(si++), true, false);
@@ -1277,8 +1352,11 @@ namespace cmpl
      * @param woOrder       strip order from set
      * @return				true if result set is computed; false if source set is already in canonical representation
      */
-    bool SetUtil::canonicalSet(CmplVal &res, const CmplVal &seta, bool woOrder)
+    bool SetUtil::canonicalSet(CmplVal &res, CmplVal &seta, bool woOrder)
     {
+        //TODO:
+        //  wenn Set bereits kanonisch ist, aber noch nicht so gekennzeichnet, dann kann Kennzeichen hier wegen const nicht gesetzt werden
+
         // the canonical representation guarantees that two equal sets are represented in an identical format.
         // a set is in canonical representation when:
         //  - Subsets:
@@ -1311,18 +1389,6 @@ namespace cmpl
         bool dirOrder = false;
         res.unset();
 
-        //TODO: infinite sets:
-        //          TP_SET_INF_TPL or TP_SET_INF_SET:
-        //                  - all subsets must be canonical
-        //                  - if not subset is infinite, then change to finite set
-        //                  - TP_SET_INF_TPL: no one of the subsets is further divisible by partsToVector
-        //                  - TP_SET_INF_SET: contains no more than one finite direct subset; contains no direct subsets TP_SET_INF_SET with the same constructing operation
-        //          TP_SET_R1_LB_INF or TP_SET_R1_LB_INF_MNF:
-        //                  - if lower bound is 0, then change type to TP_SET_R1A_INT / TP_SET_R1A_INT_MNF
-        //          (all other infinite sets are already in canonical representation)
-        //  (but the canocical representation cannot guarantee that two equal infinite sets are represented equally)
-
-
         // handle empty set and null tuple set
         if (SetBase::cnt(set) == 0 || SetBase::maxRank(set) == 0) {
             tp_e t = (SetBase::cnt(set) == 0 ? TP_SET_EMPTY : (SetBase::markNF(set) ? TP_ITUPLE_NULL : TP_SET_NULL));
@@ -1331,6 +1397,19 @@ namespace cmpl
 
             res.set(t);
             return true;
+        }
+
+        // handle infinite sets
+        if (!SetBase::finite(set)) {
+            if (set.useValP()) {
+                return set.setInfinite()->canonicalSet(res, woOrder);
+            }
+            else if ((set.t == TP_SET_R1_LB_INF || set.t == TP_SET_R1_LB_INF_MNF) && set.v.i == 0) {
+                res.set((set.t == TP_SET_R1_LB_INF ? TP_SET_R1A_INT : TP_SET_R1A_INT_MNF));
+                return true;
+            }
+
+            return false;
         }
 
         if (!SET_VAL_HAS_ORDER(seta) || !SetBase::isCanonical(set)) {
@@ -1426,6 +1505,8 @@ namespace cmpl
                         SetBase::setCanonical(*(sfn->baseSet()), true);
                         for (unsigned long i = 0; i < sf->baseCnt(); i++)
                             SetBase::setCanonical(arr[i], true);
+
+                        checkBaseSplitFinSet(res, false);
                     }
                 }
             }
@@ -1454,10 +1535,10 @@ namespace cmpl
                         SetFinite *nsf;
                         if (sb) {
                             CmplVal v(TP_SET_REC_MULT, sb, false);
-                            nsf = new SetFinite(v, true, true);
+                            nsf = new SetFinite(v, true, 0, true, 0, 0);
                         }
                         else {
-                            nsf = new SetFinite(*(sf->baseSet()), true, true);
+                            nsf = new SetFinite(*(sf->baseSet()), true, 0, true, 0, 0);
                         }
                         res.dispSet(TP_SET_FIN, nsf);
                     }
@@ -1633,7 +1714,76 @@ namespace cmpl
             }
         }
 
+        // result set is canonical
+        CmplVal& rset = res ?: seta;
+        if (!SetBase::isCanonical(rset))
+            SetBase::setCanonical(rset, true);
+
+        CmplVal &rseto = SET_VAL_WO_ORDER(rset);
+        if (rseto.t == TP_SET_FIN && rseto.setFinite()->baseSplit() == 0)
+            checkBaseSplitFinSet(rseto, false);
+
         return (bool)res;
+    }
+
+
+    /**
+     * check if split of base set of SetFinite is possible, set <code>_baseSplit</code> within SetFinite </code>
+     * @param set			source set (must be TP_SET_FIN)
+     * @param uo            consider user order
+     * @param modarr        set also <code>_modArray</code> within SetFinite
+     * @param force         check split also if already known
+     * @return              true if split is possible
+     */
+    bool SetUtil::checkBaseSplitFinSet(CmplVal &set, bool uo, bool modarr, bool force)
+    {
+        CmplVal &es = SET_VAL_WO_ORDER(set);
+        if (es.t != TP_SET_FIN)
+            return false;
+
+        SetFinite *sf = es.setFinite();
+        if (sf->baseRank() > 1 && sf->minRank() > 1 && (force || sf->baseSplit() == 0)) {
+            // base set can only be SetRecMult
+            SetRecMult *srm = sf->baseSet(true).setRecMult();
+            unsigned long bc = sf->baseCnt();
+
+            // all subsets must be canonical
+            if (!sf->isCanonical()) {
+                CmplValAuto nss;
+                for (unsigned long i = 0; i < bc; i++) {
+                    CmplVal *ss = sf->subSet(i);
+                    if (canonicalSet(nss, *ss, false))
+                        ss->moveFrom(nss, true);
+                }
+            }
+
+            // check subsets for equality neccessary for a split before rank r
+            unsigned long md = 1;
+            unsigned r = sf->baseRank() - 1;
+            for (; r > 0; r--) {
+                md *= srm->partCnt(r);
+
+                bool ne = false;
+                for (unsigned long i = 0; !ne && i < md; i++) {
+                    CmplVal *s1 = sf->subSet(i);
+                    for (unsigned long j = i + md; j < bc; j += md) {
+                        CmplVal *s2 = sf->subSet(j);
+                        if (!compareEq(s1, s2, true)) {
+                            ne = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!ne)
+                    break;
+            }
+
+            sf->setBaseSplit(sf->baseRank() - r, modarr);
+        }
+
+        unsigned splt = sf->baseSplit(uo);
+        return (splt && splt < sf->baseRank());
     }
 
 
@@ -1977,7 +2127,7 @@ namespace cmpl
 
             if (rr.useInt()) {
                 if (toTuple)
-                    res.set(TP_INDEX_VAL_TUPEL(rr.t), rr.v.i);
+                    res.set(TP_INDEX_VAL_TUPLE(rr.t), rr.v.i);
                 else
                     res.set(TP_INDEX_VAL_SET(rr.t), rr.v.i);
             }
@@ -2138,6 +2288,7 @@ namespace cmpl
             tp_e mode = TP_SET_REC_MULT;
             unsigned resRank = 0;
             unsigned baseRank = 0;
+            unsigned rmRank = 0;
             unsigned baseInd = tr;
             bool baseSplit = false;
             bool uoRecMult = false;
@@ -2161,6 +2312,7 @@ namespace cmpl
                     mode = (ewo->setFinite()->containNullSub() ? TP_SET_NULL : TP_SET_FIN);
                     baseInd = r;
                     baseSplit = (mode == TP_SET_FIN);
+                    rmRank = resRank;
                     baseRank = resRank + (baseSplit ? ewo->setFinite()->baseRank() : 0);
                     resRank += ewo->setFinite()->maxRank();
 
@@ -2278,11 +2430,11 @@ namespace cmpl
                     res.moveFrom(nsv);
                 }
                 else {
-                    res.set(TP_SET_FIN, new SetFinite(nsv, false));
+                    res.set(TP_SET_FIN, new SetFinite(nsv, false, (rmRank ? baseRank - rmRank : baseRank), false, 0, 0));
 
                     SetFinite *sfdst = res.setFinite();
                     SetFinite *sfsrc = SET_VAL_WO_ORDER(*(tpl->at(baseInd))).setFinite();
-                    unsigned long bcdst = sfdst->baseCnt();
+                    unsigned long bcdst = sfdst->baseCnt(true);
                     unsigned long bcsrc = sfsrc->baseCnt();
 
                     if (baseInd == tr - 1) {
@@ -2379,13 +2531,20 @@ namespace cmpl
                 // Konstruktion (einschliesslich Reihenfolge) durch volle Iteration ueber alle Teilsets
                 //          und Hinzufuegen Tuple zu Ergebnisset soweit darin noch nicht enthalten
                 //          (Iteration notwendig, weil Tuple-artiges Zusammenfuegen dazu fuehren koennte, dass Elemente faelschlich doppelt enthalten sind)
-                // Iteration:
-                //      Iteratoren fuer alle Quellsets auf Starttupel initialisieren; ist zusammengesetzt erstes Ergebnistupel
-                //      Iterationsschritt: Schritt im obersten Iterator; wenn dort Ende, Schritt im zweitobersten und obersten neu auf Start usw.
-                //          Beendet, wenn unterster Iterator am Ende
 
                 res.set(TP_SET_EMPTY);
 
+                CmplValAuto tup(TP_TUPLE, tpl, true);
+                TupleIterator it(ctx, tup, uo);
+
+                CmplValAuto t, tt;
+                for (it.begin(); it; it++) {
+                    tt.set((*it).t, (*it).v.vp, false);
+                    addSet(ctx, &t, 0, &res, &tt, uo, false);
+                    res.moveFrom(t, true);
+                }
+
+                /*
                 // init iteration for all source sets
                 vector<SetIterator> vsi(tr);
                 CmplVal *e = tpl->at(0);
@@ -2431,11 +2590,11 @@ namespace cmpl
                         r--;
                     }
                 }
+                */
 
                 if (tcr) {
-                    CmplValAuto cs;
-                    if (canonicalSet(cs, res))
-                        res.moveFrom(cs, true);
+                    if (canonicalSet(t, res))
+                        res.moveFrom(t, true);
                 }
             }
 
@@ -2459,9 +2618,97 @@ namespace cmpl
      */
     void SetUtil::tupleToSetInf(ExecContext *ctx, CmplVal& res, Tuple *tpl, bool tcr, bool uo)
     {
-        //TODO
-    }
+        vector<CmplValAuto> parts;
 
+        bool inf = false;
+        bool emp = false;
+        tp_e prvSetAll = TP_BLANK;
+
+        unsigned tr = tpl->rank();
+        CmplVal *e = tpl->at(0);
+
+        for (unsigned r = 0; r < tr; r++, e++) {
+            CmplVal *ewo = &(SET_VAL_WO_ORDER(*e));
+
+            if (ewo->rank0()) {
+                ewo = NULL;
+            }
+
+            else if (ewo->isSetInf() || ewo->t == TP_BLANK || (ewo->isInterval() && Interval::isSetInf(*ewo))) {
+                inf = true;
+                if (ewo->t == TP_SET_ALL || ewo->t == TP_SET_ALL_MNF || ewo->t == TP_SET_ALL_INT || ewo->t == TP_SET_ALL_INT_MNF || ewo->t == TP_SET_ALL_STR || ewo->t == TP_SET_ALL_STR_MNF || ewo->t == TP_BLANK) {
+                    if (prvSetAll == TP_BLANK) {
+                        prvSetAll = (ewo->t != TP_BLANK ? ewo->t : TP_SET_ALL);
+                    }
+                    else if (prvSetAll == TP_SET_ALL || prvSetAll == TP_SET_ALL_MNF ||
+                             ((prvSetAll == TP_SET_ALL_INT || prvSetAll == TP_SET_ALL_INT_MNF) && (ewo->t == TP_SET_ALL_INT || ewo->t == TP_SET_ALL_INT_MNF)) ||
+                             ((prvSetAll == TP_SET_ALL_STR || prvSetAll == TP_SET_ALL_STR_MNF) && (ewo->t == TP_SET_ALL_STR || ewo->t == TP_SET_ALL_STR_MNF))) {
+                        ewo = NULL;
+                    }
+                }
+                else if (ewo->isSetInf()) {
+                    if (ewo->t == TP_SET_INF_TPL) {
+                        SetInfiniteTpl *sit = ewo->setInfiniteTpl();
+                        if (sit->isCanonical() || !tcr) {
+                            for (unsigned p = 0; p < sit->partCnt(); p++)
+                                parts.emplace_back(sit->partSet(p));
+                        }
+                        else {
+                            SetBase::partsToVector(ewo, parts, uo);
+                        }
+                        ewo = NULL;
+                    }
+                }
+                else {
+                    CmplValAuto v;
+                    constructFromInterval(ctx, v, *ewo);
+                    parts.push_back(v);
+                    ewo = NULL;
+                }
+            }
+
+            else if (ewo->t == TP_SET_EMPTY || (ewo->isInterval() && Interval::isEmpty(*ewo))) {
+                emp = true;
+                break;
+            }
+
+            else {
+                if (ewo->isInterval()) {
+                    CmplValAuto v;
+                    constructFromInterval(ctx, v, *ewo);
+                    parts.push_back(v);
+                    ewo = NULL;
+                }
+                else if (ewo->isSet() && ewo->useValP() && tcr) {
+                    if (ewo->t == TP_SET_FIN && ewo->setFinite()->baseSplit(uo) == 0)
+                        checkBaseSplitFinSet(*ewo, uo);
+
+                    SetBase::partsToVector((uo ? e : ewo), parts, uo);
+                    ewo = NULL;
+                }
+
+                prvSetAll = TP_BLANK;
+            }
+
+            if (ewo) {
+                if (ewo->t != TP_BLANK)
+                    parts.emplace_back(uo ? e : ewo);
+                else
+                    parts.emplace_back(TP_SET_ALL);
+            }
+        }
+
+        if (parts.size() == 0)
+            res.set(TP_SET_NULL);
+        else if (emp)
+            res.set(TP_SET_EMPTY);
+        else if (!inf)
+            tupleToSetFin(ctx, res, tpl, tcr, uo);
+        else if (parts.size() == 1)
+            res.moveFrom(parts[0]);
+        else
+            res.set(TP_SET_INF_TPL, new SetInfiniteTpl(parts, tcr, uo));
+    }
 
 
 	/****** SetConstructHelper ****/
@@ -2753,7 +3000,7 @@ namespace cmpl
 				res.copyFrom(bs, true, false);			
 			}
 			else {
-				SetFinite *sf = new SetFinite(bs, arr, _minRank, _maxRank);
+                SetFinite *sf = new SetFinite(bs, arr, _minRank, _maxRank);
 				res.set(TP_SET_FIN, sf);
 			}
 		}

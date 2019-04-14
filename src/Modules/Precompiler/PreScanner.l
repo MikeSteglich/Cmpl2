@@ -46,7 +46,7 @@
 
 %option prefix="precmpl"
 %option reentrant
-%option ansi-prototypes
+/*%option ansi-prototypes*/
 %option debug
 %option noyywrap
 %option nounput

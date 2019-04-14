@@ -160,19 +160,21 @@ namespace cmpl
         if (r == 0 || f >= _rank) {
             res.set(TP_ITUPLE_NULL);
         }
-        else if (r == 1 || f == _rank - 1) {
-            res.copyFrom(_array + f, true, false);
-        }
         else {
             if (f + r > _rank)
                 r = _rank - f;
 
-            Tuple *tp = new Tuple(r);
-            res.set(TP_TUPLE, tp);
+            if (r == 1) {
+                res.copyFrom(_array + f, true, false);
+            }
+            else {
+                Tuple *tp = new Tuple(r);
+                res.set(TP_TUPLE, tp);
 
-            CmplVal *p = _array + f;
-            for (unsigned i = 0; i < r; i++)
-                tp->at(i)->copyFrom(p + i, true, false);
+                CmplVal *p = _array + f;
+                for (unsigned i = 0; i < r; i++)
+                    tp->at(i)->copyFrom(p + i, true, false);
+            }
         }
     }
 
@@ -199,7 +201,7 @@ namespace cmpl
                 if (rt.isTuple())
                     res.copyFrom(rt);
                 else
-                    res.set(TP_INDEX_VAL_TUPEL(rt.t), rt.v.i);
+                    res.set(TP_INDEX_VAL_TUPLE(rt.t), rt.v.i);
 
                 return;
             }

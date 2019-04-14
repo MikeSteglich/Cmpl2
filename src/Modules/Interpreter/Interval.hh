@@ -135,6 +135,11 @@ namespace cmpl
         static intType uppBoundInt(const CmplVal &v);
 	
         /**
+         * get whether a numerical value n is within an interval v
+         */
+        static bool numInInterval(const CmplVal &v, const CmplVal &n);
+
+        /**
          * get whether the interval is aequivalent to a set
          */
         static bool isSet(const CmplVal &v)					{ return (v.isInterval() && (v.useNothing() || v.useInt() || (v.t == TP_INTERVAL && !isLowBoundReal(v) && !isUppBoundReal(v)))); }

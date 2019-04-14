@@ -885,7 +885,6 @@ namespace cmpl
                         for (int set : vsets)
                             (v++)->copyFrom(_values[set], true, false);
 
-                        //TODO: Tuple in Set umwandeln: so nur vorlaeufig, besser ueber andere allgemeinere Funktion
                         if (!TupleUtil::toIndexTuple(_ctx, modePar, tpl)) {
                             throw FileException("handling of given index set not implemented, in head line in cmpl data file", _mod->data()->globStrings()->at(_filename), line);
                         }

@@ -28,10 +28,10 @@
 
 /* generate C++ parser class CMPL_Parser in the namespace */
 %skeleton "lalr1.cc"
-%require "2.1a"
-%name-prefix="cmpl"
+%require "3.0.4"
+%name-prefix "cmpl"
 %defines
-%define "parser_class_name" "CMPL_Parser"
+%define parser_class_name {CMPL_Parser}
 
 %{
 namespace cmpl

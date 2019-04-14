@@ -34,12 +34,11 @@
 #include "../../Control/LocationInfo.hh"
 
 // use LocationInfo instead of the standard location of bison
-#define location	LocationInfo
+typedef cmpl::LocationInfo location;
 
 #define YYLLOC_DEFAULT(Current, Rhs, N)							\
 	do {														\
-		if (N) { (Current).setFrom((Rhs)[1], (Rhs)[N]); }		\
-		else { (Current).setFrom((Rhs)[0]); }					\
+		if (N) { (Current).setFrom((Rhs)[1].location, (Rhs)[N].location); }		\
+		else { (Current).setFrom((Rhs)[0].location); }					\
 	} while (false)
-
 

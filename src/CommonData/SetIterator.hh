@@ -248,10 +248,10 @@ namespace cmpl
         static bool isScalarIn(const CmplVal& set, const CmplVal& ind);
 
         /**
-         * check whether a scalar index value is an element of a finite set, and returns the index number of the element in the set
-         * @param set			set (must be a finite set)
+         * check whether a scalar index value is an element of a set, and returns the index number of the element in the set if finite
+         * @param set			set
          * @param ind			index value, must be int or string
-         * @param num			return of the index number of ind within set
+         * @param num			return of the index number of ind within set (only if set is a finite set)
          * @return 				true if ind is an element in set
          */
         static bool isScalarIn(const CmplVal& set, const CmplVal& ind, unsigned long& num);

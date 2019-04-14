@@ -88,7 +88,10 @@ namespace cmpl
                 return true;
         }
 
-        //TODO: wenn ind unendliches Tuple, dann doch nicht mit TupleUtil::toIndexTuple() in Set wandeln?
+        //TODO: Unterscheidung ob einfaches Indextuple oder ob Sets enthalten sind.
+        //      Wenn einfach, dann direkt ausfuehren
+        //      Wenn Sets enthalten sind, dann ueber TupleMatching ausfuehren (vorherige Umwandlung des indizierenden Tuples in Set ist nicht notwendig!)
+        //              (pruefen was mit TP_LIST_TUPLE: muss das vor TupleMatching in regulaeres Tuple umgewandelt werden?)
 
         if (lvalue()) {
             // store index value as _addVal in this

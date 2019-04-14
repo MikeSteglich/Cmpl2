@@ -109,9 +109,10 @@ namespace cmpl
          * @param ctx			execution context
          * @param res           store for result tuple
          * @param src           source tuple
+         * @param tcr			transform result tuple to canonical set representation
          * @return              true if tuple only contains simple index values, sets, or elements with type TP_DEF_CB_SYM
          */
-        static bool asTupleIndexOrSet(ExecContext *ctx, CmplVal& res, CmplVal& src);
+        static bool asTupleIndexOrSet(ExecContext *ctx, CmplVal& res, CmplVal& src, bool tcr);
 
         /**
          * try to match first tuple with a second tuple
@@ -158,58 +159,63 @@ namespace cmpl
     {
     public:
         enum Mode {
-            matchIn,            ///< matching for operator "in" as boolean operator (_set is right operand and _tpl is left operand in this operation)
-            matchIter,          ///< matching for operator "in" as iteration operator (_set is right operand and _tpl is left operand in this operation)
-            matchReduce,		///< matching for operator "*>" (_set is left operand and _tpl is right operand in this operation)
-            matchIndex,         ///< matching for indexation (_set is definition set of the array and _tpl is the indexing tuple in this operation)
+            matchIn,            ///< matching for operator "in" as boolean operator (_src is left operand and _pat is right operand in this operation; user order is never used)
+            matchIter,          ///< matching for operator "in" as iteration operator (_src is right operand and _pat is left operand in this operation (contrary to matchIn); user order of _src is used)
+            matchReduce,		///< matching for operator "*>" (_src is left operand and _pat is right operand in this operation; user order of _src is used)
+            matchIndex,         ///< matching for indexation (_src is definition set of the array and _pat is the indexing tuple in this operation; user order of _pat is used, but if _pat contains only elements without explicit or implicit order, then user order of _src is used)
         };
 
     private:
         // source values
         ExecContext *_ctx;          ///< execution context
         Mode _mode;                 ///< matching mode
-        CmplVal _set;				///< source tuple set (must be a finite set, save for _mode == matchIn)
-        CmplVal _tpl;				///< tuple to match against <code>_set</code> (must contain only simple index values, sets, or elements with type TP_DEF_CB_SYM (which can match with any part of a tuple from the source tuple set, also with no part or more than one part))
+        CmplVal _src;               ///< source value to match against <code>_pat</code>, must be an index tuple (_mode == matchIn) or a finite tuple set
+        CmplVal _pat;               ///< tuple pattern, must be a tuple containing index values, sets (not for _mode == matchIter), or elements with type TP_DEF_CB_SYM (only for _mode == matchIter)
         bool _useOrder;				///< use user order
 
         // result values
         CBAssignInfoComplex *_assInfo;		///< only for _mode == matchIter: assign info of codeblock symbols for match tuples
-        vector<unsigned long> *_resIndex;	///< only for _mode == matchIndex: indexes of matched tupels within _set
+        vector<unsigned long> *_resIndex;	///< only for _mode == matchIndex: indexes of matched tupels within _src
 
         // temporary values used in match()
-        vector<unsigned> _freePos;	///< positions of elements marked as free within <code>_tpl</code>
-        unsigned *_minRank;			///< array with minimal rank of elements within <code>_tpl</code>
-        unsigned *_maxRank;			///< array with maximal rank of elements within <code>_tpl</code>
+        unsigned long _srcCnt;      ///< count of elements in <code>_src</code>
+        unsigned _srcMaR;           ///< max set rank of <code>_src</code>
+        bool _srcUO;                ///< <code>_src</code> is or contains set with user order
+
+        vector<unsigned> _freePos;	///< positions of elements marked as free within <code>_pat</code>
+        unsigned *_minRank;			///< array with minimal rank of elements within <code>_pat</code>
+        unsigned *_maxRank;			///< array with maximal rank of elements within <code>_pat</code>
 
         bool _oneRank;				///< true if _minRank == _maxRank for all its entries
-        bool _indexTuple;			///< <code>_tpl</code> is index tuple (doesn't contain any set)
-        bool _infTpl;				///< <code>_tpl</code> contains an infinite set
-        unsigned long _tplCnt;		///< count of tupel elements in <code>_tpl</code> (only if !_infSet)
-        unsigned _tplRank;			///< rank of tuple <code>_tpl</code>
+        bool _indexTuple;			///< <code>_pat</code> is index tuple (doesn't contain any set)
+        bool _infTpl;				///< <code>_pat</code> contains an infinite set
+        unsigned long _tplCnt;		///< count of tuple elements in <code>_pat</code> (only if !_infTpl)
+        unsigned _tplRank;			///< rank of tuple <code>_pat</code>
+        unsigned _patOrder;         ///< only for _mode == matchIndex: flag whether <code>_pat</code> contains elements with user order (2) or implicit order (1) or only elements without any order (0)
 
         unsigned _minRankSum;		///< sum over <code>_minRank</code>
         unsigned _maxRankSum;		///< sum over <code>_maxRank</code>
-        unsigned _firstDiffRank;	///< index of first element within <code>_tpl</code> with minimal rank unequal to maximal rank
-        unsigned _afterDiffRank;	///< index after last element within <code>_tpl</code> with minimal rank unequal to maximal rank
+        unsigned _firstDiffRank;	///< index of first element within <code>_pat</code> with minimal rank unequal to maximal rank
+        unsigned _afterDiffRank;	///< index after last element within <code>_pat</code> with minimal rank unequal to maximal rank
 
     public:
         /**
          * constructor
+         * @param ctx			execution context
          * @param mode          matching mode
-         * @param set           source tuple set (must be a finite set, save for mode == matchIn)
-         * @param tpl           tuple to match against <code>set</code>
+         * @param src           source tuple (mode == matchIn) or finite set
+         * @param pat           tuple pattern to match <code>src</code> against
          * @param uo            use user order
          */
-        TupleMatching(ExecContext *ctx, Mode mode, CmplVal& set, CmplVal& tpl, bool uo): _ctx(ctx), _mode(mode), _set(set), _tpl(tpl), _useOrder(uo),
-                    _assInfo(NULL), _resIndex(NULL)		{ }
+        TupleMatching(ExecContext *ctx, Mode mode, const CmplVal& src, const CmplVal& pat, bool uo);
 
         /**
          * destructor
          */
-        ~TupleMatching()                                { _set.dispose(); _tpl.dispose(); releaseResult(); }
+        ~TupleMatching()                                { _src.dispose(); _pat.dispose(); releaseResult(); }
 
         /**
-         * try to match the tuple with the elements of the tuple set and make a result set of all matching tuples
+         * try to match _src with the elements of the tuple pattern _pat and make a result set of all matching tuples
          * @param res           store for result set
          * @return              true if any matching tuples, then result set is filled
          */
@@ -228,14 +234,19 @@ namespace cmpl
         void releaseResult();
 
         /**
-         * prepare <code>_tpl</code> for matching, and fills temporary instance variables
+         * prepare <code>_src</code> for matching
+         */
+        void prepareSource();
+
+        /**
+         * prepare <code>_pat</code> for matching, and fills temporary instance variables
          */
         void prepareTuple();
 
         /**
-         * matches single index tuple against <code>_tpl</code>
+         * matches single index tuple against <code>_pat</code>
          * @param it            index tuple
-         * @param am            return of matching rank per element in <code>_tpl</code>
+         * @param am            return of matching rank per element in <code>_pat</code>
          * @return              true if successfully matched
          */
         bool singleMatch(const CmplVal& it, unsigned *am);
@@ -268,7 +279,7 @@ namespace cmpl
          * reduce given tuple according to positions in <code>_freePos</code>, then add it to result set
          * @param res           result set
          * @param tpl           source tuple
-         * @param ranks         rank per element in match tuple <code>_tpl</code>
+         * @param ranks         rank per element in match tuple <code>tpl</code>
          * @param uo            add to result set with user order
          * @param srcInd        index of tuple in source set
          * @return              true if tuple is added to result set / false if tuple was already in result set
@@ -283,22 +294,118 @@ namespace cmpl
     class TupleMatchingValueException : public runtime_error
     {
     private:
-        int _invSet;            ///< true: set is invalid / false: tuple is invalid
+        int _invSrc;            ///< true: _src is invalid / false: _pat is invalid
 
     public:
         /**
          * constructor
          * @param txt       error message
-         * @param invSet    true: set is invalid / false: tuple is invalid
+         * @param invSrc    true: _src is invalid / false: _pat is invalid
          */
-        TupleMatchingValueException(const string& txt, bool invSet) noexcept : runtime_error(txt), _invSet(invSet)      { }
+        TupleMatchingValueException(const string& txt, bool invSrc) noexcept : runtime_error(txt), _invSrc(invSrc)      { }
 
         /**
-         * get whether set or tuple is invalid
+         * get whether source or tuple pattern is invalid
          */
-        int invSet() const noexcept                 { return _invSet; }
+        int invSrc() const noexcept                 { return _invSrc; }
     };
 
+
+
+    /**
+     * utility class for iterating over all index tuples of a finite set or a tuple which may contain finite sets
+     */
+    class TupleIterator
+    {
+    private:
+        ExecContext *_ctx;          ///< execution context
+
+        CmplValAuto _tpl;           ///< tuple or set to iterate
+        unsigned _rank;             ///< rank of tuple
+
+        bool _useOrder;				///< iterate in user order
+        bool _reverse;				///< iterate in reverse order
+
+        vector<SetIterator> _sub;   ///< sub iterator per tuple element
+
+        unsigned long _ind;			///< index number of current element
+        bool _ended;                ///< iteration is ended
+        CmplValAuto _cur;   		///< current tuple
+
+    public:
+        /**
+         * constructor
+         * @param tpl			tuple or set to iterate (must contain only finite sets or index values)
+         * @param useOrder		iterate in user order
+         * @param reverse		iterate in reverse order
+         */
+        TupleIterator(ExecContext *ctx, const CmplVal& tpl, bool useOrder = false, bool reverse = false): _ctx(ctx), _tpl(tpl), _useOrder(useOrder), _reverse(reverse), _cur(TP_EMPTY)      { iterIntern(true); }
+
+        /**
+         * get current element of iteration
+         * @return				current index tuple / TP_EMPTY if iteration is ended
+         */
+        inline const CmplVal& curTuple() const	{ return _cur; }
+
+        /**
+         * get current index number of iteration
+         * @return				current index number
+         */
+        inline unsigned long curIndex() const	{ return _ind; }
+
+        /**
+         * start or restart the iteration
+         * @return				first tupel of the set
+         */
+        inline CmplVal& begin()					{ iterIntern(true); return _cur; }
+
+        /**
+         * iterate to the next tuple
+         * @return				next tuple of the set
+         */
+        inline CmplVal& iter()					{ iterIntern(false); return _cur; }
+
+        /**
+         * get value TP_EMPTY as flag that the iteration is ended
+         * @return				value TP_EMPTY
+         */
+        inline CmplVal end() const				{ return CmplVal(TP_EMPTY); }
+
+        /**
+         * returns whether the iteration is ended
+         * @return				true if end of iteration is reached (current element is then TP_EMPTY)
+         */
+        bool ended() const                      { return _ended; }
+
+        /**
+         * get current element of iteration
+         * @return				current index tuple / TP_EMPTY if iteration is ended
+         */
+        const inline CmplVal& operator* () const { return _cur; }
+
+        /**
+         * iterate to the next tuple
+         */
+        inline void operator++ ()				{ iterIntern(false); }
+
+        /**
+         * iterate to the next tuple
+         */
+        inline void operator++ (int)			{ iterIntern(false); }
+
+        /**
+         * returns whether the iteration is not ended
+         * @return				true if iteration is not ended (current element is not TP_EMPTY)
+         */
+        inline explicit operator bool() const	{ return !_ended; }
+
+    private:
+        /**
+         * iterate to the first or next tuple
+         * @param start			start or restart the iteration
+         */
+        void iterIntern(bool start);
+    };
 }
 
 #endif // TUPLEUTIL_HH

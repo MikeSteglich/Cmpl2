@@ -438,8 +438,9 @@ namespace cmpl
     {
         CBAssignInfoBasis *ai = NULL;
         CmplValAuto set;
+        bool tpm = (cbs->t != TP_DEF_CB_SYM && cbs->tuple()->countPartType(TP_DEF_CB_SYM) != cbs->tuple()->rank());
 
-        if (!SetUtil::setForInOrOf(ctx, set, a2->val(), opIn)) {
+        if (!SetUtil::setForInOrOf(ctx, set, a2->val(), opIn, tpm)) {
             ctx->valueError("right operand for 'in' as iteration codeblock header must be a set", a2);
             set.set(TP_SET_EMPTY);
         }
@@ -449,36 +450,28 @@ namespace cmpl
             set.set(TP_SET_EMPTY);
         }
 
-        if (SetBase::cnt(set)) {
-            if (cbs->t == TP_DEF_CB_SYM) {
-                ai = new CBAssignInfoSingle(cbs->v.i);
-            }
-            else if (cbs->tuple()->countPartType(TP_DEF_CB_SYM) == cbs->tuple()->rank()) {
-                ai = new CBAssignInfoTuple(cbs->tuple());
-            }
-            else {
-                CmplValAuto ccb;
-                if (TupleUtil::asTupleIndexOrSet(ctx, ccb, *cbs)) {
-                    TupleMatching tm(ctx, TupleMatching::matchIter, set, ccb, true);
+        if (tpm) {
+            try {
+                TupleMatching tm(ctx, TupleMatching::matchIter, set, *cbs, true);
 
-                    try {
-                        CmplValAuto its;
-                        if (tm.match(its)) {
-                            set.moveFrom(its, true);
-                            ai = tm.takeAssignInfo();
-                        }
-                    }
-                    catch (TupleMatchingValueException& ex) {
-                        if (ex.invSet())
-                            ctx->valueError(ex.what(), a2);
-                        else
-                            ctx->valueError(ex.what(), *cbs, se);
-                    }
-                }
-                else {
-                    ctx->valueError("tuple on left side in iteration codeblock header must be an index tuple", *cbs, se);
+                CmplValAuto its;
+                if (tm.match(its)) {
+                    set.moveFrom(its, true);
+                    ai = tm.takeAssignInfo();
                 }
             }
+            catch (TupleMatchingValueException& ex) {
+                if (ex.invSrc())
+                    ctx->valueError("right operand for 'in' as iteration codeblock header must be a finite set", a2);
+                else
+                    ctx->valueError("tuple on left side in iteration codeblock header must be an index tuple", *cbs, se);
+            }
+        }
+        else if (SetBase::cnt(set)) {
+            if (cbs->t == TP_DEF_CB_SYM)
+                ai = new CBAssignInfoSingle(cbs->v.i);
+            else
+                ai = new CBAssignInfoTuple(cbs->tuple());
         }
 
         if (ai)
@@ -639,8 +632,10 @@ namespace cmpl
             if (tpe <= tps) {
                 v.set(TP_ITUPLE_NULL);
             }
-            else if (tps == 0 && tpe == r) {
+            else if (tpe == tps + 1) {
                 v.copyFrom(Tuple::at(curIter, tps), true, false);
+                if (v.isITuple())
+                    v.t = TP_INDEX_VAL_BASE(v.t);
             }
             else if (curIter.isTuple()) {
                 curIter.tuple()->partTuple(v, tps, tpe - tps);
@@ -717,7 +712,7 @@ namespace cmpl
         DELETE_UNSET(_cbFetchIDs);
 
         for (oneInfo& oi : _info)
-            delete oi._rank;
+            delete[] oi._rank;
 
         _info.clear();
     }
@@ -730,7 +725,8 @@ namespace cmpl
     void CBAssignInfoComplex::addInfo(unsigned long pos, unsigned *ranks)
     {
         if (_info.empty() || pos > _info.back()._end) {
-            _info.push_back(oneInfo(pos, pos + 1, ranks));
+            _info.emplace_back(pos, pos + 1, ranks);
+            ranks = NULL;
         }
         else {
             unsigned i;
@@ -748,9 +744,15 @@ namespace cmpl
                         oi._end = pos;
 
                         _info.insert(_info.begin() + (i++), oneInfo(pos, pos + 1, ranks));
+                        ranks = NULL;
 
-                        if (e > pos + 1)
-                            _info.insert(_info.begin() + (i++), oneInfo(pos + 1, e, oi._rank));
+                        if (e > pos + 1) {
+                            unsigned *r2 = new unsigned[_cnt];
+                            for (unsigned j = 0; j < _cnt; j++)
+                                r2[j] = oi._rank[j];
+
+                            _info.insert(_info.begin() + (i++), oneInfo(pos + 1, e, r2));
+                        }
 
                         break;
                     }
@@ -760,6 +762,7 @@ namespace cmpl
             if (i == 0) {
                 e = max(pos + 1, _info.front()._start);
                 _info.insert(_info.begin(), oneInfo(pos, e, ranks));
+                ranks = NULL;
                 i = 1;
             }
 
@@ -771,6 +774,9 @@ namespace cmpl
                 e = oi._end;
             }
         }
+
+        if (ranks)
+            delete[] ranks;
     }
 
     /**
@@ -778,13 +784,14 @@ namespace cmpl
      * @param ctx		execution context
      * @param curIter	current tuple within the iteration
      * @param curInd	current index number within the iteration
+     * @return          symbol number (fetch id) of last set symbol + 1
      */
-    void CBAssignInfoComplex::setCBSymbolValues(ExecContext *ctx, CmplVal& curIter, unsigned long curInd)
+    unsigned CBAssignInfoComplex::setCBSymbolValues(ExecContext *ctx, const CmplVal &curIter, unsigned long curInd)
     {
         // check if current info object is matching
         oneInfo *oi = &(_info[_curInfo]);
 
-        if (curInd < oi->_start || (oi->_end && oi->_end < curInd)) {
+        if (curInd < oi->_start || (oi->_end && oi->_end <= curInd)) {
             _curInfo = (curInd < oi->_start ? 0 : (_curInfo + 1));
 
             while (_info[_curInfo]._end && _info[_curInfo]._end <= curInd)
@@ -800,7 +807,7 @@ namespace cmpl
         CmplValAuto v;
 
         for (unsigned i = 0; i < _cnt; i++, rp++, fp++) {
-            if (*rp == 0 || t <= Tuple::rank(curIter)) {
+            if (*rp == 0 || t >= Tuple::rank(curIter)) {
                 v.set(TP_ITUPLE_NULL);
             }
             else if (*rp == 1) {
@@ -815,6 +822,8 @@ namespace cmpl
             ctx->setCBSymbolVal(_cbFetchIDs[i], &v);
             v.dispose();
         }
+
+        return (_cnt ? _cbFetchIDs[_cnt-1] + 1 : 0);
     }
 
 

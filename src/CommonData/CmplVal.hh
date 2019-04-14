@@ -273,7 +273,7 @@ namespace cmpl
 		// other parameter values
 		TP_FORMULA			= 0x408000,		///< formula																			tp_u.valFormula
         //TP_FORMULA_EMPTY	= 0x400000,		///< empty formula																		(tp_u not used)
-		TP_FUNCTION			= 0x488000,		///< function object																	tp_u.valFunction
+        TP_FUNCTION			= 0x488000,		///< function object					TP_ITUPLE_NULL												tp_u.valFunction
 		TP_CONTAINER		= 0x498000,		///< container object																	tp_u.valContainer
         TP_SPECIALSYM       = 0x4a8000,     ///< pseudo symbol handling value                                                       tp_u.ValSpecialBase
 		TP_DATA_TYPE		= 0x4c8000,		///< cmpl data type object																tp_u.valType
@@ -389,7 +389,7 @@ namespace cmpl
 
     // conversion between index value, tuple with one component and set with one element
     #define TP_INDEX_VAL_BASE(t)                (((((unsigned)t) & 0x00f0f0) == 0x0020f0 || ((unsigned)t) == TP_INT) ? TP_INT : (((((unsigned)t) & 0x00f0f0) == 0x0020e0 || ((unsigned)t) == TP_STR) ? TP_STR : TP_EMPTY))                      ///< base index value type if given type has int or string elements and use tp_u.i
-    #define TP_INDEX_VAL_TUPEL(t)               (((((unsigned)t) & 0x00f0f0) == 0x0020f0 || ((unsigned)t) == TP_INT) ? TP_ITUPLE_1INT : (((((unsigned)t) & 0x00f0f0) == 0x0020e0 || ((unsigned)t) == TP_STR) ? TP_ITUPLE_1STR : TP_EMPTY))      ///< index tuple type with one component if given type has int or string elements and use tp_u.i
+    #define TP_INDEX_VAL_TUPLE(t)               (((((unsigned)t) & 0x00f0f0) == 0x0020f0 || ((unsigned)t) == TP_INT) ? TP_ITUPLE_1INT : (((((unsigned)t) & 0x00f0f0) == 0x0020e0 || ((unsigned)t) == TP_STR) ? TP_ITUPLE_1STR : TP_EMPTY))      ///< index tuple type with one component if given type has int or string elements and use tp_u.i
     #define TP_INDEX_VAL_SET(t)                 (((((unsigned)t) & 0x00f0f0) == 0x0020f0 || ((unsigned)t) == TP_INT) ? TP_SET_1INT : (((((unsigned)t) & 0x00f0f0) == 0x0020e0 || ((unsigned)t) == TP_STR) ? TP_SET_1STR : TP_EMPTY))            ///< set type with one element if given type has int or string elements and use tp_u.i
 
 	// values for TP_OBJECT_TYPE
@@ -709,7 +709,7 @@ namespace cmpl
 		 * @param disp		return true, if the caller has to dispose r after use
 		 * @return			true if conversion is successful
 		 */
-        bool toString(CmplVal& r, TypeConversionLevel tcl, ModuleBase *modp, bool &disp);
+        bool toString(CmplVal& r, TypeConversionLevel tcl, ModuleBase *modp, bool &disp) const;
 
 		/**
 		 * return string value as char pointer

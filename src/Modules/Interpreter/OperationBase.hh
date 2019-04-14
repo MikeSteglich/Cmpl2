@@ -221,6 +221,8 @@ namespace cmpl
     protected:
         // set operations
         static void tplInSet(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a1, CmplVal *a2, bool opIn);         ///< check whether tuple is in set
+        static void tplMatch(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a1, CmplVal *a2);                    ///< tuple matching operation
+        static void setMarkNF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a1, bool mnf);                         ///< mark set as non-free or free
 
         //TODO
     };

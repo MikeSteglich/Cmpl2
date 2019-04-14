@@ -54,7 +54,7 @@ int prevSC;
 %option reentrant
 %option bison-bridge bison-locations
 %option noyywrap
-%option ansi-prototypes
+/*%option ansi-prototypes*/
 %option yylineno
 %option debug
 

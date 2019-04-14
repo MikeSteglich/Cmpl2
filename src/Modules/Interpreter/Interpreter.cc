@@ -576,8 +576,6 @@ namespace cmpl
 
         // set model properties
         _resModel->setModelProperties(this);
-        unsigned long mcr = _resModel->rows().size();
-        unsigned long mcc = _resModel->cols().size();
 
         // solver selection
         _ctrl->errHandler().setExecStep("solver selection");
@@ -587,8 +585,8 @@ namespace cmpl
         _ctrl->errHandler().setExecStep("remodeling");
         _ctrl->runExtension(this, EXT_STEP_INTERPRET_REMODEL, _resModel);
 
-        // if model size changed by remodeling, then set model properties anew
-        if (mcr != _resModel->rows().size() || mcc != _resModel->cols().size())
+        // if model type now unknown by remodeling, then set model properties anew
+        if (_resModel->modelProp().modelType() == OptModel::modelTypeUnknown)
             _resModel->setModelProperties(this);
 
         _baseExecCtx = NULL;

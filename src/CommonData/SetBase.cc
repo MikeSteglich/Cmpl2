@@ -78,7 +78,7 @@ namespace cmpl
     /**
      * @brief set or unset explicit mark as non-free for a set
      * @param v         set
-     * @param mnf
+     * @param mnf       true: mark as non-free / false: mark as free
      */
     void SetBase::setMarkNF(CmplVal& v, bool mnf)
     {
@@ -105,16 +105,19 @@ namespace cmpl
 
             case TP_SET_NULL:
             case TP_ITUPLE_NULL:
-                set.t = (mnf ? TP_SET_NULL : TP_ITUPLE_NULL);
+                set.t = (mnf ? TP_ITUPLE_NULL : TP_SET_NULL);
                 break;
 
             case TP_SET_1INT:
             case TP_ITUPLE_1INT:
-                set.t = (mnf ? TP_SET_1INT : TP_ITUPLE_1INT);
+            case TP_INT:
+            case TP_BIN:
+                set.t = (mnf ? TP_INT : TP_SET_1INT);
                 break;
             case TP_SET_1STR:
             case TP_ITUPLE_1STR:
-                set.t = (mnf ? TP_SET_1STR : TP_ITUPLE_1STR);
+            case TP_STR:
+                set.t = (mnf ? TP_STR : TP_SET_1STR);
                 break;
 
             case TP_SET_R1_LB_INF:
@@ -498,13 +501,14 @@ namespace cmpl
     /**
      * push all tuple divisible parts in a vector
      * @param dtp       vector to push parts in
+     * @param uo        consider user order
      * @return          true if parts are pushed to vector; false if set is not tuple divisible
      */
-    bool SetRecMult::partsToVector(vector<CmplVal>& dtp) const
+    bool SetRecMult::partsToVector(vector<CmplValAuto>& dtp, bool uo) const
     {
         CmplVal *s = _array;
         for (unsigned r = 0; r < _rank; r++, s++)
-            dtp.push_back(CmplVal(s));
+            dtp.push_back(CmplValAuto(s));
 
         return true;
     }
@@ -715,7 +719,7 @@ namespace cmpl
     SetFinite::SetFinite(CmplVal& bs, CmplVal *arr, unsigned minR, unsigned maxR)
 	{
 		_base.copyFrom(bs, true, false);
-		_array = arr;
+        _array = arr;
 
         _baseCnt = SetBase::cnt(_base);
         _subOrder = SetBase::hasUserOrder(_base);
@@ -733,11 +737,14 @@ namespace cmpl
 		_maxRank = maxR;
         _baseRank = SetBase::rank(_base);
 
+        _baseSplit = 0;
+        _modArray = 0;
+
 		_cnt = (_minRank == 0 ? 1 : 0);
         _markNF = false;
         _isCanonical = false;
 
-		CmplVal *p = _array;
+        CmplVal *p = _array;
 		for (unsigned long i = 0; i < _baseCnt; i++, p++) {
 			if (*p) {
                 _cnt += SetBase::cnt(*p);
@@ -754,11 +761,12 @@ namespace cmpl
      * constructor: from another set
      * @param set			set to construct from, act here as base set (must be a finite set, but not the empty set and not the null tuple set)
      * @param woOrder		strip user order
+     * @param splt          value for <code>_baseSplit</code> or 0 if unknown
      * @param addNull		add null tuple to resulting finite set
      * @param rmi			min rank for the result set / 0: not specified
      * @param rma			max rank for the result set / 0: not specified
      */
-    SetFinite::SetFinite(const CmplVal& set, bool woOrder, bool addNull, unsigned rmi, unsigned rma)
+    SetFinite::SetFinite(const CmplVal& set, bool woOrder, unsigned splt, bool addNull, unsigned rmi, unsigned rma)
     {
         if (set.t == TP_SET_FIN) {
             SetFinite *src = set.setFinite();
@@ -776,13 +784,16 @@ namespace cmpl
             }
 
             _baseCnt = src->_baseCnt;
+            _baseSplit = src->_baseSplit;
+            _modArray = src->_modArray;
+
             _cnt = src->_cnt + (addNull ? 1 : 0);
             _markNF = false;
             _isCanonical = false;
 
-            _array = new CmplVal[_baseCnt];
+            _array = new CmplVal[_modArray ?: _baseCnt];
             CmplVal *a = _array, *b = src->_array;
-            for (unsigned i = 0; i < _baseCnt; i++, a++, b++) {
+            for (unsigned i = 0; i < (_modArray ?: _baseCnt); i++, a++, b++) {
                 if (woOrder) {
                     SetBase::stripOrder(*b, *a);
                 }
@@ -813,14 +824,20 @@ namespace cmpl
             _markNF = false;
             _isCanonical = false;
 
-            _array = new CmplVal[_baseCnt];
-            CmplVal *a = _array;
-            for (unsigned i = 0; i < _baseCnt; i++, a++)
-                a->t = TP_EMPTY;
-
             _baseRank = SetBase::rank(_base);
             _minRank = (addNull ? 0 : (rmi ?: _baseRank));
             _maxRank = (rma ?: _baseRank);
+
+            _array = NULL;
+            _baseSplit = (_baseRank == 1 || _minRank == 0 ? _baseRank : 0);
+            _modArray = 0;
+            if (splt && !_baseSplit)
+                setBaseSplit(splt, true);
+
+            _array = new CmplVal[_modArray ?: _baseCnt];
+            CmplVal *a = _array;
+            for (unsigned i = 0; i < (_modArray ?: _baseCnt); i++, a++)
+                a->t = TP_EMPTY;
         }
 
         _index = NULL;
@@ -832,8 +849,8 @@ namespace cmpl
 	 */
 	SetFinite::~SetFinite()
 	{
-		for (unsigned i = 0; i < _baseCnt; i++)
-			_array[i].dispose();
+        for (unsigned i = 0; i < (_modArray ?: _baseCnt); i++)
+            _array[i].dispose();
 
         delete[] _array;
 
@@ -856,7 +873,7 @@ namespace cmpl
             return true;
 
         CmplVal *ss = _array;
-        for (unsigned i = 0; i < _baseCnt; i++, ss++) {
+        for (unsigned i = 0; i < (_modArray ?: _baseCnt); i++, ss++) {
             if (ss->t == TP_SET_FIN && ss->setFinite()->containNullSub())
                 return true;
         }
@@ -868,21 +885,39 @@ namespace cmpl
     /**
      * push all tuple divisible parts in a vector
      * @param dtp       vector to push parts in
+     * @param uo        consider user order
      * @return          true if parts are pushed to vector; false if set is not tuple divisible
      */
-    bool SetFinite::partsToVector(vector<CmplVal>& dtp) const
+    bool SetFinite::partsToVector(vector<CmplValAuto>& dtp, bool uo) const
     {
-        if (_minRank == 0 || _baseRank == 1)
+        if (_minRank == 0 || _baseRank == 1 || _baseSplit == 0 || _baseSplit >= _baseRank || (uo && SetBase::hasDirectUserOrder(_base) && SetBase::hasUserOrder(_base)))
             return false;
 
-        //TODO
-        //	prüfen ob gemaess Gleichheit Blattsets unterer Teil vom Basisset abtrennbar ist:
-        //		wenn ja: jeden abgetrennten Rang-1-Set in vector, und restlichen SetFinite; return true
-        //		wenn nein: return false
+        unsigned dfr = _baseRank - _baseSplit;
 
-        return false;
+        // _base can only be SetRecMult
+        SetRecMult *srm = SET_VAL_WO_ORDER(_base).setRecMult();
+        CmplVal *e = srm->partSet(0);
+        for (unsigned r = 0; r < dfr; r++, e++)
+            dtp.emplace_back(uo ? *e : SET_VAL_WO_ORDER(*e));
+
+        CmplValAuto bs;
+        srm->partSet(bs, dfr, _baseRank - 1, !uo);
+
+        unsigned long bsc = SetBase::cnt(bs);
+        CmplVal *arr = new CmplVal[bsc];
+
+        CmplVal *es = _array;
+        CmplVal *ed = arr;
+        for (unsigned long i = 0; i < bsc; i++, es++, ed++)
+            ed->copyFrom(uo ? *es : SET_VAL_WO_ORDER(*es));
+
+        SetFinite *sfn = new SetFinite(bs, arr, _minRank - dfr, _maxRank - dfr);
+        sfn->_isCanonical = _isCanonical;
+
+        dtp.emplace_back(TP_SET_FIN, sfn);
+        return true;
     }
-
 
     /**
      * set min rank and max rank for this set
@@ -932,7 +967,7 @@ namespace cmpl
                     _subOrder = true;
 
                 s++;
-                for (unsigned long i = 1; i < _baseCnt; i++, s++) {
+                for (unsigned long i = 1; i < (_modArray ?: _baseCnt); i++, s++) {
                     unsigned srmi = (*s ? SetBase::minRank(*s) : 0);
                     unsigned srma = (*s ? SetBase::maxRank(*s) : 0);
                     if (_minRank > _baseRank + srmi)
@@ -1011,7 +1046,7 @@ namespace cmpl
             CmplVal *s;
             unsigned long i;
 
-            for (i = 0, s = _array; i < _baseCnt; i++, s++) {
+            for (i = 0, s = _array; i < (_modArray ?: _baseCnt); i++, s++) {
                 if (!SetBase::negOrder(*s, oneNeg))
                     return false;
             }
@@ -1032,14 +1067,15 @@ namespace cmpl
             CmplVal bs;
             SetBase::stripOrder(_base, bs);
 
-            CmplVal *arr = new CmplVal[_baseCnt];
+            CmplVal *arr = new CmplVal[_modArray ?: _baseCnt];
             CmplVal *q, *d;
             unsigned long i;
 
-            for (i = 0, q = _array, d = arr; i < _baseCnt; i++, d++, q++)
+            for (i = 0, q = _array, d = arr; i < (_modArray ?: _baseCnt); i++, d++, q++)
                 SetBase::stripOrder(*q, *d);
 
             s = new SetFinite(bs, arr, _minRank, _maxRank);
+            s->_modArray = _modArray;
             bs.dispose();
         }
         else {
@@ -1066,7 +1102,47 @@ namespace cmpl
      */
     CmplVal& SetFinite::subSet(unsigned long i, bool woOrder) const
     {
+        if (_modArray)
+            i %= _modArray;
+
         return (woOrder ? SET_VAL_WO_ORDER(_array[i]) : _array[i]);
+    }
+
+
+    /**
+     * set <code>_baseSplit</code> and <code>_modArray</code>
+     * @param splt          value for <code>_baseSplit</code>
+     * @param modarr        set also <code>_modArray</code>
+     */
+    void SetFinite::setBaseSplit(unsigned splt, bool modarr)
+    {
+        _baseSplit = splt;
+
+        if (modarr && splt && splt < _baseRank) {
+            // base set can only be SetRecMult
+            SetRecMult *srm = baseSet(true).setRecMult();
+
+            unsigned long md = 1;
+            for (unsigned r = 1; r <= splt; r++)
+                md *= srm->partCnt(_baseRank - r);
+
+            if (_modArray == 0 || md < _modArray) {
+                if (_array) {
+                    CmplVal *arr = new CmplVal[md];
+                    for (unsigned long i = 0; i < md; i++)
+                        arr[i].moveFrom(_array[i]);
+
+                    for (unsigned long i = 0; i < (_modArray ?: _baseCnt); i++)
+                        _array[i].dispose();
+
+                    delete[] _array;
+
+                    _array = arr;
+                }
+
+                _modArray = md;
+            }
+        }
     }
 
 
@@ -1110,14 +1186,14 @@ namespace cmpl
 		}
 
 		unsigned long ti2 = 0;
-		CmplVal& sub = _array[ti1];
-		if (sub) {
-			if (sub.useValP()) {
-                ti2 = sub.setBase()->tupleAtIntern(i2, tpl, ti + _baseRank, useOrder, false);
+        CmplVal* sub = subSet(ti1);
+        if (*sub) {
+            if (sub->useValP()) {
+                ti2 = sub->setBase()->tupleAtIntern(i2, tpl, ti + _baseRank, useOrder, false);
 			}
 			else {
 				tpl->setRank(ti + _baseRank + 1);
-                ti2 = SetIterator::tupleAtInternSimple(sub, i2, tpl->at(ti + _baseRank), false);
+                ti2 = SetIterator::tupleAtInternSimple(*sub, i2, tpl->at(ti + _baseRank), false);
 			}
 		}
 
@@ -1137,6 +1213,9 @@ namespace cmpl
 
             vp++;
             for (unsigned long i = 1; i < _baseCnt; i++, vp++) {
+                if (_modArray && i % _modArray == 0)
+                    vp = _array;
+
                 _index[i] = _index[i - 1] + SetBase::cnt(*vp);
             }
         }
@@ -1162,7 +1241,7 @@ namespace cmpl
                 if (so->negOrder()) {
                     _indexUseOrder = new unsigned long[_baseCnt];
                     for (unsigned long i = 0; i < _baseCnt; i++)
-                        _indexUseOrder[i] = (i==0 ? 0 : _indexUseOrder[i - 1]) + SetBase::cnt(_array[_baseCnt - 1 - i]);
+                        _indexUseOrder[i] = (i==0 ? 0 : _indexUseOrder[i - 1]) + SetBase::cnt(*subSet(_baseCnt - 1 - i));
                 }
                 else if (so->order()) {
                     ord = so->order();
@@ -1172,7 +1251,7 @@ namespace cmpl
             if (ord) {
                 _indexUseOrder = new unsigned long[_baseCnt];
                 for (unsigned long i = 0; i < _baseCnt; i++)
-                    _indexUseOrder[i] = (i==0 ? 0 : _indexUseOrder[i - 1]) + SetBase::cnt(_array[ord[i]]);
+                    _indexUseOrder[i] = (i==0 ? 0 : _indexUseOrder[i - 1]) + SetBase::cnt(*subSet(ord[i]));
             }
 
             if (freeOrd)

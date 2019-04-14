@@ -144,7 +144,13 @@ namespace cmpl
         }
 
         if (ac == 0) {
-            //TODO
+            if (op == ICS_OPER_MUL || op == ICS_OPER_DIV) {
+                res.set(op == ICS_OPER_MUL ? TP_SET_R1A : TP_SET_R1A_MNF);
+            }
+            else {
+                ctx->modp()->ctrl()->errHandler().internalError("illegal operation with no operand");
+                res.set(TP_INT, 0);
+            }
         }
         else if (ac == 1) {
             if (op == ICS_OPER_TRP) {
@@ -460,13 +466,11 @@ namespace cmpl
                 break;
 
             case ICS_OPER_MUL:
-                //TODO
-                ctx->modp()->ctrl()->errHandler().internalError("unary operation not implemented");
+                setMarkNF(ctx, res, se, a1, false);
                 break;
 
             case ICS_OPER_DIV:
-                //TODO
-                ctx->modp()->ctrl()->errHandler().internalError("unary operation not implemented");
+                setMarkNF(ctx, res, se, a1, true);
                 break;
 
             case ICS_OPER_NOT:
@@ -598,8 +602,7 @@ namespace cmpl
                     break;
 
                 case ICS_OPER_IRR:
-                    //TODO
-                    ctx->modp()->ctrl()->errHandler().internalError("binary operation not implemented");
+                    tplMatch(ctx, res, se, a1, a2);
                     break;
 
                 case ICS_OPER_OBJTO:
@@ -1729,9 +1732,47 @@ namespace cmpl
     void OperationBase::tplInSet(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a1, CmplVal *a2, bool opIn)
     {
         CmplValAuto set;
-        if (!SetUtil::setForInOrOf(ctx, set, *a2, opIn)) {
+
+        if (opIn && a2->isInterval()) {
+            // check whether number is within interval
+            if (a1->isScalarNumber()) {
+                res->set(TP_BIN, Interval::numInInterval(*a2, *a1));
+            }
+            else if (a1->isTuple() && Tuple::rank(*a1) == 1) {
+                CmplValAuto n;
+                if (a1->t == TP_ITUPLE || a1->t == TP_LIST_TUPLE)
+                    n.copyFrom(a1->t == TP_ITUPLE ? a1->tuple()->at(0) : &((ctx->stackCur() - a1->v.i)->val()));
+                else if (a1->t == TP_ITUPLE_1INT)
+                    n.set(TP_INT, a1->v.i);
+
+                res->set(TP_BIN, Interval::numInInterval(*a2, n));
+            }
+            else {
+                res->set(TP_BIN, false);
+            }
+
+            return;
+        }
+
+        if (!SetUtil::setForInOrOf(ctx, set, *a2, opIn, opIn)) {
             ctx->valueError((opIn ? "second argument must be a set" : "second argument must be an array"), *a2, se);
             res->set(TP_BIN, false);
+            return;
+        }
+
+        if (opIn && (set.isTuple() || set.t == TP_SET_INF_TPL)) {
+            try {
+                TupleMatching tm(ctx, TupleMatching::matchIn, *a1, set, true);
+                CmplValAuto t;
+                res->set(TP_BIN, tm.match(t));
+            }
+            catch (TupleMatchingValueException& ex) {
+                res->set(TP_BIN, false);
+                if (ex.invSrc())
+                    ctx->valueError("first argument must be an index value or tuple", *a1, se);
+                else
+                    ctx->valueError("second argument must be a tuple or set", *a2, se);
+            }
             return;
         }
 
@@ -1745,14 +1786,12 @@ namespace cmpl
             tpl.copyFrom(a1);
         }
         else if (a1->isScalarIndex()) {
-            tpl.set(TP_INDEX_VAL_TUPEL(a1->t), a1->v.i);
+            tpl.set(TP_INDEX_VAL_TUPLE(a1->t), a1->v.i);
         }
         else if (a1->isScalarValue()) {
             intType i;
             if (a1->toInt(i, typeConversionValue, ctx->modp()))
                 tpl.set(TP_ITUPLE_1INT, i);
-
-            //TODO: TP_INFINITE behandeln, ist in entsprechenden unendlichen Sets enthalten
         }
         else if (a1->isTuple() && a1->useValP()) {
             if (!TupleUtil::toIndexTuple(ctx, tpl, a1->tuple()))
@@ -1768,6 +1807,69 @@ namespace cmpl
         unsigned long num;
         bool b = SetUtil::tupleInSet(ctx, set, tpl, num);
         res->set(TP_BIN, b);
+    }
+
+
+    /**
+     * execute tuple matching operation "*>"
+     * @param ctx			execution context
+     * @param res			store for result value
+     * @param se			syntax element id of operation
+     * @param a1			argument one
+     * @param a2			argument two
+     */
+    void OperationBase::tplMatch(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a1, CmplVal *a2)
+    {
+        try {
+            TupleMatching tm(ctx, TupleMatching::matchReduce, *a1, *a2, true);
+            tm.match(*res);
+        }
+        catch (TupleMatchingValueException& ex) {
+            res->set(TP_SET_EMPTY);
+            if (ex.invSrc())
+                ctx->valueError("first argument must be a finite set", *a1, se);
+            else
+                ctx->valueError("second argument must be a tuple or set", *a2, se);
+        }
+    }
+
+
+    /**
+     * execute unary operation "/" or "*", for marking a set as non-free or free
+     * @param ctx			execution context
+     * @param res			store for result value
+     * @param se			syntax element id of operation
+     * @param a1			argument value
+     * @param mnf			true: mark as non-free / false: mark as free
+     */
+    void OperationBase::setMarkNF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a1, bool mnf)
+    {
+        if (res->isTuple() && res->useValP()) {
+            // recursive for all tuple parts
+            Tuple *tpl1 = a1->tuple();
+            unsigned r = tpl1->rank();
+
+            Tuple *tplr;
+            res->set(TP_TUPLE, (tplr = new Tuple(r)));
+
+            for (unsigned i = 0; i < r; i++) {
+                setMarkNF(ctx, tplr->at(i), se, tpl1->at(i), mnf);
+            }
+        }
+        else {
+            if (a1->t == TP_STRINGP)
+                a1->stringPToStr(ctx->modp());
+
+            if (a1->isInterval())
+                SetUtil::constructFromInterval(ctx, *res, *a1);
+            else
+                res->copyFrom(a1);
+
+            if (res->isSet() || res->isScalarIndex() || (res->isTuple() && !res->useValP()))
+                SetBase::setMarkNF(*res, mnf);
+            else
+                ctx->valueError("argument must be a set, tuple or index value", *a1, se);
+        }
     }
 
 

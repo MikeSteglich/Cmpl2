@@ -157,6 +157,31 @@ namespace cmpl
 	}
 
 
+    /**
+     * get whether a numerical value n is within an interval v
+     */
+    bool Interval::numInInterval(const CmplVal &v, const CmplVal &n)
+    {
+        if (!v.isInterval() || !n.isScalarNumber() || v.t == TP_INTERVAL_EMPTY) {
+            return false;
+        }
+        else if (n.t == TP_REAL) {
+            if ((hasUppBound(v) && uppBoundReal(v) < n.v.r) || (hasLowBound(v) && lowBoundReal(v) > n.v.r))
+                return false;
+        }
+        else if (n.t == TP_INFINITE) {
+            if ((hasUppBound(v) && n.v.i > 0) || (hasLowBound(v) && n.v.i < 0))
+                return false;
+        }
+        else {
+            if ((hasUppBound(v) && uppBoundInt(v) < n.v.i) || (hasLowBound(v) && lowBoundInt(v) > n.v.i))
+                return false;
+        }
+
+        return true;
+    }
+
+
 	/**
 	 * construct an interval from stack values
 	 * @param ctx			execution context

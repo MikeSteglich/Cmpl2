@@ -177,12 +177,13 @@ namespace cmpl
          * @param ctx			execution context
          * @param seta			set to search the tuple within
          * @param tup			tuple to search (can also be TP_LIST_TUPLE, then it must be the topmost element on the value stack of the execution context)
-         * @param num			return of the index number of the tuple within the set
+         * @param num			return of the index number of the tuple within the set (only if set is finite)
          * @param tps			start index of used tuple part
          * @param tpc			max count of indizes of used tuple part (searching for the longest tuple part not longer than tpc) / -1: up to the end of tuple (searching only for the full remaining tuple)
+         * @param fulltp        search only for tuple length tpc
          * @return 				count of indizes of found tuple part + 1
          */
-        static unsigned tupleInSet(ExecContext *ctx, const CmplVal &seta, const CmplVal &tup, unsigned long& num, unsigned tps = 0, int tpc = -1);
+        static unsigned tupleInSet(ExecContext *ctx, const CmplVal &seta, const CmplVal &tup, unsigned long& num, unsigned tps = 0, int tpc = -1, bool fulltp = false);
 
         /**
          * get set for operation "in" or "of"
@@ -190,9 +191,10 @@ namespace cmpl
          * @param set           return result set
          * @param src           source value (right operand in operation "in" or "of")
          * @param opIn          operation "in" (true) or "of" (false)
+         * @param toTuple       allow tuple as result
          * @return              source value is appropriate
          */
-        static bool setForInOrOf(ExecContext *ctx, CmplVal& set, CmplVal& src, bool opIn);
+        static bool setForInOrOf(ExecContext *ctx, CmplVal& set, CmplVal& src, bool opIn, bool toTuple = false);
 
         /**
          * get set of valid elements for array
@@ -250,7 +252,17 @@ namespace cmpl
          * @param woOrder       strip order from set
          * @return				true if result set is computed; false if source set is already in canonical representation
          */
-        static bool canonicalSet(CmplVal &res, const CmplVal &seta, bool woOrder = false);
+        static bool canonicalSet(CmplVal &res, CmplVal &seta, bool woOrder = false);
+
+        /**
+         * check if split of base set of SetFinite is possible, set <code>_baseSplit</code> within SetFinite </code>
+         * @param set			source set (must be TP_SET_FIN)
+         * @param uo            consider user order
+         * @param modarr        set also <code>_modArray</code> within SetFinite
+         * @param force         check split also if set is already in canonical representation
+         * @return              true if split is possible
+         */
+        static bool checkBaseSplitFinSet(CmplVal &set, bool uo, bool modarr = false, bool force = false);
 
     private:
         /**

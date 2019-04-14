@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.0.1, 2019-01-26T19:26:43. -->
+<!-- Written by QtCreator 4.0.1, 2019-02-13T23:44:49. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -168,9 +168,9 @@
     </valuelist>
     <value type="int" key="PE.EnvironmentAspect.Base">2</value>
     <valuelist type="QVariantList" key="PE.EnvironmentAspect.Changes"/>
-    <value type="QString" key="ProjectExplorer.CustomExecutableRunConfiguration.Arguments">prodmix-fc-data-sos.cmpl -fm -solver cplex</value>
+    <value type="QString" key="ProjectExplorer.CustomExecutableRunConfiguration.Arguments">tss2.cmpl -fm -mps-format cplex</value>
     <value type="QString" key="ProjectExplorer.CustomExecutableRunConfiguration.Executable">/home/thomas/Cmpl2/bin/cmpl</value>
-    <value type="QString" key="ProjectExplorer.CustomExecutableRunConfiguration.WorkingDirectory">%{buildDir}</value>
+    <value type="QString" key="ProjectExplorer.CustomExecutableRunConfiguration.WorkingDirectory">/home/thomas/Cmpl2/bin</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName">Run /home/thomas/Cmpl2/bin/cmpl</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName"></value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">ProjectExplorer.CustomExecutableRunConfiguration</value>

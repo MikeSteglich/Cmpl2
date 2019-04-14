@@ -233,55 +233,57 @@ namespace cmpl
             unsigned long n;
             return isScalarIn(setv, ind, n);
         }
-        else if (setv.isSetInf() && !set.useValP()) {
-            if (ind.isScalarIndex()) {
-                switch (setv.t) {
-                    case TP_SET_R1_LB_INF:
-                    case TP_SET_R1_LB_INF_MNF:
-                        return (ind.isScalarInt() && ind.v.i >= setv.v.i);
 
-                    case TP_SET_R1_INF_UB:
-                    case TP_SET_R1_INF_UB_MNF:
-                        return (ind.isScalarInt() && ind.v.i <= setv.v.i);
+        if (ind.isScalarIndex()) {
+            switch (setv.t) {
+                case TP_SET_R1_LB_INF:
+                case TP_SET_R1_LB_INF_MNF:
+                    return (ind.isScalarInt() && ind.v.i >= setv.v.i);
 
-                    case TP_SET_R1_IINF:
-                    case TP_SET_R1_IINF_MNF:
-                        return (ind.isScalarInt());
+                case TP_SET_R1_INF_UB:
+                case TP_SET_R1_INF_UB_MNF:
+                    return (ind.isScalarInt() && ind.v.i <= setv.v.i);
 
-                    case TP_SET_R1A:
-                    case TP_SET_R1A_MNF:
-                        return true;
+                case TP_SET_R1_IINF:
+                case TP_SET_R1_IINF_MNF:
+                    return (ind.isScalarInt());
 
-                    case TP_SET_R1A_INT:
-                    case TP_SET_R1A_INT_MNF:
-                        return (ind.isScalarInt() && ind.v.i >= 0);
+                case TP_SET_R1A:
+                case TP_SET_R1A_MNF:
+                    return true;
 
-                    case TP_SET_R1A_STR:
-                    case TP_SET_R1A_STR_MNF:
-                        return (ind.t == TP_STR);
+                case TP_SET_R1A_INT:
+                case TP_SET_R1A_INT_MNF:
+                    return (ind.isScalarInt() && ind.v.i >= 0);
 
-                    case TP_SET_ALL:
-                    case TP_SET_ALL_MNF:
-                        return true;
+                case TP_SET_R1A_STR:
+                case TP_SET_R1A_STR_MNF:
+                    return (ind.t == TP_STR);
 
-                    case TP_SET_ALL_INT:
-                    case TP_SET_ALL_INT_MNF:
-                        return (ind.isScalarInt() && ind.v.i >= 0);
+                case TP_SET_ALL:
+                case TP_SET_ALL_MNF:
+                    return true;
 
-                    case TP_SET_ALL_STR:
-                    case TP_SET_ALL_STR_MNF:
-                        return (ind.t == TP_STR);
+                case TP_SET_ALL_INT:
+                case TP_SET_ALL_INT_MNF:
+                    return (ind.isScalarInt() && ind.v.i >= 0);
 
-                    default:
-                        return false;
-                }
-            }
-            else {
-                throw invalid_argument("no suitable index value in SetIterator::isScalarIn()");
+                case TP_SET_ALL_STR:
+                case TP_SET_ALL_STR_MNF:
+                    return (ind.t == TP_STR);
+
+                case TP_SET_INF_TPL:
+                case TP_SET_INF_SET:
+                    // cannot handled here
+                    throw invalid_argument("no suitable infinite set in SetIterator::isScalarIn()");
+
+                default:
+                    if (!setv.isSetInf())
+                        throw invalid_argument("no suitable set in SetIterator::isScalarIn()");
             }
         }
         else {
-            throw invalid_argument("no suitable set in SetIterator::isScalarIn()");
+            throw invalid_argument("no suitable index value in SetIterator::isScalarIn()");
         }
 
         return false;
@@ -289,15 +291,19 @@ namespace cmpl
 
 
     /**
-     * check whether a scalar index value is an element of a finite set, and returns the index number of the element in the set
-     * @param set			set (must be a finite set)
+     * check whether a scalar index value is an element of a set, and returns the index number of the element in the set if finite
+     * @param set			set
      * @param ind			index value, must be int or string
-     * @param num			return of the index number of ind within set
+     * @param num			return of the index number of ind within set (only if set is a finite set)
      * @return 				true if ind is an element in set
      */
     bool SetIterator::isScalarIn(const CmplVal& set, const CmplVal& ind, unsigned long& num)
     {
         const CmplVal& setv = SET_VAL_WO_ORDER(set);
+
+        if (setv.isSetInf()) {
+            return isScalarIn(setv, ind);
+        }
 
         if (ind.isScalarIndex())
         {
@@ -505,7 +511,7 @@ namespace cmpl
                         ord[ob++] = ib;
 
                     for (i = 0; i < sf->_baseCnt; i++) {
-                        CmplVal& ss = sf->_array[ordb ? ordb[i] : i];
+                        CmplVal& ss = *(sf->subSet(ordb ? ordb[i] : i));
                         unsigned long ibs = ib + sf->indSubStart(ordb ? ordb[i] : i);
 
                         if (ss)
@@ -825,7 +831,7 @@ namespace cmpl
                     setTupleValOne(vs, tplInd, 0, (_reverse /*&& !_useOrder*/));
 				}
 			
-				if (sub && _sub && _set.t == TP_SET_FIN && _set.setFinite()->_array[tplInd])
+                if (sub && _sub && _set.t == TP_SET_FIN && *(_set.setFinite()->subSet(tplInd)))
 					_sub->setTupleValsAll(true);
 
                 //if (_useOrder) {
@@ -943,7 +949,7 @@ namespace cmpl
 					setTupleValsAll(false);
 
 				if (_set.t == TP_SET_FIN) {
-                    CmplVal *svp = _set.setFinite()->_array + _indBase; // (_useOrder ? _tplIndBase : _indBase);
+                    CmplVal *svp = _set.setFinite()->subSet(_indBase); // (_useOrder ? _tplIndBase : _indBase);
 					if (*svp) {
 						checkGetSubIterator(svp);
 						_sub->iterInternStart(sv, false);
@@ -993,7 +999,7 @@ namespace cmpl
 					return true;
 				}
 
-                if (_set.setFinite()->_array[(/*_useOrder ? _tplIndBase :*/ _indBase)]) {
+                if (*(_set.setFinite()->subSet(/*_useOrder ? _tplIndBase :*/ _indBase))) {
 					if (_sub->iterInternNext(sv)) {
                         //if (_useOrder)
                         //	_tplInd = (_set.setFinite()->_minRank == 0 ? 1 : 0) + (_tplIndBase == 0 ? 0 : _set.setFinite()->_index[_tplIndBase-1]) + _sub->tupleIndex();
@@ -1076,7 +1082,7 @@ namespace cmpl
 			}
 
 			if (_set.t == TP_SET_FIN) {
-                CmplVal *svp = _set.setFinite()->_array + _indBase; //(_useOrder ? _tplIndBase : _indBase);
+                CmplVal *svp = _set.setFinite()->subSet(_indBase); //(_useOrder ? _tplIndBase : _indBase);
 				if (*svp) {
 					checkGetSubIterator(svp);
 					_sub->iterInternStart(sv, false);

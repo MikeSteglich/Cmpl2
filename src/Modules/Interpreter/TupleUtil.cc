@@ -360,13 +360,15 @@ namespace cmpl
                     tp = TP_SET_EMPTY;
                 else if (!Interval::isSet(*e))
                     return false;
-                else if (Interval::isSetInf(*e))
+                else if (Interval::isSetInf(*e) || tp == TP_SET_ALL)
                     tp = TP_SET_INF_TPL;
                 else if (tp != TP_SET_INF_TPL)
                     tp = TP_SET_FIN;
             }
             else if (e->isSet()) {
-                if (tp != TP_SET_INF_TPL)
+                if (tp == TP_SET_ALL)
+                    tp = TP_SET_INF_TPL;
+                else if (tp != TP_SET_INF_TPL)
                     tp = (e->isSetInf() ? TP_SET_INF_TPL : TP_SET_FIN);
             }
             else {
@@ -399,94 +401,6 @@ namespace cmpl
         }
 
         return true;
-
-
-        /*
-        //TODO: Behandlung anderer Tuple, insbesondere mit unendlichen Sets und mit TP_SET_FIN
-        //  generell (oder nur partiell?) durch andere neue Funktion zu ersetzen: SetUtil::tupleToSet()
-        if (e1->t == TP_BLANK || e1->t == TP_SET_ALL) {
-            //TODO: hier werden erstmal nur alle Darstellungen von TP_SET_ALL behandelt
-            for (unsigned i = 1; i < r; i++) {
-                if (tpl->at(i)->t != TP_BLANK && tpl->at(i)->t != TP_SET_ALL)
-                    return false;
-            }
-            res.set(TP_SET_ALL);
-        }
-        else if (r == 1) {
-            if (e1->isScalarIndex()) {
-                res.set((e1->t == TP_STR ? TP_ITUPLE_1STR : TP_ITUPLE_1INT), e1->v.i);
-            }
-            else if (e1->isSet()) {
-                res.copyFrom(e1, true, false);
-            }
-            else if (e1->isInterval() && (Interval::isSet(*e1) || Interval::isEmpty(*e1))) {
-                if (Interval::isEmpty(*e1))
-                    res.set(TP_SET_EMPTY);
-                else
-                    SetUtil::constructFromInterval(ctx, res, *e1);
-            }
-            else {
-                return false;
-            }
-        }
-        else {
-            unsigned rr = 0;
-            CmplVal *ei;
-            bool bs = false;
-
-            // determine rank for result set
-            for (unsigned i = 0; i < r; i++) {
-                ei = tpl->at(i);
-                if (Interval::isEmpty(*ei)) {
-                    res.set(TP_SET_EMPTY);
-                    return true;
-                }
-                else if (ei->isScalarIndex()) {
-                    rr++;
-                }
-                else if ((ei->isSet() && SetBase::finiteRank1(*ei)) || Interval::isSetFin(*ei)) {
-                    rr++;
-                    bs = true;
-                }
-                else if (ei->t == TP_SET_REC_MULT) {
-                    rr += ei->setRecMult()->maxRank();
-                    bs = true;
-                }
-                else {
-                    return false;
-                }
-            }
-
-            // construct set or index tuple
-            if (bs) {
-                CmplVal *arr = new CmplVal[rr];
-                for (unsigned i = 0; i < r; i++) {
-                    ei = tpl->at(i);
-                    if (ei->isScalarIndex() || (ei->isSet() && SetBase::finiteRank1(*ei))) {
-                        arr[i].copyFrom(ei, true, false);
-                    }
-                    else if (Interval::isSetFin(*ei)) {
-                        SetUtil::constructFromInterval(ctx, arr[i], *ei);
-                    }
-                    else if (ei->t == TP_SET_REC_MULT) {
-                        SetRecMult *srm = ei->setRecMult();
-                        for (unsigned j = 0; j < srm->maxRank(); j++, i++)
-                            arr[i].copyFrom(srm->partSet(j), true, false);
-                    }
-                }
-                SetRecMult *ns = new SetRecMult(rr, arr);
-                res.set(TP_SET_REC_MULT, ns);
-            }
-            else {
-                Tuple *nt = new Tuple(rr, 0, Tuple::tupleIndexOnly);
-                for (unsigned i = 0; i < r; i++)
-                    nt->at(i)->copyFrom(tpl->at(i), true, false);
-                res.set(TP_ITUPLE, nt);
-            }
-        }
-
-        return true;
-        */
     }
 
 
@@ -524,7 +438,7 @@ namespace cmpl
             }
 
             if (conv) {
-                vector<CmplVal> dtp;
+                vector<CmplValAuto> dtp;
                 dtp.reserve(maxRank);
 
                 p = tpl->at(0);
@@ -532,16 +446,16 @@ namespace cmpl
                     if (p->t != TP_NULL && p->t != TP_SET_NULL) {
                         if (p->isSet() && !SetBase::rank1(*p)) {
                             if (!p->useValP() || p->setBase()->isCanonical()) {
-                                SetBase::partsToVector(*p, dtp);
+                                SetBase::partsToVector(*p, dtp, true);
                             }
                             else {
                                 CmplValAuto pc;
                                 bool b = SetUtil::canonicalSet(pc, *p);
-                                SetBase::partsToVector((b ? pc : *p), dtp);
+                                SetBase::partsToVector((b ? pc : *p), dtp, true);
                             }
                         }
                         else {
-                            dtp.push_back(CmplVal(p));
+                            dtp.emplace_back(p);
                         }
                     }
                 }
@@ -551,7 +465,7 @@ namespace cmpl
                     res.set(TP_ITUPLE_NULL);
                 }
                 else if (r == 1 && dtp[0].isScalarIndex()) {
-                    res.set(TP_INDEX_VAL_TUPEL(dtp[0].t), dtp[0].v.i);
+                    res.set(TP_INDEX_VAL_TUPLE(dtp[0].t), dtp[0].v.i);
                 }
                 else {
                     Tuple *dest = new Tuple(r);
@@ -569,7 +483,7 @@ namespace cmpl
         else {
             if (src.isScalarIndex()) {
                 src.stringPToStr(ctx->modp());
-                res.set(TP_INDEX_VAL_TUPEL(src.t), src.v.i);
+                res.set(TP_INDEX_VAL_TUPLE(src.t), src.v.i);
             }
             else if (src.t == TP_NULL || src.t == TP_SET_NULL) {
                 res.set(TP_ITUPLE_NULL);
@@ -594,9 +508,10 @@ namespace cmpl
      * @param ctx			execution context
      * @param res           store for result tuple
      * @param src           source tuple
+     * @param tcr			transform result tuple to canonical set representation
      * @return              true if tuple only contains simple index values, sets, or elements with type TP_DEF_CB_SYM
      */
-    bool TupleUtil::asTupleIndexOrSet(ExecContext *ctx, CmplVal& res, CmplVal& src)
+    bool TupleUtil::asTupleIndexOrSet(ExecContext *ctx, CmplVal& res, CmplVal& src, bool tcr)
     {
         bool b = true;
 
@@ -640,13 +555,19 @@ namespace cmpl
                     }
                 }
 
-                if (b)
-                    canonicalTuple(ctx, res, (rr ? rr : src));
+                if (b) {
+                    if (tcr)
+                        canonicalTuple(ctx, res, (rr ?: src));
+                    else if (rr)
+                        res.moveFrom(rr);
+                    else
+                        res.copyFrom(src);
+                }
             }
         }
         else if (src.isScalarIndex()) {
             src.stringPToStr(ctx->modp());
-            res.set(TP_INDEX_VAL_TUPEL(src.t), src.v.i);
+            res.set(TP_INDEX_VAL_TUPLE(src.t), src.v.i);
         }
         else {
             b = SetUtil::convertToSetOrTuple(ctx, res, src, typeConversionExact);
@@ -911,7 +832,30 @@ namespace cmpl
     /****** TupleMatching ****/
 
     /**
-     * try to match the tuple with the elements of the tuple set and make a result set of all matching tuples
+     * constructor
+     * @param ctx			execution context
+     * @param mode          matching mode
+     * @param src           source tuple (mode == matchIn) or finite set
+     * @param pat           tuple pattern to match <code>src</code> against
+     * @param uo            use user order
+     */
+    TupleMatching::TupleMatching(ExecContext *ctx, Mode mode, const CmplVal& src, const CmplVal& pat, bool uo):
+        _ctx(ctx), _mode(mode), _useOrder(uo), _assInfo(NULL), _resIndex(NULL), _minRank(NULL), _maxRank(NULL)
+    {
+        CmplValAuto t(src);
+        if (!TupleUtil::asTupleIndexOrSet(ctx, _src, t, false)) {
+            throw TupleMatchingValueException("value contains inappropriate values for tuple matching", true);
+        }
+
+        t.copyFrom(pat);
+        if (!TupleUtil::asTupleIndexOrSet(ctx, _pat, t, true)) {
+            throw TupleMatchingValueException("value contains inappropriate values for tuple matching", false);
+        }
+    }
+
+
+    /**
+     * try to match _src with the elements of the tuple pattern _pat and make a result set of all matching tuples
      * @param res           store for result set
      * @return              true if any matching tuples, then result set is filled
      */
@@ -923,53 +867,59 @@ namespace cmpl
         releaseResult();
         res.set(TP_SET_EMPTY);
 
-        if (!_set.isSet()) {
-            CmplValAuto t;
-            if (!SetUtil::convertToSetOrTuple(_ctx, t, _set, typeConversionExact, false))
-                throw TupleMatchingValueException("value must be a set", true);
+        CmplValAuto patOrg(TP_EMPTY);
+        if (_mode == matchIter)
+            patOrg.copyFrom(_pat);
 
-            _set.moveFrom(t, true);
-        }
-        else if (_set.isSetInf() && _mode != matchIn) {
-            throw TupleMatchingValueException("value must be a finite set", true);
-        }
-
-        if (_set.t != TP_SET_EMPTY)
+        prepareSource();
+        if (_srcCnt)
             prepareTuple();
 
         if (_mode == matchIter && !_freePos.empty())
-            _assInfo = new CBAssignInfoComplex(_tpl, &_freePos);
+            _assInfo = new CBAssignInfoComplex(patOrg, &_freePos);
         else if (_mode == matchIndex)
             _resIndex = new vector<unsigned long>();
 
 
-        if (!_tpl || _set.t == TP_SET_EMPTY) {
+        if (!_pat || !_srcCnt) {
             if (_mode == matchIndex && _freePos.empty())
                 throw TupleMatchingValueException("array doesn't contain element with given index tuple", false);
         }
 
         else if (_indexTuple) {
-            b = SetUtil::tupleInSet(_ctx, _set, _tpl, ind);
-            if (b) {
-                reduceAddTuple(res, _tpl, _minRank, false, ind);
+            if (!_src.isSet()) {
+                CmplValAuto t;
+                if (!SetUtil::convertToSetOrTuple(_ctx, t, _src, typeConversionExact, false))
+                    throw TupleMatchingValueException("value must be a tuple or set", true);
+                _src.moveFrom(t, true);
             }
-            else {
-                if (_mode == matchIndex && _freePos.empty())
+
+            b = SetUtil::tupleInSet(_ctx, _src, _pat, ind);
+            if (b) {
+                reduceAddTuple(res, _pat, _minRank, false, ind);
+            }
+            else if (_mode == matchIndex && _freePos.empty()) {
                     throw TupleMatchingValueException("array doesn't contain element with given index tuple", false);
             }
         }
 
-        else if (_oneRank && !_infTpl && (_set.isSetInf() || _tplCnt < SetBase::cnt(_set)) && (!_useOrder || !SetBase::hasUserOrder(_set) || (_mode != matchIter && _mode != matchReduce)))
+        else if (_oneRank && !_infTpl && _tplCnt < _srcCnt && (!_useOrder || !_srcUO || (_mode != matchIter && _mode != matchReduce)))
         {
-            CmplValAuto tplSet;
-            if (!SetUtil::convertToSetOrTuple(_ctx, tplSet, _tpl, typeConversionExact, false))
-                throw TupleMatchingValueException("value invalid for tuple matching", false);
+            if (!_src.isSet()) {
+                CmplValAuto t;
+                if (!SetUtil::convertToSetOrTuple(_ctx, t, _src, typeConversionExact, false))
+                    throw TupleMatchingValueException("value must be a tuple or set", true);
+                _src.moveFrom(t, true);
+            }
 
-            SetIterator it(tplSet, SetIterator::iteratorTupleSimple, _useOrder);
+            bool uo = (_useOrder && _patOrder != 1 && _mode != matchIn);
+            TupleIterator it(_ctx, _pat, uo);
+            _patOrder = 0;
+
             for (it.begin(); it; it++) {
-                if (SetUtil::tupleInSet(_ctx, _set, *it, ind)) {
+                if (SetUtil::tupleInSet(_ctx, _src, *it, ind)) {
                     b = true;
-                    reduceAddTuple(res, *it, _minRank, _useOrder, ind);
+                    reduceAddTuple(res, *it, _minRank, uo, ind);
 
                     if (_freePos.empty())
                         break;
@@ -979,25 +929,28 @@ namespace cmpl
 
         else
         {
-            if (_set.isSetInf())
-                throw TupleMatchingValueException("set for tuple matching must be a finite set", 1);
-
             unique_ptr<unsigned[]> amp{new unsigned[_tplRank]};
             unsigned *am = amp.get();
 
-            SetIterator it(_set, SetIterator::iteratorTupleSimple, _useOrder);
+            TupleIterator it(_ctx, _src, (_patOrder || _mode == matchIn ? false : _useOrder));
+            bool uo = (_useOrder && _patOrder != 1 && _mode != matchIn);
+
             for (it.begin(); it; it++) {
                 if (singleMatch(*it, am)) {
                     b = true;
-                    reduceAddTuple(res, *it, am, _useOrder, it.curIndex());
+                    reduceAddTuple(res, *it, am, uo, it.curIndex());
 
                     if (_freePos.empty())
                         break;
                 }
             }
+
+            // TODO: wenn _useOrder && _patOrder == 2:
+            //  separat aufgebaute user order noch res hinzufuegen
         }
 
         if (b) {
+            //TODO: ist das hier wirklich immer noetig (besser ueber Parameter bestimmen ob)
             CmplVal t;
             if (SetUtil::canonicalSet(t, res))
                 res.moveFrom(t, true);
@@ -1045,34 +998,81 @@ namespace cmpl
 
 
     /**
-     * prepare <code>_tpl</code> for matching, and fills temporary instance variables
+     * prepare <code>_src</code> for matching
+     */
+    void TupleMatching::prepareSource()
+    {
+        _srcCnt = 1;
+        _srcMaR = 0;
+        _srcUO = false;
+
+        if (!_src.isSet() && !_src.isTuple()) {
+            CmplValAuto t;
+            if (!SetUtil::convertToSetOrTuple(_ctx, t, _src, typeConversionExact, true))
+                throw TupleMatchingValueException("value must be a tuple or set", true);
+            _src.moveFrom(t, true);
+        }
+
+        if (_src.isITuple()) {
+            _srcMaR = Tuple::rank(_src);
+        }
+        else {
+            if (_src.isTuple() && _src.useValP()) {
+                Tuple *tpl = _src.tuple();
+                unsigned r = tpl->rank();
+
+                CmplVal *p = tpl->at(0);
+                for (unsigned i = 0; i < r; i++, p++) {
+                    if (p->isSetFin()) {
+                        _srcCnt *= SetBase::cnt(*p);
+                        _srcMaR += SetBase::maxRank(*p);
+                        _srcUO = _srcUO || SetBase::hasUserOrder(*p);
+                    }
+                    else if (p->isScalarIndex()) {
+                        _srcMaR++;
+                    }
+                    else {
+                        throw TupleMatchingValueException("value must be a finite set", true);
+                    }
+                }
+            }
+            else if (_src.isSetFin()) {
+                _srcCnt = SetBase::cnt(_src);
+                _srcMaR = SetBase::maxRank(_src);
+                _srcUO = SetBase::hasUserOrder(_src);
+            }
+            else {
+                throw TupleMatchingValueException("value must be a finite set", true);
+            }
+
+            if (_mode == matchIn && _srcCnt != 1)
+                throw TupleMatchingValueException("value must be a single index tuple", true);
+        }
+    }
+
+
+    /**
+     * prepare <code>_pat</code> for matching, and fills temporary instance variables
      */
     void TupleMatching::prepareTuple()
     {
-        CmplValAuto res;
-
-        // tuple can only contain simple index values, sets, or elements with type TP_DEF_CB_SYM
-        if (!TupleUtil::asTupleIndexOrSet(_ctx, res, _tpl))
-            throw TupleMatchingValueException("tuple value contains inappropriate values for tuple matching", false);
-
         // if set is given instead of tuple then convert it to canonical tuple
-        if (res.isSet()) {
-            bool sr1 = SetBase::rank1(res);
+        if (_pat.isSet()) {
+            bool sr1 = SetBase::rank1(_pat);
             Tuple *tpl = new Tuple(1);
 
-            tpl->at(0)->moveFrom(res, false);
-            res.set(TP_TUPLE, tpl);
+            tpl->at(0)->moveFrom(_pat, false);
+            _pat.set(TP_TUPLE, tpl);
 
             if (!sr1) {
                 CmplVal t;
-                TupleUtil::canonicalTuple(_ctx, t, res);
-                res.moveFrom(t, true);
+                TupleUtil::canonicalTuple(_ctx, t, _pat);
+                _pat.moveFrom(t, true);
             }
         }
 
         // check elements of tuple
-        unsigned r = Tuple::rank(res);
-        unsigned maxRankSet = SetBase::maxRank(_set);
+        unsigned r = Tuple::rank(_pat);
         unsigned miR, maR;
 
         _freePos.clear();
@@ -1083,45 +1083,50 @@ namespace cmpl
         _infTpl = false;
         _tplCnt = 1;
         _minRankSum = 0;
+        _patOrder = 0;
 
         if (r) {
             _minRank = new unsigned[r];
             _maxRank = new unsigned[r];
 
-            if (res.useValP()) {
-                Tuple *ts = res.tuple();
+            if (_pat.useValP()) {
+                Tuple *ts = _pat.tuple();
                 Tuple *tr = NULL;
                 CmplValAuto n, nt;
 
                 CmplVal *e = ts->at(0);
                 for (unsigned i = 0; i < r; i++, e++) {
                     if (e->t == TP_DEF_CB_SYM) {
-                        if (_mode == matchIter) {
-                            // replace TP_DEF_CB_SYM by TP_SET_ALL
-                            n.set(TP_SET_ALL);
-                            _freePos.push_back(i);
-                        }
-                        else {
+                        if (_mode != matchIter)
                             throw TupleMatchingValueException("tuple value contains inappropriate values for tuple matching", false);
-                        }
-                    }
-                    else if (e->isSet() && !SetBase::markNF(e)) {
-                        if (_mode == matchReduce || _mode == matchIndex)
-                            _freePos.push_back(i);
 
+                        // replace TP_DEF_CB_SYM by TP_SET_ALL
+                        n.set(TP_SET_ALL);
+                        _freePos.push_back(i);
+                    }
+                    else if (e->isSet()) {
                         if (e->t == TP_SET_1INT || e->t == TP_SET_1STR)
                             n.set(TP_INDEX_VAL_BASE(e->t), e->v.i);
-                    }
-                    else if (e->t == TP_SET_EMPTY) {
-                        _infTpl = false;
-                        _tplCnt = 0;
-                        break;
+                        else if (_mode == matchIter)
+                            throw TupleMatchingValueException("tuple value contains inappropriate values for tuple matching", false);
+
+                        if (e->t == TP_SET_EMPTY) {
+                            _infTpl = false;
+                            _tplCnt = 0;
+                            break;
+                        }
+                        else if ((_mode == matchReduce || _mode == matchIndex) && !SetBase::markNF(e)) {
+                            _freePos.push_back(i);
+
+                            if (_mode == matchIndex && _patOrder < 2 && ((e->isSetFin() && SetBase::cnt(e) > 1) || e->t == TP_SET_R1_LB_INF || e->t == TP_SET_R1A_INT || e->t == TP_SET_ALL_INT))
+                                _patOrder = (SetBase::hasUserOrder(e) ? 2 : 1);
+                        }
                     }
 
-                    CmplVal& vr = (n ? n : *e);
+                    CmplVal& vr = (n ?: *e);
                     if (vr.isSet()) {
                         miR = SetBase::minRank(vr);
-                        maR = SetBase::maxRank(vr, maxRankSet);
+                        maR = SetBase::maxRank(vr, _srcMaR);
                         _indexTuple = false;
 
                         if (!_infTpl) {
@@ -1157,35 +1162,36 @@ namespace cmpl
                 }
 
                 if (nt)
-                    res.moveFrom(nt, true);
+                    _pat.moveFrom(nt, true);
             }
             else {
-                // <code>res</code> can only be a rank 1 index tuple
+                // <code>_pat</code> can only be a rank 1 index tuple
                 _minRank[0] = 1;
                 _maxRank[0] = 1;
                 _minRankSum = 1;
             }
         }
 
-        if ((!_infTpl && !_tplCnt) || _minRankSum > maxRankSet) {
-            res.dispUnset();
+        if ((!_infTpl && !_tplCnt) || _minRankSum > _srcMaR) {
+            _pat.dispUnset();
             _freePos.clear();
             DELETE_UNSET(_minRank);
             DELETE_UNSET(_maxRank);
         }
         else if (_oneRank) {
             DELETE_UNSET(_maxRank);
+            _maxRankSum = _minRankSum;
             _firstDiffRank = _afterDiffRank = 0;
         }
         else {
-            if (_minRankSum == maxRankSet) {
+            if (_minRankSum == _srcMaR) {
                 _oneRank = true;
                 DELETE_UNSET(_maxRank);
                 _maxRankSum = _minRankSum;
                 _firstDiffRank = _afterDiffRank = 0;
             }
             else {
-                unsigned dr = maxRankSet - _minRankSum;
+                unsigned dr = _srcMaR - _minRankSum;
                 _maxRankSum = 0;
                 _afterDiffRank = 0;
 
@@ -1205,7 +1211,6 @@ namespace cmpl
         }
 
         _tplRank = r;
-        _tpl.moveFrom(res, true);
     }
 
 
@@ -1234,12 +1239,12 @@ namespace cmpl
         else if (_tplRank == 1)
         {
             *am = itr;
-            if (!_tpl.useValP()) {
+            if (!_pat.useValP()) {
                 // _maxRankSum can only be 1 here, so itr must be also 1
-                return (it.v.i == _tpl.v.i && it.t == TP_INDEX_VAL_BASE(_tpl.t));
+                return (it.v.i == _pat.v.i && it.t == TP_INDEX_VAL_BASE(_pat.t));
             }
             else {
-                CmplVal *v = _tpl.tuple()->at(0);
+                CmplVal *v = _pat.tuple()->at(0);
                 if (v->isSet())
                     return SetUtil::tupleInSet(_ctx, v, it, dummy);
                 else
@@ -1253,7 +1258,7 @@ namespace cmpl
 
             for (i = 0; i < _tplRank; i++) {
                 if (_minRank[i] == 1 || (!_minRankSum && _maxRank[i])) {
-                    CmplVal *v = _tpl.tuple()->at(i);
+                    CmplVal *v = _pat.tuple()->at(i);
                     if (v->isSet())
                         b = SetUtil::tupleInSet(_ctx, v, it, dummy);
                     else
@@ -1277,7 +1282,7 @@ namespace cmpl
         else
         {
             // match parts before first element with diffRank
-            Tuple *mtpl = _tpl.tuple();
+            Tuple *mtpl = _pat.tuple();
             Tuple *itpl = it.tuple();
 
             unsigned ft = (_oneRank || itr == _minRankSum ? _tplRank : _firstDiffRank);
@@ -1383,14 +1388,14 @@ namespace cmpl
 
             else {
                 // determine corrected range for minimal and maximal rank for element at t1f
-                miR = maR = 0;
+                unsigned miRt = 0, maRt = 0;
                 for (i1 = t1f + 1; i1 < t1t; i1++) {
-                    miR += _minRank[i1];
-                    maR += _maxRank[i1];
+                    miRt += _minRank[i1];
+                    maRt += _maxRank[i1];
                 }
 
-                miR = max(_minRank[t1f], (t2t - t2f > maR ? t2t - t2f - maR : 0));
-                maR = min(_maxRank[t1f], (t2t - t2f > miR ? t2t - t2f - miR : 0));
+                miR = max(_minRank[t1f], (t2t - t2f > maRt ? t2t - t2f - maRt : 0));
+                maR = min(_maxRank[t1f], (t2t - t2f > miRt ? t2t - t2f - miRt : 0));
 
                 if (miR > maR)
                     return false;
@@ -1448,16 +1453,17 @@ namespace cmpl
                 return (mr == 0);
             }
             else {
-                p = itpl->at(rf);
                 unsigned long dummy;
 
-                if (rc == 1)
+                if (rc == 1) {
+                    p = itpl->at(rf);
                     return SetUtil::tupleInSet(_ctx, set, p, dummy);
-
-                //TODO
-                //	wie simpleIn, aber nur mit Teil des Tupels
-                //	gibt es das schon (sollte eigentlich)?
-                return false;
+                }
+                else {
+                    CmplVal vtpl(TP_TUPLE, itpl, false);
+                    unsigned t = SetUtil::tupleInSet(_ctx, set, vtpl, dummy, rf, rc);
+                    return (t == rc + 1);
+                }
             }
         }
         else if (rc == 1) {
@@ -1474,13 +1480,19 @@ namespace cmpl
      * reduce given tuple according to positions in <code>_freePos</code>, then add it to result set
      * @param res           result set
      * @param tpl           source tuple
-     * @param ranks         rank per element in match tuple <code>_tpl</code>
+     * @param ranks         rank per element in match tuple <code>tpl</code>
      * @param uo            add to result set with user order
      * @param srcInd        index of tuple in source set
      * @return              true if tuple is added to result set / false if tuple was already in result set
      */
     bool TupleMatching::reduceAddTuple(CmplVal& res, const CmplVal& tpl, unsigned *ranks, bool uo, unsigned long srcInd)
     {
+        //TODO: Beruecksichtigung Reihenfolge aus _pat: wenn uo && _patOrder == 2
+        //  Dann addTupleToSet (und res) hier doch ohne uo, neue userOrder wird hier unabhaengig davon aufgebaut, und am Schluss hinzugefuegt.
+        //  Vergleich Tuples in res mit dem neuen Tuple tpl bezueglich der Reihenfolge aus _pat ist nur moeglich, wenn die Zuordnung der Teile der Tuples auf die Teile von _pat bekannt ist.
+        //      Es muss deshalb auch fuer alle schon eingefuegten Tuples in res die Zuordnung noch aufgehoben werden.
+        //      _assInfo schon dafuer geeignet?
+
         CmplValAuto redTpl;
         if (_freePos.empty()) {
             redTpl.set(TP_ITUPLE_NULL);
@@ -1504,7 +1516,7 @@ namespace cmpl
                             r += ranks[i];
 
                         const CmplVal *v = Tuple::at(tpl, r);
-                        redTpl.set(TP_INDEX_VAL_TUPEL(v->t), v->v.i);
+                        redTpl.set(TP_INDEX_VAL_TUPLE(v->t), v->v.i);
                         break;
                     }
                 }
@@ -1552,6 +1564,108 @@ namespace cmpl
         }
 
         return b;
+    }
+
+
+
+    /****** TupleIterator ****/
+
+    /**
+     * iterate to the first or next tuple
+     * @param start			start or restart the iteration
+     */
+    void TupleIterator::iterIntern(bool start)
+    {
+        if (start) {
+            _sub.clear();
+            _ind = 0;
+            _ended = false;
+            _cur.dispUnset();
+
+            if (_tpl.isITuple()) {
+                _cur.copyFrom(_tpl);
+            }
+            else {
+                if (_tpl.isTuple())
+                    _rank = Tuple::rank(_tpl);
+                else
+                    _rank = 1;
+
+                if (_rank) {
+                    _sub.resize(_rank);
+
+                    unsigned mr = _rank;
+                    for (unsigned r = 0; r < _rank; r++) {
+                        const CmplVal *e = (_tpl.isTuple() ? Tuple::at(_tpl, r) : &_tpl);
+                        if (e->isSet()) {
+                            _sub[r].init(e, SetIterator::iteratorTupleVal, _useOrder, _reverse);
+                            mr += SetBase::maxRank(e);
+                        }
+                        else {
+                            CmplValAuto s;
+                            if (e->isInterval())
+                                SetUtil::constructFromInterval(_ctx, s, *e);
+                            else if (e->isScalarIndex())
+                                s.set(TP_INDEX_VAL_SET(e->t), e->v.i);
+                            else if (e->t == TP_ITUPLE_NULL)
+                                s.set(TP_SET_NULL);
+
+                            _sub[r].init(s, SetIterator::iteratorTupleVal, _useOrder, _reverse);
+                        }
+
+                        _sub[r].begin();
+
+                        if (_sub[r].ended()) {
+                            _ended = true;
+                            break;
+                        }
+                    }
+
+                    if (!_ended) {
+                        if (_rank == 1) {
+                            _cur.copyFrom(_sub[0].curTuple());
+                        }
+                        else {
+                            _cur.set(TP_ITUPLE, new Tuple(0, mr, Tuple::tupleIndexOnly));
+                            _cur.tuple()->concatIter(_sub, 0);
+                        }
+                    }
+                }
+            }
+        }
+
+        else if (!_ended) {
+            _ind++;
+
+            if (_tpl.isITuple()) {
+                _cur.dispUnset();
+                _ended = true;
+            }
+            else if (_rank == 1) {
+                _sub[0]++;
+                _cur.copyFrom(_sub[0].curTuple());
+                _ended = _sub[0].ended();
+            }
+            else {
+                unsigned r = _rank - 1;
+                while (true) {
+                    _sub[r]++;
+                    if (_sub[r] || r == 0)
+                        break;
+
+                    _sub[r].begin();
+                    r--;
+                }
+
+                if (_sub[0]) {
+                    _cur.tuple()->concatIter(_sub, r);
+                }
+                else {
+                    _cur.dispUnset();
+                    _ended = true;
+                }
+            }
+        }
     }
 
 }

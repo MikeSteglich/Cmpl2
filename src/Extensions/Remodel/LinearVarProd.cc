@@ -160,6 +160,9 @@ namespace cmpl
     {
         unsigned cnt = 0;
 
+        //TODO: Nachbehandlung ValFormulaLinearCombOp ueber checkLinear fehlt, wenn ValFormulaLinearCombOp auf der Hauptebene
+        //TODO (anderswo): wenn Zielfunktion ohne Richtung, dann nicht als Zielfunktionstyp dargestellt?
+
         unsigned pc = f->partCount();
         for (unsigned i = 0; i < pc; i++) {
             CmplVal *p = f->getPart(i);
@@ -180,21 +183,15 @@ namespace cmpl
                 else {
                     // recursive search
                     ValFormulaLinearCombBase *vcb = dynamic_cast<ValFormulaLinearCombBase *>(pf);
-                    if (!vcb || !(vcb->linearConstraint())) {
-                        unsigned lin = remodelRecVarProd(modp, om, pf);
-
-                        if (lin) {
-                            cnt += lin;
-                            if (vcb) {
-                                ValFormulaLinearCombOp *vco = dynamic_cast<ValFormulaLinearCombOp *>(vcb);
-                                if (vco)
-                                    vco->checkLinear(modp->baseExecCtx());
-                            }
-                        }
-                    }
+                    if (!vcb || !(vcb->linearConstraint()))
+                        cnt += remodelRecVarProd(modp, om, pf);
                 }
             }
         }
+
+        ValFormulaLinearCombOp *vco;
+        if (cnt && (vco = dynamic_cast<ValFormulaLinearCombOp *>(f)))
+            vco->checkLinear(modp->baseExecCtx());
 
         return cnt;
     }

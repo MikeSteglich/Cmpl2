@@ -1,7 +1,7 @@
 SetUtil.o SetUtil.d : SetUtil.cc SetUtil.hh ../../CommonData/CmplVal.hh \
  ../../CommonData/Tuple.hh ../../CommonData/CmplVal.hh \
- ../../CommonData/SetBase.hh ../../CommonData/Tuple.hh TupleUtil.hh \
- Interval.hh Interpreter.hh ../../Control/ModuleBase.hh \
+ ../../CommonData/SetBase.hh ../../CommonData/Tuple.hh SetInfinite.hh \
+ TupleUtil.hh Interval.hh Interpreter.hh ../../Control/ModuleBase.hh \
  ../../Control/CmdLineOptList.hh ../../Control/LocationInfo.hh \
  ../../Control/MainData.hh ../../Control/StringStore.hh \
  ../../Control/ErrorHandler.hh ../../Control/ThreadHandler.hh \

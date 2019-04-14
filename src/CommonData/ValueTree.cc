@@ -175,7 +175,7 @@ namespace cmpl
         }
         else if (r == 1) {
             getIndexOfLevel(levelFrom, res);
-            res.t = TP_INDEX_VAL_TUPEL(res.t);
+            res.t = TP_INDEX_VAL_TUPLE(res.t);
         }
         else {
             Tuple *tpl = new Tuple(r, 0, Tuple::tupleIndexOnly);

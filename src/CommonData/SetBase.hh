@@ -124,9 +124,10 @@ namespace cmpl
         /**
          * push all tuple divisible parts in a vector
          * @param dtp       vector to push parts in
+         * @param uo        consider user order
          * @return          true if parts are pushed to vector; false if set is not tuple divisible
          */
-        virtual bool partsToVector(vector<CmplVal>& dtp) const      { return false; }
+        virtual bool partsToVector(vector<CmplValAuto>& dtp, bool uo) const      { return false; }
 
         /**
          * get whether the tuple set has an user order of its elements specified direct here
@@ -201,7 +202,7 @@ namespace cmpl
         /**
          * @brief set or unset explicit mark as non-free for a set
          * @param v         set
-         * @param mnf
+         * @param mnf       true: mark as non-free / false: mark as free
          */
         static void setMarkNF(CmplVal& v, bool mnf);
 
@@ -245,8 +246,9 @@ namespace cmpl
          * push all tuple divisible parts of a set value in a vector, or push value itself if it isn't tuple divisible
          * @param v         set value
          * @param dtp       vector to push parts in
+         * @param uo        consider user order
          */
-        static inline void partsToVector(const CmplVal& v, vector<CmplVal>& dtp)       { if (!v.useValP() || !v.setBase()->partsToVector(dtp)) { dtp.push_back(CmplVal(v)); } }
+        static inline void partsToVector(const CmplVal& v, vector<CmplValAuto>& dtp, bool uo)       { if (!v.useValP() || !v.setBase()->partsToVector(dtp, uo)) { dtp.emplace_back(v); } }
 
         /**
          * get whether the tuple set has an user order of its elements specified direct here
@@ -547,9 +549,10 @@ namespace cmpl
         /**
          * push all tuple divisible parts in a vector
          * @param dtp       vector to push parts in
+         * @param uo        consider user order
          * @return          true if parts are pushed to vector; false if set is not tuple divisible
          */
-        virtual bool partsToVector(vector<CmplVal>& dtp) const;
+        virtual bool partsToVector(vector<CmplValAuto> &dtp, bool uo) const;
 
 		/**
 		 * write contents of the object to a stream
@@ -645,7 +648,7 @@ namespace cmpl
 
 	protected:
 		CmplVal _base;			///< set for the first dimension(s) (TP_SET_R1_ENUM, TP_SET_R1_ALG, TP_SET_R1_0_UB, TP_SET_R1_1_UB, TP_SET_1INT, TP_SET_1STR, TP_INT, TP_STR or TP_SET_REC_MULT)
-        unsigned long _baseCnt;	///< count of set <code>_base</code> (length of arrays <code>_array</code>, <code>_order</code> and <code>_index</code>)
+        unsigned long _baseCnt;	///< count of set <code>_base</code> (length of arrays <code>_array</code>, <code>_index</code> and <code>_indexUseOrder</code>)
 
         CmplVal *_array;		///< per element of <code>_base</code> the set for the remaining dimensions (length is count of elements of set <code>_base</code>) (elements can be of any finite set type, or TP_EMPTY if no remaining dimension)
 		unsigned long *_index;	///< cumulated count of elements in subsets in <code>_array</code> / NULL: not computed yet
@@ -656,6 +659,9 @@ namespace cmpl
 		unsigned _minRank;		///< minimal rank in this tuple set. if 0, then the set contains in addition to the elements coded in <code>_base</code> and <code>_array</code> also the null tuple
 		unsigned _maxRank;		///< maximal rank in this tuple set
 		unsigned _baseRank;		///< rank of set <code>_base</code>
+
+        unsigned _baseSplit;    ///< only for <code>_baseRank</code> greater than 1: rank of remaining upper part of set <code>_base</code> after the split of a maximal lower part (greater or equal _baseRank: no splitable part / 0: not known)
+        unsigned long _modArray;///< only if a splitable lower part of set <code>_base</code>: <code>_array</code> has this length, do all indexation i by <code>_array[i % _modArray]</code> / 0: not so
 
 	public:
 		/**
@@ -671,11 +677,12 @@ namespace cmpl
          * constructor: from another set
          * @param set			set to construct from, act here as base set (must be a finite set, but not the empty set and not the null tuple set)
          * @param woOrder		strip user order
+         * @param splt          value for <code>_baseSplit</code> or 0 if unknown
          * @param addNull		add null tuple to resulting finite set (append if <code>ord</code>)
          * @param rmi			min rank for the result set / 0: not specified
          * @param rma			max rank for the result set / 0: not specified
          */
-        SetFinite(const CmplVal &set, bool woOrder, bool addNull = false, unsigned rmi = 0, unsigned rma = 0);
+        SetFinite(const CmplVal &set, bool woOrder, unsigned splt, bool addNull, unsigned rmi, unsigned rma);
 
 		/**
 		 * destructor
@@ -699,6 +706,12 @@ namespace cmpl
          */
         unsigned baseRank() const				{ return _baseRank; }
 
+        /**
+         * get rank of remaining upper part of set <code>_base</code> after the split of a maximal lower part / 0: not known
+         * @param uo        no split if base set has direct user order
+         */
+        unsigned baseSplit(bool uo = false) const		{ return (_baseRank == 1 || _baseSplit >= _baseRank || (uo && SetBase::hasDirectUserOrder(_base) && SetBase::hasUserOrder(_base)) ? _baseRank : _baseSplit); }
+
 		/**
 		 * get whether all tupels in the tuple set have the same rank
 		 */
@@ -717,9 +730,10 @@ namespace cmpl
         /**
          * push all tuple divisible parts in a vector
          * @param dtp       vector to push parts in
+         * @param uo        consider user order
          * @return          true if parts are pushed to vector; false if set is not tuple divisible
          */
-        virtual bool partsToVector(vector<CmplVal>& dtp) const;
+        virtual bool partsToVector(vector<CmplValAuto> &dtp, bool uo) const;
 
         /**
          * set min rank and max rank for this set
@@ -776,15 +790,16 @@ namespace cmpl
 
 		/**
 		 * get count of elements in base set (also number of subsets)
+         * @param md            return <code>_modArray</code> if set
 		 */
-		inline unsigned long baseCnt() const			{ return _baseCnt; }
+        inline unsigned long baseCnt(bool md = false) const			{ return (md && _modArray ? _modArray : _baseCnt); }
 
 		/**
 		 * get one subset of the set
 		 * @param i				index of the subset
 		 * @return				subset
 		 */
-		inline CmplVal *subSet(unsigned long i) const	{ return _array + i; }
+        inline CmplVal *subSet(unsigned long i) const	{ return _array + (_modArray ? (i % _modArray) : i); }
 
         /**
          * get one subset of the set
@@ -793,6 +808,13 @@ namespace cmpl
          * @return				subset
          */
         CmplVal& subSet(unsigned long i, bool woOrder) const;
+
+        /**
+         * set <code>_baseSplit</code> and <code>_modArray</code>
+         * @param splt          value for <code>_baseSplit</code>
+         * @param modarr        set also <code>_modArray</code>
+         */
+        void setBaseSplit(unsigned splt, bool modarr = false);
 
     protected:
 		/**
@@ -916,6 +938,14 @@ namespace cmpl
          * get whether all tupels in the tuple set have the same rank
          */
         virtual bool oneRank() const		{ return SetBase::oneRank(_set); }
+
+        /**
+         * push all tuple divisible parts in a vector
+         * @param dtp       vector to push parts in
+         * @param uo        consider user order
+         * @return          true if parts are pushed to vector; false if set is not tuple divisible
+         */
+        virtual bool partsToVector(vector<CmplValAuto>& dtp, bool uo) const     { return (!_set.useValP() || (uo && hasUserOrder()) ? false : _set.setBase()->partsToVector(dtp, false)); }
 
         /**
          * get whether the tuple set has an user order of its elements specified direct here

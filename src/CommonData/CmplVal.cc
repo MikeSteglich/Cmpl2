@@ -734,7 +734,7 @@ namespace cmpl
 	 * @param disp		return true, if the caller has to dispose r after use
 	 * @return			true if conversion is successful
 	 */
-    bool CmplVal::toString(CmplVal& r, TypeConversionLevel tcl, ModuleBase *modp, bool &disp)
+    bool CmplVal::toString(CmplVal& r, TypeConversionLevel tcl, ModuleBase *modp, bool &disp) const
 	{
         if (t == TP_STR || t == TP_STRINGP) {
             r.t = t;
@@ -746,7 +746,7 @@ namespace cmpl
             return true;
         }
         else if (tcl >= typeConversionIdent) {
-            CmplVal *src = (t == TP_TUPLE && tuple()->rank() == 1 ? tuple()->at(0) : this);
+            const CmplVal *src = (t == TP_TUPLE && tuple()->rank() == 1 ? tuple()->at(0) : this);
             if (tcl == typeConversionIdent && (src->t == TP_STR || src->t == TP_STRINGP || src->t == TP_ITUPLE_1STR)) {
                 r.t = (src->t == TP_ITUPLE_1STR ? TP_STR : src->t);
                 disp = false;
@@ -857,6 +857,8 @@ namespace cmpl
 
         if (isTuple()) {
             //TODO
+            //  kann hier gar nicht behandelt werden!
+            //  Stattdessen vor Aufruf sicherstellen, dass Tuple als TP_ITUPLE gekennzeichnet ist, wenn es eines ist
             return false;
         }
 
