@@ -1,1 +1,1 @@
-warning (module interpret: remodeling): product of real optimization variables rx and ry can only be approximated; at 07_Variablenprodukte.cmpl:29.10-14
+error (module writeMps: write Free MPS): non-linear constraint in the model: at row 2; at 07_Variablenprodukte.cmpl:22.2-20

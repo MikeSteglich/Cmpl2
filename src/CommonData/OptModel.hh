@@ -502,6 +502,16 @@ namespace cmpl
             bool hasVarProd()       { return (init && (varprodInt || varprodReal)); }
 
             /**
+             * get whether model has sos
+             */
+            bool hasSos() { return sos>0;}
+
+            /**
+             * get whether model has conditions
+             */
+            bool hasConditions() { return conditions;}
+
+            /**
              * get model type (type with least linearizations)
              */
             ModelType modelType()   { return (!init ? modelTypeUnknown : (vartypes > 0 || conditions > 0 || varprodInt > 0 || sos > 0 ? (varprodInt || varprodReal ? modelTypeMIQP : modelTypeMIP) : (varprodReal ? modelTypeQP : modelTypeLP))); }

@@ -135,6 +135,7 @@ namespace cmpl
          */
         virtual const char *modNameRemodel()        { return (_registerMods.size() > 0 ? _registerMods[0].c_str() : "interpret"); }
 
+    public:
         /**
          * parse single command line option containing a string
          * @param opt           option

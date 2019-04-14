@@ -10,3 +10,5 @@ bin/cmpl
 *.d
 bin/cmpl
 cmpl-Entwicklung.odt
+*.user
+*.log

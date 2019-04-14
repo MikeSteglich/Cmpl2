@@ -1,2 +1,6 @@
 warning (module solutionReportAscii: init): Wrong display option var; at 25_test_B.cmpl:1.2-15, called from: command line:$1
+warning (module solutionReportAscii: init): Wrong display option X*; at 25_test_B.cmpl:1.2-15, called from: command line:$1
 warning (module solutionReportCsv: init): Wrong display option var; at 25_test_B.cmpl:1.2-15, called from: command line:$1
+warning (module solutionReportCsv: init): Wrong display option X*; at 25_test_B.cmpl:1.2-15, called from: command line:$1
+warning (module solutionReportXml: init): Wrong display option var; at 25_test_B.cmpl:1.2-15, called from: command line:$1
+warning (module solutionReportXml: init): Wrong display option X*; at 25_test_B.cmpl:1.2-15, called from: command line:$1
