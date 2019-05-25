@@ -160,7 +160,7 @@ namespace cmpl
 		 * get index of the current element within the set
 		 * @return				index of the current element within the set / equal count() if iteration is ended
 		 */
-		inline unsigned long tupleIndex() const	{ return (_useOrder ? _tplInd : (_reverse && _ind < _cnt ? (_cnt - 1 - _ind) : _ind)); } 
+        inline unsigned long tupleIndex() const	{ return ((_useOrder || _directOrder) ? _tplInd : (_reverse && _ind < _cnt ? (_cnt - 1 - _ind) : _ind)); }
 
 		/**
 		 * start or restart the iteration

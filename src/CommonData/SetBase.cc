@@ -1171,7 +1171,8 @@ namespace cmpl
 			tplIndBase = 1;
 		}
 
-        unsigned long *indexArr = (useOrder ? fillIndexUseOrder() : fillIndex());
+        unsigned long *index = fillIndex();
+        unsigned long *indexArr = (useOrder ? fillIndexUseOrder() : index);
 
         unsigned long i1 = SetIterator::searchArrayPos<unsigned long>(indexArr, _baseCnt, ind);
 		unsigned long i2 = (i1==0 ? ind : (ind - indexArr[i1-1]));
@@ -1197,7 +1198,7 @@ namespace cmpl
 			}
 		}
 
-		return tplIndBase + (ti1==0 ? 0 : indexArr[ti1-1]) + ti2;
+        return tplIndBase + (ti1==0 ? 0 : index[ti1-1]) + ti2;
 	}
 
 	/**

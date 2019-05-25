@@ -857,9 +857,10 @@ namespace cmpl
     /**
      * try to match _src with the elements of the tuple pattern _pat and make a result set of all matching tuples
      * @param res           store for result set
+     * @param tcr			transform result set to canonical set representation
      * @return              true if any matching tuples, then result set is filled
      */
-    bool TupleMatching::match(CmplVal& res)
+    bool TupleMatching::match(CmplVal& res, bool tcr)
     {
         bool b = false;
         unsigned long ind;
@@ -903,7 +904,7 @@ namespace cmpl
             }
         }
 
-        else if (_oneRank && !_infTpl && _tplCnt < _srcCnt && (!_useOrder || !_srcUO || (_mode != matchIter && _mode != matchReduce)))
+        else if (0 && _oneRank && !_infTpl && _tplCnt < _srcCnt && (!_useOrder || !_srcUO || (_mode != matchIter && _mode != matchReduce)))
         {
             if (!_src.isSet()) {
                 CmplValAuto t;
@@ -932,25 +933,24 @@ namespace cmpl
             unique_ptr<unsigned[]> amp{new unsigned[_tplRank]};
             unsigned *am = amp.get();
 
-            TupleIterator it(_ctx, _src, (_patOrder || _mode == matchIn ? false : _useOrder));
-            bool uo = (_useOrder && _patOrder != 1 && _mode != matchIn);
+            bool uo = (_useOrder && !_patOrder && _mode != matchIn);
+            TupleIterator it(_ctx, _src, uo);
 
             for (it.begin(); it; it++) {
                 if (singleMatch(*it, am)) {
                     b = true;
-                    reduceAddTuple(res, *it, am, uo, it.curIndex());
+                    reduceAddTuple(res, *it, am, uo, it.tupleIndex());
 
                     if (_freePos.empty())
                         break;
                 }
             }
 
-            // TODO: wenn _useOrder && _patOrder == 2:
-            //  separat aufgebaute user order noch res hinzufuegen
+            if (b && _uoSort.size() > 1)
+                addResUO(res);
         }
 
-        if (b) {
-            //TODO: ist das hier wirklich immer noetig (besser ueber Parameter bestimmen ob)
+        if (b && tcr) {
             CmplVal t;
             if (SetUtil::canonicalSet(t, res))
                 res.moveFrom(t, true);
@@ -994,6 +994,16 @@ namespace cmpl
         DELETE_UNSET(_maxRank);
         DELETE_UNSET(_assInfo);
         DELETE_UNSET(_resIndex);
+
+        if (_uoSetSort.size()) {
+            for (unsigned i = 0; i < _uoInvSort.size(); i++) {
+                if (_uoInvSort[i])
+                    delete[] _uoInvSort[i];
+            }
+
+            _uoSetSort.clear();
+            _uoInvSort.clear();
+        }
     }
 
 
@@ -1075,9 +1085,6 @@ namespace cmpl
         unsigned r = Tuple::rank(_pat);
         unsigned miR, maR;
 
-        _freePos.clear();
-        DELETE_UNSET(_minRank);
-        DELETE_UNSET(_maxRank);
         _oneRank = true;
         _indexTuple = true;
         _infTpl = false;
@@ -1178,34 +1185,60 @@ namespace cmpl
             DELETE_UNSET(_minRank);
             DELETE_UNSET(_maxRank);
         }
-        else if (_oneRank) {
-            DELETE_UNSET(_maxRank);
-            _maxRankSum = _minRankSum;
-            _firstDiffRank = _afterDiffRank = 0;
-        }
         else {
-            if (_minRankSum == _srcMaR) {
-                _oneRank = true;
+            if (_oneRank) {
                 DELETE_UNSET(_maxRank);
                 _maxRankSum = _minRankSum;
                 _firstDiffRank = _afterDiffRank = 0;
             }
             else {
-                unsigned dr = _srcMaR - _minRankSum;
-                _maxRankSum = 0;
-                _afterDiffRank = 0;
+                if (_minRankSum == _srcMaR) {
+                    _oneRank = true;
+                    DELETE_UNSET(_maxRank);
+                    _maxRankSum = _minRankSum;
+                    _firstDiffRank = _afterDiffRank = 0;
+                }
+                else {
+                    unsigned dr = _srcMaR - _minRankSum;
+                    _maxRankSum = 0;
+                    _afterDiffRank = 0;
 
-                for (unsigned i = 0; i < r; i++) {
-                    if (_maxRank[i] != _minRank[i]) {
-                        if (_maxRank[i] > _minRank[i] + dr)
-                            _maxRank[i] = _minRank[i] + dr;
+                    for (unsigned i = 0; i < r; i++) {
+                        if (_maxRank[i] != _minRank[i]) {
+                            if (_maxRank[i] > _minRank[i] + dr)
+                                _maxRank[i] = _minRank[i] + dr;
 
-                        if (!_afterDiffRank)
-                            _firstDiffRank = i;
-                        _afterDiffRank = i + 1;
+                            if (!_afterDiffRank)
+                                _firstDiffRank = i;
+                            _afterDiffRank = i + 1;
+                        }
+
+                        _maxRankSum += _maxRank[i];
                     }
+                }
+            }
 
-                    _maxRankSum += _maxRank[i];
+            if (_patOrder == 2 && _useOrder) {
+                // fill _uoInvSort with arrays of inverse user order
+                CmplVal *e = _pat.tuple()->at(0);
+                for (unsigned i = 0; i < r; i++, e++) {
+
+                    if (e->isSetFin() && SetBase::hasUserOrder(e)) {
+                        _uoSetSort.push_back(e);
+
+                        unsigned long cs = SetBase::cnt(e);
+                        unsigned long *ord = SetIterator::copyOrder(e);
+
+                        unsigned long *inv;
+                        _uoInvSort.push_back((inv = new unsigned long[cs]));
+
+                        for (unsigned long n = 0; n < cs; n++)
+                            inv[ord[n]] = n;
+                    }
+                    else {
+                        _uoSetSort.push_back(NULL);
+                        _uoInvSort.push_back(NULL);
+                    }
                 }
             }
         }
@@ -1262,7 +1295,7 @@ namespace cmpl
                     if (v->isSet())
                         b = SetUtil::tupleInSet(_ctx, v, it, dummy);
                     else
-                        b = (it.v.i == v->v.i && it.t == v->t);
+                        b = (it.v.i == v->v.i && TP_INDEX_VAL_BASE(it.t) == v->t);
 
                     if (b || _minRank[i] == 1)
                         break;
@@ -1487,12 +1520,6 @@ namespace cmpl
      */
     bool TupleMatching::reduceAddTuple(CmplVal& res, const CmplVal& tpl, unsigned *ranks, bool uo, unsigned long srcInd)
     {
-        //TODO: Beruecksichtigung Reihenfolge aus _pat: wenn uo && _patOrder == 2
-        //  Dann addTupleToSet (und res) hier doch ohne uo, neue userOrder wird hier unabhaengig davon aufgebaut, und am Schluss hinzugefuegt.
-        //  Vergleich Tuples in res mit dem neuen Tuple tpl bezueglich der Reihenfolge aus _pat ist nur moeglich, wenn die Zuordnung der Teile der Tuples auf die Teile von _pat bekannt ist.
-        //      Es muss deshalb auch fuer alle schon eingefuegten Tuples in res die Zuordnung noch aufgehoben werden.
-        //      _assInfo schon dafuer geeignet?
-
         CmplValAuto redTpl;
         if (_freePos.empty()) {
             redTpl.set(TP_ITUPLE_NULL);
@@ -1561,9 +1588,147 @@ namespace cmpl
             if (_resIndex) {
                 _resIndex->insert(_resIndex->begin() + pos, srcInd);
             }
+
+            if (!uo && _uoSetSort.size()) {
+                _uoSort.emplace(_uoSort.begin() + pos, _ctx, redTpl, ranks, _freePos, _uoSetSort, _uoInvSort);
+            }
         }
 
         return b;
+    }
+
+
+    /**
+     * add user order from <code>_uoSort</code> to result set
+     * @param res           result set
+     */
+    void TupleMatching::addResUO(CmplVal& res)
+    {
+        // sort tuples
+        unsigned long cnt = _uoSort.size();
+
+        for (unsigned long n = 0; n < cnt; n++)
+            _uoSort[n]._pos = n;
+
+        sort(_uoSort.begin(), _uoSort.end(), ptuples::less);
+
+        // check sort order
+        bool uo = false, rev = false;
+        if (_uoSort[0]._pos == 0) {
+            for (unsigned long n = 1; n < cnt; n++) {
+                if (_uoSort[n]._pos != n) {
+                    uo = true;
+                    break;
+                }
+            }
+        }
+        else {
+            uo = true;
+            rev = true;
+            for (unsigned long n = 0; n < cnt; n++) {
+                if (_uoSort[n]._pos != cnt - 1 - n) {
+                    rev = false;
+                    break;
+                }
+            }
+        }
+
+        // add order to result set
+        if (uo) {
+            unsigned long *o = NULL;
+            if (!rev) {
+                o = new unsigned long[cnt];
+                for (unsigned long n = 0; n < cnt; n++)
+                    o[n] = _uoSort[n]._pos;
+            }
+
+            CmplVal t(TP_SET_WITH_UO, (rev ? new SetWithOrder(res, true) : new SetWithOrder(res, o)));
+            res.moveFrom(t, true);
+        }
+    }
+
+
+
+    /****** TupleMatching::ptuples ****/
+
+    /**
+     * constructor
+     * @param ctx           execution context
+     * @param rtpl          single result tuple
+     * @param ranks         rank per element in match tuple
+     * @param freePos       positions of elements marked as free within <code>_pat</code>
+     * @param uoSetSort     vector of part sets within <code>_pat</code> which have user order
+     * @param uoSetPat      vector of arrays with inverse user order for part sets within <code>_pat</code> which have user order
+     */
+    TupleMatching::ptuples::ptuples(ExecContext *ctx, const CmplVal& rtpl, unsigned *ranks, vector<unsigned>& freePos, vector<CmplVal *>& uoSetSort, vector<unsigned long *>& uoInvSort)
+    {
+        unsigned rs = 0;
+        for (unsigned fp : freePos) {
+
+            _tp.emplace_back(TP_ITUPLE_NULL);
+            unsigned r = ranks[fp];
+
+            if (r) {
+                CmplValAuto& t = _tp.back();
+                if (rtpl.useValP())
+                    rtpl.tuple()->partTuple(t, rs, r);
+                else
+                    t.copyFrom(rtpl);
+
+                rs += r;
+
+                if (uoSetSort[fp]) {
+                    // replace tuple t by sort number in user order
+                    unsigned long n;
+                    SetUtil::tupleInSet(ctx, *(uoSetSort[fp]), t, n);
+                    unsigned long i = uoInvSort[fp][n];
+
+                    t.dispSet(TP_INT, (intType)i);
+                }
+            }
+        }
+    }
+
+
+    /**
+     * compare two ptuples
+     * @param a             first element
+     * @param b             second element
+     * @return              true if <code>a</code> is less than <code>b</code>
+     */
+    bool TupleMatching::ptuples::less(const ptuples& a, const ptuples& b)
+    {
+        const vector<CmplValAuto>& va = a._tp;
+        const vector<CmplValAuto>& vb = b._tp;
+        unsigned ca = va.size();
+        unsigned cb = vb.size();
+
+        for (unsigned i = 0; i < ca && i < cb; i++) {
+            const CmplValAuto& ta = va[i];
+            const CmplValAuto& tb = vb[i];
+
+            if (ta.useInt() && tb.useInt()) {
+                int cc = cmp(ta.t, ta.v.i, tb.t, tb.v.i);
+                if (cc)
+                    return (cc < 0);
+            }
+
+            unsigned ra = Tuple::rank(ta);
+            unsigned rb = Tuple::rank(tb);
+            for (unsigned r = 0; r < ra && r < rb; r++) {
+                const CmplVal *ia = Tuple::at(ta, r);
+                const CmplVal *ib = Tuple::at(tb, r);
+
+                int cc = cmp(ia->t, ia->v.i, ib->t, ib->v.i);
+                if (cc)
+                    return (cc < 0);
+            }
+
+            if (ra != rb)
+                return (ra < rb);
+        }
+
+        return (ca < cb);
     }
 
 
@@ -1579,10 +1744,14 @@ namespace cmpl
         if (start) {
             _sub.clear();
             _ind = 0;
-            _ended = false;
+            _tplInd = 0;
+            _cnt = 0;
+            _ended = true;
             _cur.dispUnset();
 
             if (_tpl.isITuple()) {
+                _cnt = 1;
+                _ended = false;
                 _cur.copyFrom(_tpl);
             }
             else {
@@ -1593,6 +1762,9 @@ namespace cmpl
 
                 if (_rank) {
                     _sub.resize(_rank);
+
+                    _cnt = 1;
+                    _ended = false;
 
                     unsigned mr = _rank;
                     for (unsigned r = 0; r < _rank; r++) {
@@ -1614,6 +1786,7 @@ namespace cmpl
                         }
 
                         _sub[r].begin();
+                        _cnt *= _sub[r].count();
 
                         if (_sub[r].ended()) {
                             _ended = true;
@@ -1663,6 +1836,22 @@ namespace cmpl
                 else {
                     _cur.dispUnset();
                     _ended = true;
+                }
+            }
+        }
+
+        if (_useOrder && !_ended && _rank) {
+            // set _tplInd
+            _tplInd = _sub[_rank - 1].tupleIndex();
+
+            if (_rank > 1) {
+                unsigned long c = _sub[_rank - 1].count();
+                for (unsigned r = _rank - 2; ; r--) {
+                    _tplInd += _sub[r].tupleIndex() * c;
+                    c *= _sub[r].count();
+
+                    if (!r)
+                        break;
                 }
             }
         }

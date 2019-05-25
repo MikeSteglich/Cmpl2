@@ -138,20 +138,22 @@ namespace cmpl
         /**
          * perform indexation operation
          * @param ctx			execution context
-         * @param ind			index value (must be index tuple or tuple set)
+         * @param ind			index value (must be tuple or set)
+         * @param its           number of first index part containing a set + 1 / 0: all index parts are scalar
          * @param orgInd        original index value
          * @return				true: result stored in execution context / false: this changed to result
          */
-        bool indexation(ExecContext *ctx, CmplVal& ind, StackValue *orgInd);
+        bool indexation(ExecContext *ctx, CmplVal& ind, unsigned its, StackValue *orgInd);
 
         /**
          * perform indexation operation on list, this must contain a list (not TP_REF_LIST)
          * @param ctx			execution context
-         * @param ind			index value (must be index tuple or tuple set, and not TP_LIST_TUPLE)
+         * @param ind			index value (must be tuple or set, and not TP_LIST_TUPLE)
+         * @param its           number of first index part containing a set + 1 / 0: all index parts are scalar
          * @param orgInd        original index value
          * @return				true: result stored in execution context / false: this changed to result
          */
-        bool indexationList(ExecContext *ctx, CmplVal& ind, StackValue *orgInd);
+        bool indexationList(ExecContext *ctx, CmplVal& ind, unsigned its, StackValue *orgInd);
 
     public:
         /**

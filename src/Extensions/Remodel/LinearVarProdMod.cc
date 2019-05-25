@@ -56,7 +56,7 @@ namespace cmpl
     {
         RemodelBaseMod::init(ctrl, data, name);
 
-        _prodLinearLvl = 1;
+        _prodLinearLvl = 3;
         _prodRealWarn = 1;
 
         _prodDecomp = true;

@@ -88,11 +88,6 @@ namespace cmpl
                 return true;
         }
 
-        //TODO: Unterscheidung ob einfaches Indextuple oder ob Sets enthalten sind.
-        //      Wenn einfach, dann direkt ausfuehren
-        //      Wenn Sets enthalten sind, dann ueber TupleMatching ausfuehren (vorherige Umwandlung des indizierenden Tuples in Set ist nicht notwendig!)
-        //              (pruefen was mit TP_LIST_TUPLE: muss das vor TupleMatching in regulaeres Tuple umgewandelt werden?)
-
         if (lvalue()) {
             // store index value as _addVal in this
             if (_addVal) {
@@ -108,23 +103,53 @@ namespace cmpl
             return false;
         }
 
+        // check if indexation with index tuple or with set
         CmplValAuto ci;
-        if (ind->_val.t == TP_LIST_TUPLE)
-            ci.set(TP_LIST_TUPLE, ind->_val.v.i);
-        else
-            TupleUtil::toIndexTuple(ctx, ci, ind, true);
+        unsigned its = 0;
 
-        return indexation(ctx, ci, ind);
+        if (ind->_val.t == TP_LIST_TUPLE) {
+            ci.set(TP_LIST_TUPLE, ind->_val.v.i);
+        }
+        else {
+            if (ind->_val.isTuple() || ind->_val.isSet()) {
+                ci.copyFrom(ind->_val);
+            }
+            else if (!SetUtil::convertToSetOrTuple(ctx, ci, ind->_val, typeConversionExact, true)) {
+                ctx->valueError("value not usable for indexation", ind);
+                return false;
+            }
+
+            if (!ci.isITuple()) {
+                if (ci.isSet() || !ci.useValP()) {
+                    its = 1;
+                }
+                else {
+                    Tuple *tpl = ci.tuple();
+                    if (tpl->tupleType() != Tuple::tupleIndexOnly) {
+                        for (unsigned r = 0; r < tpl->rank(); r++) {
+                            if (!tpl->at(r)->isScalarIndex()) {
+                                its = r + 1;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // do indexation
+        return indexation(ctx, ci, its, ind);
     }
 
     /**
      * perform indexation operation
      * @param ctx			execution context
-     * @param ind			index value (must be index tuple or tuple set)
+     * @param ind			index value (must be tuple or set)
+     * @param its           number of first index part containing a set + 1 / 0: all index parts are scalar
      * @param orgInd        original index value
      * @return				true: result stored in execution context / false: this changed to result
      */
-    bool StackValue::indexation(ExecContext *ctx, CmplVal& ind, StackValue *orgInd)
+    bool StackValue::indexation(ExecContext *ctx, CmplVal& ind, unsigned its, StackValue *orgInd)
     {
         // handle lists
         if (_val.isList()) {
@@ -137,7 +162,7 @@ namespace cmpl
                 tp.init(lst->_syntaxElem);
                 TupleUtil::constructFromList(ctx, tp._val, lst);
 
-                if (!tp.indexation(ctx, ind, orgInd))
+                if (!tp.indexation(ctx, ind, its, orgInd))
                     ctx->opResult().moveFrom(tp._val, false);
 
                 tp.unsetValue();
@@ -147,26 +172,16 @@ namespace cmpl
                 if (ind.t == TP_LIST_TUPLE) {
                     CmplValAuto ci;
                     TupleUtil::constructFromList(ctx, ci, orgInd);
-                    return lst->indexationList(ctx, ci, orgInd);
+                    return lst->indexationList(ctx, ci, its, orgInd);
                 }
                 else {
-                    return lst->indexationList(ctx, ind, orgInd);
+                    return lst->indexationList(ctx, ind, its, orgInd);
                 }
             }
         }
 
         // do indexation
-        if (ind.isSet()) {
-            if (ind.t == TP_SET_ALL) {
-                // trivial indexation, let the value unchanged
-                return false;
-            }
-            else {
-                // indexation with set, returns array
-                //TODO
-            }
-        }
-        else if (ind.isITuple() || ind.t == TP_LIST_TUPLE) {
+        if (!its) {
             if (ind.t == TP_ITUPLE_NULL && simpleValue()) {
                 // trivial indexation, let the value unchanged
                 return false;
@@ -179,25 +194,74 @@ namespace cmpl
                     ctx->opResult().copyFrom(arr->at(i), true, false);
                     return true;
                 }
-                else {
-                    ctx->valueError("element not found in array with given index tuple", orgInd);
+            }
+        }
+        else {
+            if (ind.t == TP_SET_ALL || ind.t == TP_TUPLE_EMPTY || ind.t == TP_BLANK) {
+                // trivial indexation, let the value unchanged
+                return false;
+            }
+            else if (_val.t == TP_ARRAY) {
+                // indexation with set, returns array
+                try {
+                    CmplArray *arr = _val.array();
+                    TupleMatching tm(ctx, TupleMatching::matchIndex, arr->defset(), ind, true);
+
+                    CmplValAuto rdefset;
+                    tm.match(rdefset);
+
+                    CmplArray *resarr;
+                    CmplValAuto res(TP_ARRAY, (resarr = new CmplArray(rdefset)));
+
+                    vector<unsigned long> *resinds = tm.resIndex();
+                    if (resinds && resinds->size()) {
+                        CmplVal *a = resarr->at(0);
+                        bool av = true;
+
+                        for (unsigned long i : *resinds) {
+                            CmplVal *v = arr->at(i);
+                            if (v->t == TP_EMPTY)
+                                av = false;
+
+                            a->copyFrom(v, true, false);
+                            ++a;
+                        }
+
+                        resarr->setValidInfo(av);
+                    }
+
+                    ctx->opResult().copyFrom(res, true, false);
+                    return true;
+                }
+                catch (TupleMatchingValueException& ex) {
+                    if (ex.invSrc())
+                        ctx->valueError("invalid array for indexation", orgInd);
+                    else
+                        ctx->valueError("invalid value given as index tuple set", orgInd);
+
                     return false;
                 }
             }
+            else {
+                // no matching element
+                ctx->opResult().set(TP_NULL);
+                return true;
+            }
         }
 
-        ctx->valueError("indexation not implemented", orgInd);
+        ctx->valueError("element not found in array with given index tuple", orgInd);
         return false;
     }
 
     /**
      * perform indexation operation on list, this must contain a list (not TP_REF_LIST)
      * @param ctx			execution context
-     * @param ind			index value (must be index tuple or tuple set, and not TP_LIST_TUPLE)
+     * @param ind			index value (must be tuple or set, and not TP_LIST_TUPLE)
+     * @param its           number of first index part containing a set + 1 / 0: all index parts are scalar
      * @param orgInd        original index value
      * @return				true: result stored in execution context / false: this changed to result
      */
-    bool StackValue::indexationList(ExecContext *ctx, CmplVal& ind, StackValue *orgInd)
+    bool StackValue::indexationList(ExecContext *ctx, CmplVal& ind, unsigned its, StackValue *orgInd)
     {
         if (ind.t == TP_ITUPLE_NULL) {
             ctx->valueError("element not found in array with given index tuple", orgInd);
@@ -206,10 +270,10 @@ namespace cmpl
 
         // split the first element from the index value
         CmplValAuto fe, re;
-        if (ind.isScalarIndex()) {
+        if (ind.isScalarIndex() || its == 1) {
             fe.copyFrom(ind, true, false);
         }
-        else if (ind.isITuple()) {
+        else if (ind.isTuple()) {
             fe.copyFrom(Tuple::at(ind, 0), true, false);
             if (fe.t == TP_ITUPLE_1INT || fe.t == TP_ITUPLE_1STR)
                 fe.t = (fe.t == TP_ITUPLE_1INT ? TP_INT : TP_STR);
@@ -218,6 +282,9 @@ namespace cmpl
             if (r > 1)
                 ind.tuple()->partTuple(re, 1, r - 1);
         }
+        /*
+         * Fall (ind.isSet()) ist hier gar nicht moeglich, da obige Pruefung "its" schon garantiert, dass "ind" Tuple ist, mit erstem Element einfachem Indexwert
+         *
         else if (ind.isSet()) {
             if (ind.useValP()) {
                 SetBase *s = ind.setBase();
@@ -272,6 +339,7 @@ namespace cmpl
                 }
             }
         }
+        */
         else {
             ctx->internalError("wrong type of index value");
             return false;
@@ -279,18 +347,20 @@ namespace cmpl
 
         if (!fe.isScalarIndex()) {
             // special list indexation not possible: convert list to array and use it for indexation
+            //TODO: fuer bessere Performance sollte die Liste auf dem Stack durch das Array ersetzt werden,
+            //      damit bei naechster aehnlicher Indexierung nicht erneut das Array neu aufgebaut werden muss.
             StackValue arr;
             arr.init(_syntaxElem);
             arrayFromList(ctx, arr._val, this);
 
-            bool res = arr.indexation(ctx, ind, orgInd);
+            bool res = arr.indexation(ctx, ind, 1, orgInd);
             arr.unsetValue();
 
             return res;
         }
         else if (fe.t == TP_STR || fe.v.i < 1 || fe.v.i > _val.v.i) {
             ctx->opResult().set(TP_NULL);
-            if (!ind.isSet())
+            if (its == 0)
                 ctx->valueError("element not found in array with given index tuple", orgInd);
         }
         else {
@@ -324,7 +394,9 @@ namespace cmpl
             }
             else
             {
-                return elem->indexation(ctx, re, orgInd);
+                bool res = elem->indexation(ctx, re, (its ? its - 1 : 0), orgInd);
+                if (!res)
+                    ctx->opResult().copyFrom(elem->val(), true, false);
             }
         }
 

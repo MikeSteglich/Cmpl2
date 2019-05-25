@@ -166,6 +166,9 @@ namespace cmpl
         };
 
     private:
+        struct ptuples;
+
+    private:
         // source values
         ExecContext *_ctx;          ///< execution context
         Mode _mode;                 ///< matching mode
@@ -191,7 +194,11 @@ namespace cmpl
         bool _infTpl;				///< <code>_pat</code> contains an infinite set
         unsigned long _tplCnt;		///< count of tuple elements in <code>_pat</code> (only if !_infTpl)
         unsigned _tplRank;			///< rank of tuple <code>_pat</code>
-        unsigned _patOrder;         ///< only for _mode == matchIndex: flag whether <code>_pat</code> contains elements with user order (2) or implicit order (1) or only elements without any order (0)
+        unsigned _patOrder;         ///< only for _mode == matchIndex (otherwise 0): flag whether <code>_pat</code> contains elements with user order (2) or implicit order (1) or only elements without any order (0)
+
+        vector<CmplVal *> _uoSetSort;   ///< only used for _patOrder == 2: vector of part sets within <code>_pat</code> which have user order
+        vector<unsigned long *> _uoInvSort; ///< only used for _patOrder == 2: vector of arrays with inverse user order of part sets within <code>_pat</code> which have user order
+        vector<ptuples> _uoSort;    ///< only used for _patOrder == 2: part tuples for sorting of result
 
         unsigned _minRankSum;		///< sum over <code>_minRank</code>
         unsigned _maxRankSum;		///< sum over <code>_maxRank</code>
@@ -217,15 +224,21 @@ namespace cmpl
         /**
          * try to match _src with the elements of the tuple pattern _pat and make a result set of all matching tuples
          * @param res           store for result set
+         * @param tcr			transform result set to canonical set representation
          * @return              true if any matching tuples, then result set is filled
          */
-        bool match(CmplVal& res);
+        bool match(CmplVal& res, bool tcr = true);
 
         /**
          * take assign info result of tuple matching for iteration
          * @return              assign info object for codeblock symbols in iteration
          */
         CBAssignInfoBasis *takeAssignInfo();
+
+        /**
+         * get indexes of matched tupels within _src, only for mode matchIndex
+         */
+        vector<unsigned long> *resIndex()               { return (_mode == matchIndex ? _resIndex : NULL); }
 
     private:
         /**
@@ -285,6 +298,50 @@ namespace cmpl
          * @return              true if tuple is added to result set / false if tuple was already in result set
          */
         bool reduceAddTuple(CmplVal& res, const CmplVal& tpl, unsigned *ranks, bool uo, unsigned long srcInd);
+
+        /**
+         * add user order from <code>_uoSort</code> to result set
+         * @param res           result set
+         */
+        void addResUO(CmplVal& res);
+
+    private:
+        /**
+         * part tuples for sorting of the result array
+         */
+        struct ptuples {
+            unsigned long _pos;             ///< position of regarding element in result set
+            vector<CmplValAuto> _tp;        ///< part tuples for one matching tuple
+
+            /**
+             * constructor
+             * @param ctx           execution context
+             * @param rtpl          single result tuple
+             * @param ranks         rank per element in match tuple
+             * @param freePos       positions of elements marked as free within <code>_pat</code>
+             * @param uoSetSort     vector of part sets within <code>_pat</code> which have user order
+             * @param uoInvSort     vector of arrays with inverse user order for part sets within <code>_pat</code> which have user order
+             */
+            ptuples(ExecContext *ctx, const CmplVal& rtpl, unsigned *ranks, vector<unsigned>& freePos, vector<CmplVal *>& uoSetSort, vector<unsigned long *>& uoInvSort);
+
+            /**
+             * compare two ptuples
+             * @param a             first element
+             * @param b             second element
+             * @return              true if <code>a</code> is less than <code>b</code>
+             */
+            static bool less(const ptuples& a, const ptuples& b);
+
+            /**
+             * compare to simple index values in canonical order
+             * @param atp           type of first value (can only be int or string)
+             * @param ai            first value
+             * @param btp           type of second value (can only be int or string)
+             * @param bi            second value
+             * @return              -1 if first value is less than second value, 1 if first value is greater than second value, 0 if values are equal
+             */
+            static int cmp(const tp_e atp, const intType ai, const tp_e btp, const intType bi)    { bool astr = (atp == TP_STR || atp == TP_ITUPLE_1STR); bool bstr = (btp == TP_STR || btp == TP_ITUPLE_1STR); return (astr != bstr ? (astr ? 1 : -1) : (ai == bi ? 0 : (ai < bi ? -1 : 1))); }
+        };
     };
 
 
@@ -328,7 +385,10 @@ namespace cmpl
 
         vector<SetIterator> _sub;   ///< sub iterator per tuple element
 
+        unsigned long _cnt;			///< count of elements
         unsigned long _ind;			///< index number of current element
+        unsigned long _tplInd;		///< index of the current element within the set (only used if _useOrder)
+
         bool _ended;                ///< iteration is ended
         CmplValAuto _cur;   		///< current tuple
 
@@ -345,31 +405,37 @@ namespace cmpl
          * get current element of iteration
          * @return				current index tuple / TP_EMPTY if iteration is ended
          */
-        inline const CmplVal& curTuple() const	{ return _cur; }
+        const CmplVal& curTuple() const     { return _cur; }
 
         /**
          * get current index number of iteration
          * @return				current index number
          */
-        inline unsigned long curIndex() const	{ return _ind; }
+        unsigned long curIndex() const      { return _ind; }
+
+        /**
+         * get index of the current element within the set
+         * @return				index of the current element within the set / equal count() if iteration is ended
+         */
+        unsigned long tupleIndex() const	{ return (_useOrder ? _tplInd : (_reverse && _ind < _cnt ? (_cnt - 1 - _ind) : _ind)); }
 
         /**
          * start or restart the iteration
          * @return				first tupel of the set
          */
-        inline CmplVal& begin()					{ iterIntern(true); return _cur; }
+        CmplVal& begin()					{ iterIntern(true); return _cur; }
 
         /**
          * iterate to the next tuple
          * @return				next tuple of the set
          */
-        inline CmplVal& iter()					{ iterIntern(false); return _cur; }
+        CmplVal& iter()					{ iterIntern(false); return _cur; }
 
         /**
          * get value TP_EMPTY as flag that the iteration is ended
          * @return				value TP_EMPTY
          */
-        inline CmplVal end() const				{ return CmplVal(TP_EMPTY); }
+        CmplVal end() const				{ return CmplVal(TP_EMPTY); }
 
         /**
          * returns whether the iteration is ended
@@ -381,23 +447,23 @@ namespace cmpl
          * get current element of iteration
          * @return				current index tuple / TP_EMPTY if iteration is ended
          */
-        const inline CmplVal& operator* () const { return _cur; }
+        const CmplVal& operator* () const { return _cur; }
 
         /**
          * iterate to the next tuple
          */
-        inline void operator++ ()				{ iterIntern(false); }
+        void operator++ ()				{ iterIntern(false); }
 
         /**
          * iterate to the next tuple
          */
-        inline void operator++ (int)			{ iterIntern(false); }
+        void operator++ (int)			{ iterIntern(false); }
 
         /**
          * returns whether the iteration is not ended
          * @return				true if iteration is not ended (current element is not TP_EMPTY)
          */
-        inline explicit operator bool() const	{ return !_ended; }
+        explicit operator bool() const	{ return !_ended; }
 
     private:
         /**
