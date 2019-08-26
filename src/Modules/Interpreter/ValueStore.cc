@@ -34,6 +34,7 @@
 #include "SetUtil.hh"
 #include "ExecContext.hh"
 #include "Interpreter.hh"
+#include "OperationBase.hh"
 #include "../../CommonData/OptModel.hh"
 
 
@@ -192,16 +193,19 @@ namespace cmpl
         if (!sv && !va)
             return;
 
+        if (!disp && !_values) {
+            disp = true;
+        }
+        else if (!disp && _values && ((sv && sv->val().t == TP_ARRAY) || (va && va->t == TP_ARRAY))) {
+            //TODO: Pruefen ob neue Werte alle bisherigen ueberschreiben (also defset(_values) gleich oder Untermenge von defset(sv/va)): wenn ja, dann weiter wie mit disp
+            if (false)  //TODO
+                disp = true;
+        }
+
         copyOnWrite(disp);
 
-        OptModel *resModel = (srn ? ctx->modp()->getResModel() : NULL);
-        CmplVal symName;
-        if (resModel)
-            symName.set(TP_STR, (intType)(ctx->modp()->data()->globStrings()->search(srn)));
-
-        if (disp || !_values) {
-            if ((sv && sv->isSimple()) || (va && !va->isSpecial())) {
-				// check assertions
+        if ((sv && sv->isSimple()) || (va && !va->isSpecial())) {
+            // check assertions
 //                if (_constSet && _values && !_values->isScalar()) {
 //                    //TODO: noch einfügen: Art der Assertion; Syntaxelement der Assertion-Definition
 //                    if (sv)
@@ -212,8 +216,9 @@ namespace cmpl
 
 //				//TODO: assertions für Typ und Objekttyp
 
-                CmplVal& v = (sv ? *(sv->simpleValue()) : *va);
+            CmplVal& v = (sv ? *(sv->simpleValue()) : *va);
 
+            if (disp) {
                 if (v.t != TP_NULL) {
                     // set value
                     if (_values && !_values->isScalar()) {
@@ -230,9 +235,10 @@ namespace cmpl
                     _values->setValidInfo((v ? TP_EMPTY : TP_SET_EMPTY));
                     _values->setObjType(v.getObjectType());
 
-                    if (resModel && v.isOptRC()) {
+                    if (srn && v.isOptRC()) {
                         CmplVal tpl(TP_ITUPLE_NULL);
-                        setValInValueTree(ctx, &v, (sv ? sv->syntaxElem() : se), resModel, symName, tpl);
+                        CmplVal symName(TP_STR, (intType)(ctx->modp()->data()->globStrings()->search(srn)));
+                        setValInValueTree(ctx, &v, (sv ? sv->syntaxElem() : se), ctx->modp()->getResModel(), symName, tpl);
                     }
                 }
                 else if (!_values || _values->defset().t != TP_SET_EMPTY) {
@@ -244,21 +250,28 @@ namespace cmpl
                     _values->incRef();
                 }
 			}
-			else {
-                // a list should be already be replaced by an array or tuple
-                if (sv && sv->isList())
-                        ctx->valueError("internal error: list value for assign", sv);
 
-                if ((sv ? sv->val() : *va).t != TP_ARRAY) {
-                    if (sv)
-                        ctx->valueError("internal error: value to assign must be an array", sv);
-                    else
-                        ctx->valueError("internal error: value to assign must be an array", *va, se);
-                }
+            else if (v.t != TP_NULL) {
+                CmplVal tpl(TP_ITUPLE_NULL);
+                setSingleValue(ctx, &tpl, 0, v, (sv ? sv->syntaxElem() : se), srn);
+            }
+        }
 
-                CmplArray *arr = (sv ? sv->val().array() : va->array());
+        else {
+            // a list should be already be replaced by an array or tuple
+            if (sv && sv->isList())
+                    ctx->valueError("internal error: list value for assign", sv);
 
-				// check assertions
+            if ((sv ? sv->val() : *va).t != TP_ARRAY) {
+                if (sv)
+                    ctx->valueError("internal error: value to assign must be an array", sv);
+                else
+                    ctx->valueError("internal error: value to assign must be an array", *va, se);
+            }
+
+            CmplArray *arr = (sv ? sv->val().array() : va->array());
+
+            // check assertions
 //                if (_constSet && _values && _values->defset() != arr->defset())	{ //TODO: muss Set-Vergleich sein, statt Pointer-Vergleich
 //                    //TODO: noch einfügen: Art der Assertion; Syntaxelement der Assertion-Definition
 //                    if (sv)
@@ -269,7 +282,8 @@ namespace cmpl
 
 //				//TODO: assertions für Typ und Objekttyp
 
-				// set value as reference to given array
+            if (disp) {
+                // set value as reference to given array
 				if (_values) {
 					delete _values;
 					_values = NULL;
@@ -278,7 +292,10 @@ namespace cmpl
 				arr->incRef();
 				_values = arr;
 
-                if (resModel) {
+                if (srn) {
+                    OptModel *resModel = ctx->modp()->getResModel();
+                    CmplVal symName(TP_STR, (intType)(ctx->modp()->data()->globStrings()->search(srn)));;
+
                     CmplArrayIterator iter(*arr);
                     for (iter.begin(); iter; iter++) {
                         CmplVal *v = *iter;
@@ -287,40 +304,97 @@ namespace cmpl
                     }
                 }
 			}
-		}
 
-		else {
-			//TODO
-		}
-	}
+            else {
+                CmplArrayIterator iter(*arr);
+                for (iter.begin(); iter; iter++) {
+                    CmplVal *v = *iter;
+                    setSingleValue(ctx, &(iter.curTuple()), 0, *v, (sv ? sv->syntaxElem() : se), srn);
+                }
+            }
+        }
+    }
 
+    /**
+     * set single value within the array
+     * @param ctx				execution context
+     * @param tpl               indexing tuple for the value within the array / NULL: not given
+     * @param ind1              direct index+1 for the value within the array / 0: not given (at least tpl or ind1 must be given, if both given it must match)
+     * @param val				value to set within the array, must be a single value (no array or list)
+     * @param se                syntax element
+     * @param srn				set row/col name for result matrix to this name
+     * @param op                assign operation (+,-,*,/) or '\0'
+     */
+    void ValueStore::setSingleValue(ExecContext *ctx, const CmplVal *tpl, unsigned long ind1, CmplVal& val, unsigned se, const char *srn, char op)
+    {
+        // copy on write if neccessary
+        if (!_values) {
+            CmplVal ds = CmplVal(TP_SET_EMPTY);
+            _values = new CmplArray(ds);
+            _values->incRef();
+        }
+        else if (_values->refCnt() > 1) {
+            copyOnWrite(false);
+        }
 
-	/**
-	 * set value from a single value
-	 * @param ctx				execution context
-	 * @param v					value to copy
-	 * @param disp				discard all previous values
-	 */
-	void ValueStore::setValue(ExecContext *ctx, CmplVal& v, bool disp)
-	{
-        copyOnWrite(disp);
+        if (!tpl && !ind1) {
+            ctx->valueError("internal error: no index given in ValueStore::setSingleValue()", val, se);
+            return;
+        }
+        else if (ind1 && ind1 > _values->size()) {
+            ctx->valueError("internal error: invalid direct index in ValueStore::setSingleValue()", val, se);
+            return;
+        }
 
-		//TODO
-	}
+        if (!op && val.t == TP_STRINGP)
+            val.stringPToStr(ctx->modp());
 
+        CmplVal& ds = _values->defset();
+        if (srn && val.isOptRC()) {
+            OptModel *resModel = ctx->modp()->getResModel();
+            CmplVal symName(TP_STR, (intType)(ctx->modp()->data()->globStrings()->search(srn)));
 
-	/**
-	 * set value to a value described only by its type
-	 * @param ctx				execution context
-	 * @param tp				type for value
-	 * @param disp				discard all previous values
-	 */
-	void ValueStore::setValue(ExecContext *ctx, tp_e tp, bool disp)
-	{
-        copyOnWrite(disp);
+            CmplValAuto tpds;
+            if (!tpl)
+                SetIterator::at(tpds, ds, ind1-1);
 
-		//TODO
-	}
+            setValInValueTree(ctx, &val, se, resModel, symName, (tpl ? *tpl : tpds));
+        }
+
+        // search tuple in the definition set of the value array of the symbol
+        unsigned long ind = (ind1 ? ind1 - 1 : 0);
+        bool found = (ind1 ? true : SetUtil::tupleInSet(ctx, ds, *tpl, ind));
+
+        if (found) {
+            // set value in array
+            if (!op) {
+                _values->at(ind)->copyFrom(val, true, true);
+            }
+            else {
+                CmplVal org;
+                org.moveFrom(_values->at(ind));
+                unsigned short opc = (op=='+' ? ICS_OPER_ADD : (op=='-' ? ICS_OPER_SUB : (op=='*' ? ICS_OPER_MUL : ICS_OPER_DIV)));
+
+                OperationBase::execBinaryOper(ctx, _values->at(ind), se, opc, false, &org, &val);
+            }
+
+            if (_values->allValid() && !(_values->at(ind)))
+                _values->delValidInfo();
+            if (_values->hasObjType() && (_values->at(ind)) && !(_values->at(ind)->hasObjectType(_values->objType())))
+                _values->delObjType(true);
+        }
+        else {
+            if (!op) {
+                // grow definition set and array, and insert value
+                CmplValAuto nds;
+                unsigned long ii = SetUtil::addTupleToSet(ctx, nds, ds, *tpl, false, true);
+                _values->insertValues(nds, ii, &val);
+            }
+            else {
+                 ctx->valueError("left hand side element not found", val, se);
+            }
+        }
+    }
 
 
     /**

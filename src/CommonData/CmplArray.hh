@@ -129,7 +129,15 @@ namespace cmpl
          */
         CmplArray(CmplArray *src);
 
-		/**
+        /**
+         * constructor: new array as copy from source array, with changed definition set
+         * @param src			source array
+         * @param defset		new definition set (must have same count as definition set in src)
+         * @param uo            sort elements according user order
+         */
+        CmplArray(CmplArray *src, CmplVal& defset, bool uo);
+
+        /**
 		 * destructor
 		 */
 		~CmplArray();

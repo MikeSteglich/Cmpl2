@@ -582,6 +582,12 @@ namespace cmpl
                 elem->set((setv.t==TP_SET_1INT ? TP_INT : TP_STR), setv.v.i);
 				break;
 
+            case TP_INT:
+            case TP_STR:
+                tplInd = 0;
+                elem->set(setv.t, setv.v.i);
+                break;
+
 			default:		// no finite set
 				throw invalid_argument("no suitable finite set in SetIterator::tupleAtInternSimple()");
 		}

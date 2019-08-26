@@ -207,6 +207,16 @@ namespace cmpl
         void doAssignScalar(ExecContext *ctx, SymbolValue *sym, CmplVal *tpl, CmplVal *rhs, unsigned se, char op, bool srn);
 
         /**
+         * assign with operation, for a non scalar left hand side or right hand side
+         * @param ctx			execution context
+         * @param sym			symbol to assign the value in
+         * @param ind			indexing set for the left hand side / NULL: no index given
+         * @param rhs			right hand side value
+         * @param op			assign operation (+,-,*,/)
+         */
+        void doAssignOp(ExecContext *ctx, SymbolValue *sym, CmplVal *ind, StackValue *rhs, char op);
+
+        /**
          * check assertion for this
          * @param ctx			execution context
          * @param cnst			mark destination as const
@@ -286,6 +296,104 @@ namespace cmpl
          * @return              src converted to regular array without other arrays as element / NULL: src is already a regular array
          */
         static CmplArray *arrayFromArrayComp(ExecContext *ctx, CmplArray *src);
+
+    private:
+        /**
+         * cast source array to array with same values but definition set according ind
+         * @param ctx           execution context
+         * @param arr           source array, must be regular array (TP_ARRAY) or empty array (TP_NULL) or scalar value
+         * @param ind           tuple or set to cast to
+         * @param se            syntax element id of ind
+         * @return              array on the stack
+         */
+        static StackValue *castArray(ExecContext *ctx, StackValue *arr, CmplVal &ind, unsigned se);
+
+        /**
+         * info about indexation value within an array cast
+         */
+        struct ArrayCastInd
+        {
+            ExecContext *_ctx;          ///< execution context
+            CmplVal& _org;              ///< original index set
+            bool _valid;                ///< set is valid for array cast
+
+            vector<CmplValAuto> _parts; ///< parts of index set
+
+            unsigned _minRank;          ///< min rank of all parts
+            unsigned _maxRank;          ///< max rank of all parts
+            unsigned long _cnt;         ///< count of elements
+
+            bool _hasNS;                ///< parts contain at least one non-scalar part
+            unsigned _frstNS;           ///< index of first non-scalar part
+            unsigned _lastNS;           ///< index of last non-scalar part
+
+            bool _infPart;              ///< parts contain at least one infinite set
+            bool _multPart;             ///< parts contain at least one part with rank other than 1
+
+            unsigned _cntRank1;         ///< count of part sets with rank 1
+            bool _openrank;             ///< indexation can have additional ranks
+
+            /**
+             * constructor
+             * @param ctx       execution context
+             * @param ind       original index set
+             */
+            ArrayCastInd(ExecContext *ctx, CmplVal& ind);
+
+            /**
+             * check if set in this is equal to definition set of array, save scalars
+             * @param arrds     definition set of array
+             * @param nds       return of new definition set / TP_EMPTY: use arrds
+             * @return          true if equal
+             */
+            bool checkSetEq(CmplVal& arrds, CmplVal& nds);
+
+            /**
+             * check if definition set of array can be casted to this set
+             * @param arrds     definition set of array
+             * @param nds       return of new definition set / TP_EMPTY: use arrds
+             * @return          true if cast is possible
+             */
+            bool checkArrayCast(CmplVal& arrds, CmplVal& nds);
+
+        private:
+            /**
+             * check if definition set of array can be casted to this set, when this set is a simple set with rank 1
+             * @param arrds     definition set of array
+             * @param nds       return of new definition set / TP_EMPTY: use arrds
+             * @return          true if cast is possible
+             */
+            bool checkArrayCastSimple(CmplVal& arrds, CmplVal& nds);
+
+            /**
+             * recursive check if part of definition set of array can be casted to part of this set
+             * @param arrds     part of definition set of array
+             * @param nds       return of new definition set / TP_EMPTY: use arrds
+             * @param start     index of start part of this set
+             * @return          true if cast is possible
+             */
+            bool checkArrayCastPartRec(CmplVal& arrds, CmplVal& nds, unsigned start);
+
+            /**
+             * check if finite set can be casted to part of this set
+             * @param sf        finite set (part of definition set of array)
+             * @param start     index of start part of this set
+             * @param npp       return of new part set for this
+             * @param chg       set to true if npp not equal to sf
+             * @return          true if cast is possible
+             */
+            bool checkArrayCastPartSetFin(SetFinite *sf, unsigned start, CmplVal& npp, bool& chg);
+
+            /**
+             * check if part of array cast is valid
+             * @param pds       part set with rank 1 of definition set of array
+             * @param pp        part set of this
+             * @param npp       return of new part set for this
+             * @param chg       set to true if npp not equal to pds
+             * @return          true if cast is valid for this part
+             */
+            bool checkArrayCastPart(CmplVal& pds, CmplVal& pp, CmplVal& npp, bool& chg);
+        };
     };
 
 }

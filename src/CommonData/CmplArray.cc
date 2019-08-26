@@ -141,6 +141,29 @@ namespace cmpl
         _validSet.copyFrom(src->_validSet, true, false);
     }
 
+    /**
+     * constructor: new array as copy from source array, with changed definition set
+     * @param src			source array
+     * @param defset		new definition set (must have same count as definition set in src)
+     * @param uo            sort elements according user order
+     */
+    CmplArray::CmplArray(CmplArray *src, CmplVal& defset, bool uo): CmplArray(src)
+    {
+        if (SetBase::cnt(_defset) != SetBase::cnt(defset))
+            throw invalid_argument("wrong element count in new definition set");
+
+        if (uo && (SetBase::hasUserOrder(defset) || SetBase::hasUserOrder(_defset))) {
+            //TODO: eigentlich tut SetIterator zu viel, nur Mapping kanonische Reihenfolge / Nutzerreihenfolge benoetigt
+            SetIterator ss(_defset, SetIterator::iteratorTupleSimple, true);
+            SetIterator sd(defset, SetIterator::iteratorTupleSimple, true);
+
+            for (ss.begin(), sd.begin(); ss; ss++, sd++)
+                _array[sd.tupleIndex()].copyFrom(src->_array[ss.tupleIndex()]);
+        }
+
+        _defset.copyFrom(defset);
+    }
+
 
 	/**
 	 * destructor

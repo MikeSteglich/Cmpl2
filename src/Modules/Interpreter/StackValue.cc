@@ -426,6 +426,8 @@ namespace cmpl
             if (!sym->isUninitialized() && !sym->isNull() && !sym->isSimpleEmpty()) {
                 //TODO: Fall beruecksichtigen, dass hasIndex() && _addVal->isSet():
                 //  dann pruefen, ob sich durch die Indizierung ein nichtleeres Array ergibt, wenn ja, dann return
+                //  -> ueber TupleMatching pruefen? (dann vielleicht weiterer Modus, damit nur Pruefung ob ueberhaupt ein Match existiert)
+                //      (kann dann auch den Fall _addVal.isITuple() gleich mit uebernehmen)
 
                 if (!hasIndex() || !(_addVal.isITuple()))
                     return;
@@ -471,65 +473,101 @@ namespace cmpl
 
         CmplVal *rhsSimple = rhs->simpleValue();
         CmplVal *lhsInd = (hasIndex() ? &_addVal : NULL);
+        StackValue *popTo = NULL;
 
-        if (!sym->isUninitialized() && (hasIndex() || (rhsSimple && sym->simpleValue()))) {
+        if (!sym->isUninitialized() && (hasIndex() || (rhsSimple && sym->simpleValue()) || op)) {
             bool needLockVS = (sym->hasValueStore() && sym->valueStore()->refCnt() > 1);
             LockGuard<mutex> lckV(needLockVS, (needLockVS ? &(sym->valueStore()->accMtx()) : NULL));
 
-            if (!lhsInd || lhsInd->isITuple()) {
+            if ((!lhsInd || lhsInd->isITuple() || ((lhsInd->t == TP_SET_ALL || lhsInd->t == TP_SET_NULL) && rhsSimple && rhsSimple->t != TP_NULL)) && (!op || sym->simpleValue())) {
                 // assign scalar value
                 if (rhsSimple && rhsSimple->t != TP_NULL)
-                    doAssignScalar(ctx, sym, lhsInd, rhsSimple, rhs->syntaxElem(), op, srn);
+                    doAssignScalar(ctx, sym, (lhsInd && lhsInd->isITuple() ? lhsInd : NULL), rhsSimple, rhs->syntaxElem(), op, srn);
                 else
                     ctx->valueError("left hand side is indexed as scalar, but right hand side is an array", rhs);
             }
+
             else {
-                //TODO (auch Lock fuer Bestimmung Quellarray)
-                ctx->valueError("re-assignment with indexation not implemented", this);
-            }
+                //TODO: Lock fuer Bestimmung Quellarray rhs
+                //  (wenn hier notwendig, dann auch weiter unten bei Zugriff ueber rhs)
+                //  (vielleicht eigentlich schon weiter oben allgemein?)
+                //  (vielleicht Ablauf generell umstellen, da sich manches hier und unten doppelt)
 
-            return;
-        }
-
-        StackValue *popTo = NULL;
-        bool assArray = true;
-
-        if (rhsSimple && rhsSimple->t != TP_NULL) {
-            if (lhsInd && lhsInd->t != TP_SET_ALL && lhsInd->t != TP_SET_NULL) {
-                if (lhsInd->isSetInf()) {
-                    ctx->valueError("scalar right hand side cannot be assigned to destination indexed by infinite set", rhs);
-                    return;
+                if (op) {
+                    doAssignOp(ctx, sym, lhsInd, rhs, op);
                 }
+                else {
+                    if (rhsSimple && rhsSimple->t != TP_NULL) {
+                        if (lhsInd->isSetInf()) {
+                            // (Array-Cast koennte prinzipiell moeglich sein, z.B. fuer Indizierung mit [1..], aber dann waere Semantik ganz anders als bei endlichem Set, deshalb hier doch nicht erlauben)
+                            ctx->valueError("scalar right hand side cannot be assigned to destination indexed by infinite set", rhs);
+                            return;
+                        }
 
-                //TODO: wenn ord, dann anders notwendig, weil jedes einzelne Element schon zugewiesen werden muss, bevor das naechste bestimmt wird
-                rhs = popTo = fillAssignArray(ctx, *lhsInd, rhsSimple, rhs->syntaxElem(), ord);
-            }
-            else if (cnst) {
-                PROTO_MOD_OUTL(ctx->modp(), "  setSimpleConstVal: sym " << sym->defId());
-                sym->setSimpleConstVal(*rhsSimple);
-                assArray = false;
+                        //TODO: wenn ord, dann anders notwendig, weil jedes einzelne Element schon zugewiesen werden muss, bevor das naechste bestimmt wird
+                        rhs = popTo = fillAssignArray(ctx, *lhsInd, rhsSimple, rhs->syntaxElem(), ord);
+                    }
 
-                if (srn && rhsSimple->isOptRC()) {
-                    OptModel *resModel = ctx->modp()->getResModel();
-                    CmplVal symName(TP_STR, (intType)(ctx->modp()->data()->globStrings()->search(ctx->modp()->symbolInfo(sym->defId())->name())));
-                    CmplVal tpl(TP_ITUPLE_NULL);
-                    ValueStore::setValInValueTree(ctx, rhsSimple, rhs->syntaxElem(), resModel, symName, tpl);
+                    else {
+                        rhs = popTo = castArray(ctx, rhs, *lhsInd, _syntaxElem);
+                    }
+
+                    PROTO_MOD_OUTL(ctx->modp(), "  setValueStore: sym " << sym->defId());
+                    ValueStore *store = sym->valueStore(true);
+                    store->setValue(ctx, rhs, false, (srn ? ctx->modp()->symbolInfo(sym->defId())->name() : NULL));
                 }
             }
         }
 
-        if (assArray) {
-            if ((!rhsSimple || rhsSimple->t == TP_NULL) && hasIndex() && lhsInd->t != TP_SET_ALL)
-                ctx->valueError("assigment with indexed destination not implemented", this);
+        else {
+            if (op) {
+                ctx->valueError("use of assignment with operation for uninitialized symbol", this);
+                return;
+            }
 
-            PROTO_MOD_OUTL(ctx->modp(), "  setValueStore: sym " << sym->defId());
-            ValueStore *store = sym->valueStore(true);
+            bool assArray = true;
 
-            LockGuard<mutex> lckV((ctx->needLock() && store->refCnt() > 1), store->accMtx());
-            store->setValue(ctx, rhs, true, (srn ? ctx->modp()->symbolInfo(sym->defId())->name() : NULL));
+            if (rhsSimple && rhsSimple->t != TP_NULL) {
+                if (lhsInd && lhsInd->t != TP_SET_ALL && lhsInd->t != TP_SET_NULL) {
+                    if (lhsInd->isSetInf()) {
+                        // (Array-Cast koennte prinzipiell moeglich sein, z.B. fuer Indizierung mit [1..], aber dann waere Semantik ganz anders als bei endlichem Set, deshalb hier doch nicht erlauben)
+                        ctx->valueError("scalar right hand side cannot be assigned to destination indexed by infinite set", rhs);
+                        return;
+                    }
 
-            if (cnst)
-                sym->setReadOnly();
+                    //TODO: wenn ord, dann anders notwendig, weil jedes einzelne Element schon zugewiesen werden muss, bevor das naechste bestimmt wird
+                    rhs = popTo = fillAssignArray(ctx, *lhsInd, rhsSimple, rhs->syntaxElem(), ord);
+                }
+                else if (cnst) {
+                    PROTO_MOD_OUTL(ctx->modp(), "  setSimpleConstVal: sym " << sym->defId());
+                    sym->setSimpleConstVal(*rhsSimple);
+                    assArray = false;
+
+                    if (srn && rhsSimple->isOptRC()) {
+                        OptModel *resModel = ctx->modp()->getResModel();
+                        CmplVal symName(TP_STR, (intType)(ctx->modp()->data()->globStrings()->search(ctx->modp()->symbolInfo(sym->defId())->name())));
+                        CmplVal tpl(TP_ITUPLE_NULL);
+                        ValueStore::setValInValueTree(ctx, rhsSimple, rhs->syntaxElem(), resModel, symName, tpl);
+                    }
+                }
+            }
+
+            if (assArray) {
+                if ((!rhsSimple || rhsSimple->t == TP_NULL) && hasIndex() && lhsInd->t != TP_SET_ALL) {
+                    rhs = castArray(ctx, rhs, *lhsInd, _syntaxElem);
+                    if (!popTo)
+                        popTo = rhs;
+                }
+
+                PROTO_MOD_OUTL(ctx->modp(), "  setValueStore: sym " << sym->defId());
+                ValueStore *store = sym->valueStore(true);
+
+                LockGuard<mutex> lckV((ctx->needLock() && store->refCnt() > 1), store->accMtx());
+                store->setValue(ctx, rhs, true, (srn ? ctx->modp()->symbolInfo(sym->defId())->name() : NULL));
+
+                if (cnst)
+                    sym->setReadOnly();
+            }
         }
 
         if (popTo)
@@ -671,6 +709,15 @@ namespace cmpl
             return;
         }
 
+        CmplVal tplNull(TP_ITUPLE_NULL);
+        CmplVal& itpl = (tpl ? *tpl : tplNull);
+        const char *srname = (srn && rhs->isOptRC() ? ctx->modp()->symbolInfo(sym->defId())->name() : NULL);
+
+        sym->valueStore()->setSingleValue(ctx, &itpl, 0, *rhs, se, srname, op);
+
+        /*
+         *TODO: entfaellt alles (nach setSingleValue() verschoben)
+
         if (!op && rhs->t == TP_STRINGP)
             rhs->stringPToStr(ctx->modp());
 
@@ -687,9 +734,6 @@ namespace cmpl
         // search tuple in the definition set of the value array of the symbol
         CmplVal& ds = arr->defset();
         unsigned long ind;
-
-        CmplVal tplNull(TP_ITUPLE_NULL);
-        CmplVal& itpl = (tpl ? *tpl : tplNull);
 
         if (srn && rhs->isOptRC()) {
             OptModel *resModel = ctx->modp()->getResModel();
@@ -726,6 +770,69 @@ namespace cmpl
             }
             else {
                  ctx->valueError("left hand side element not found", this);
+            }
+        }
+        */
+    }
+
+
+    /**
+     * assign with operation, for a non scalar left hand side or right hand side
+     * @param ctx			execution context
+     * @param sym			symbol to assign the value in
+     * @param ind			indexing set for the left hand side / NULL: no index given
+     * @param rhs			right hand side value
+     * @param se            syntax element id of right hand side value
+     * @param op			assign operation (+,-,*,/)
+     */
+    void StackValue::doAssignOp(ExecContext *ctx, SymbolValue *sym, CmplVal *ind, StackValue *rhs, char op)
+    {
+        ValueStore *store = sym->valueStore(false);
+        if (!store) {
+            ctx->valueError("invalid left hand side for re-assignment with operation", this);
+            return;
+        }
+
+        CmplVal *rhsSimple = rhs->simpleValue();
+        bool rhssc = (rhsSimple && rhsSimple->t != TP_NULL);
+        if (!rhssc && (op != '+' && op != '-')) {
+            ctx->valueError("re-assignment with operation and non scalar right hand side can use only '+=' or '-=' operator", this);
+            return;
+        }
+
+        if (!rhsSimple && rhs->val().t != TP_ARRAY) {
+            ctx->valueError("invalid right hand side for re-assignment with operation", rhs);
+            return;
+        }
+
+        // indexation for left hand side value
+        CmplArray *arr = store->values();
+        CmplVal setall(TP_SET_ALL);
+        CmplValAuto lset;
+
+        TupleMatching tm(ctx, TupleMatching::matchIndex, arr->defset(), (ind ? *ind : setall), true);
+        tm.match(lset, true);
+
+        if (!rhssc && ((rhsSimple && lset != TP_SET_EMPTY) || (!rhsSimple && !SetUtil::compareEq(&lset, &(rhs->val().array()->defset()))))) {
+            ctx->valueError("both sides for re-assignment with operation must have the same definition set", this);
+            return;
+        }
+
+        if (lset.t != TP_SET_EMPTY) {
+            // execution of operation
+            vector<unsigned long> *resinds = tm.resIndex();
+            unsigned i;
+
+            if (rhssc) {
+                for (i = 0; i < resinds->size(); i++) {
+                    store->setSingleValue(ctx, NULL, resinds->at(i)+1, *rhsSimple, rhs->syntaxElem(), NULL, op);
+                }
+            }
+            else {
+                CmplArrayIterator rhsit(*(rhs->val().array()), false, true, false);
+                for (i = 0, rhsit.begin(); i < resinds->size() && rhsit; i++, rhsit++) {
+                    store->setSingleValue(ctx, NULL, resinds->at(i)+1, *(*rhsit), rhs->syntaxElem(), NULL, op);
+                }
             }
         }
     }
@@ -1361,5 +1468,517 @@ namespace cmpl
         return res;
     }
 
+
+    /**
+     * cast source array to array with same values but definition set according ind
+     * @param ctx           execution context
+     * @param arr           source array, must be regular array (TP_ARRAY) or empty array (TP_NULL) or scalar value
+     * @param ind           tuple or set to cast to
+     * @param se            syntax element id of ind
+     * @return              array on the stack
+     */
+    StackValue *StackValue::castArray(ExecContext *ctx, StackValue *arr, CmplVal& ind, unsigned se)
+    {
+        StackValue *res = ctx->pushPre(arr->syntaxElem());
+        res->_val.set(TP_NULL);
+
+        CmplVal& arrv = arr->_val;
+        if (arrv.t != TP_ARRAY && arrv.t != TP_NULL && !arr->isSimple()) {
+            ctx->valueError("array expected", arr);
+            return res;
+        }
+        CmplVal *arrds = (arrv.t == TP_ARRAY ? &(arrv.array()->defset()) : NULL);
+
+        CmplValAuto indset;
+        if (!SetUtil::convertToSetOrTuple(ctx, indset, ind, typeConversionExact, false)) {
+            ctx->valueError("indexation must be a set or tuple", ind, se);
+            return res;
+        }
+        if (!SetBase::isCanonical(indset)) {
+            CmplValAuto t;
+            if (SetUtil::canonicalSet(t, indset))
+                indset.moveFrom(t, true);
+        }
+
+        bool arrsimple = (!arrds || arrds->t == TP_SET_R1_1_UB || arrds->t == TP_SET_R1_0_UB || arrds->t == TP_SET_NULL || arrds->t == TP_SET_EMPTY);
+        if (arrsimple && indset.isSetFin()) {
+            unsigned long arrcnt = (arrds ? SetBase::cnt(*arrds) : (arrv.t == TP_NULL ? 0 : 1));
+            if (arrcnt != SetBase::cnt(indset)) {
+                ctx->valueError("wrong element count in array", arr);
+                return res;
+            }
+
+            if (arrds && arrds->t != TP_SET_EMPTY)
+                res->_val.set(TP_ARRAY, new CmplArray(arrv.array(), indset, true));
+            else if (!arrds && arrv.t != TP_NULL)
+                res->_val.set(TP_ARRAY, new CmplArray(indset, arrv));
+
+            return res;
+        }
+
+        ArrayCastInd acinfo(ctx, indset);
+        if (!acinfo._valid) {
+            ctx->valueError("invalid set for indexation", ind, se);
+            return res;
+        }
+
+        if (arrv.t == TP_NULL) {
+            if (acinfo._infPart || acinfo._cnt == 0 || (acinfo._openrank && !acinfo._hasNS))
+                res->_val.set(TP_NULL);
+            else
+                ctx->valueError("wrong element count in array", arr);
+
+            return res;
+        }
+
+        CmplValAuto nds;
+        CmplVal arrdsv(TP_SET_NULL);
+        CmplVal *arrdsp = (arrds ?: &arrdsv);
+
+        if (acinfo.checkSetEq(*arrdsp, nds)) {
+            if (!nds)
+                res->_val.copyFrom(arrv);
+            else if (arrds)
+                res->_val.set(TP_ARRAY, new CmplArray(arrv.array(), nds, false));
+            else
+                res->_val.set(TP_ARRAY, new CmplArray(nds, arrv));
+
+            return res;
+        }
+
+        if (acinfo.checkArrayCast(*arrdsp, nds)) {
+            if (!nds)
+                res->_val.copyFrom(arrv);
+            else if (arrds)
+                res->_val.set(TP_ARRAY, new CmplArray(arrv.array(), nds, true));
+            else
+                res->_val.set(TP_ARRAY, new CmplArray(nds, arrv));
+
+            return res;
+        }
+
+        ctx->valueError("invalid set for array cast", ind, se);
+        return res;
+    }
+
+
+    /*********** StackValue::ArrayCastInd **********/
+
+    /**
+     * constructor
+     * @param ctx       execution context
+     * @param ind       original index set
+     */
+    StackValue::ArrayCastInd::ArrayCastInd(ExecContext *ctx, CmplVal& ind): _ctx(ctx), _org(ind), _valid(true)
+    {
+        SetBase::partsToVector(_org, _parts, true);
+
+        _minRank = _maxRank = 0;
+        _cnt = 1;
+        _hasNS = false;
+        _frstNS = _lastNS = 0;
+        _infPart = _multPart = false;
+        _cntRank1 = 0;
+        _openrank = false;
+
+        for (unsigned i = 0; i < _parts.size(); i++) {
+            CmplVal& v = _parts[i];
+
+            if (v.t == TP_SET_ALL && i == _parts.size() - 1) {
+                _openrank = true;
+            }
+            else if (v.isSet()) {
+                if (!_hasNS) {
+                    _hasNS = true;
+                    _frstNS = i;
+                }
+                _lastNS = i;
+
+                unsigned mir = SetBase::minRank(v);
+                unsigned mar = SetBase::maxRank(v);
+
+                if (v.isSetFin()) {
+                    _cnt *= SetBase::cnt(v);
+
+                    if (mar == 1 && mir == 1) {
+                        _cntRank1++;
+                        _minRank++;
+                        _maxRank++;
+                    }
+                    else {
+                        _multPart = true;
+                        _minRank += mir;
+                        _maxRank += mar;
+                    }
+                }
+                else if (mar == 1 && (v.t == TP_SET_R1_LB_INF || v.t == TP_SET_R1_INF_UB || v.t == TP_SET_R1_IINF || v.t == TP_SET_R1A || v.t == TP_SET_R1A_INT)) {
+                    _infPart = true;
+                    _cntRank1++;
+                    if (v.t == TP_SET_R1_IINF || v.t == TP_SET_R1A || v.t == TP_SET_R1A_INT)
+                        v.set(TP_SET_R1_LB_INF, (intType)(v.t == TP_SET_R1A_INT ? 0 : 1));
+                }
+                else {
+                    _valid = false;
+                    return;
+                }
+            }
+            else if (v.isScalarIndex()) {
+                _minRank++;
+                _maxRank++;
+            }
+            else {
+                _valid = false;
+                return;
+            }
+        }
+
+        if (_infPart && _multPart) {
+            _valid = false;
+            return;
+        }
+
+        if (_openrank)
+            _parts.pop_back();
+    }
+
+    /**
+     * check if set in this is equal to definition set of array, save scalars
+     * @param arrds     definition set of array
+     * @param nds       return of new definition set / TP_EMPTY: use arrds
+     * @return          true if equal
+     */
+    bool StackValue::ArrayCastInd::checkSetEq(CmplVal& arrds, CmplVal& nds)
+    {
+        if (_infPart)
+            return false;
+
+        if (!_hasNS) {
+            if (!_openrank)
+                return false;
+
+            // upper open part of this set is counted as equal to any definition set of array
+            Tuple *tpl;
+            CmplValAuto vtpl(TP_TUPLE, tpl = new Tuple(_parts.size() + 1));
+            for (unsigned p = 0; p < _parts.size(); p++)
+                tpl->at(p)->copyFrom(_parts[p]);
+            tpl->at(_parts.size())->copyFrom(arrds);
+
+            SetUtil::tupleToSetFin(_ctx, nds, tpl, true, true);
+            return true;
+        }
+
+        if (_cnt != SetBase::cnt(arrds))
+            return false;
+
+        unsigned mir = SetBase::minRank(arrds);
+        unsigned mar = SetBase::maxRank(arrds);
+        unsigned scr = _frstNS + (_parts.size() - 1 - _lastNS);
+
+        if (mar > _maxRank || mir < _minRank - scr || mar - mir != _maxRank - _minRank)
+            return false;
+
+        // try all posibilities suitable by rank for set comparison
+        unsigned roff = _maxRank - mar;
+        unsigned tr = _parts.size() - roff;
+        Tuple *tpl;
+        CmplValAuto vtpl(TP_TUPLE, tpl = new Tuple(tr));
+        CmplValAuto cs;
+
+        for (unsigned i = _frstNS; ; i--) {
+            unsigned lst = i + tr - 1;
+            if (lst < _parts.size() && lst >= _lastNS) {
+                // build comparison set from _parts[i].._parts[lst]
+                if (i == 0 && roff == 0 && !_openrank) {
+                    cs.copyFrom(_org);
+                }
+                else {
+                    for (unsigned p = 0; p < tr; p++)
+                        tpl->at(p)->copyFrom(_parts[i + p]);
+
+                    SetUtil::tupleToSetFin(_ctx, cs, tpl, true, true);
+                }
+
+                if (SetUtil::compareEq(&cs, &arrds, true)) {
+                    // set is equal
+                    if (roff == 0) {
+                        nds.set(TP_EMPTY);
+                    }
+                    else if (!_openrank) {
+                        nds.copyFrom(_org);
+                    }
+                    else {
+                        vtpl.dispSet(TP_TUPLE, tpl = new Tuple(_parts.size()));
+                        for (unsigned p = 0; p < _parts.size(); p++)
+                            tpl->at(p)->copyFrom(_parts[p]);
+
+                        SetUtil::tupleToSetFin(_ctx, nds, tpl, true, true);
+                    }
+
+                    return true;
+                }
+            }
+
+            if (i == 0)
+                break;
+        }
+
+        return false;
+    }
+
+    /**
+     * check if definition set of array can be casted to this set
+     * @param arrds     definition set of array
+     * @param nds       return of new definition set / TP_EMPTY: use arrds
+     * @return          true if cast is possible
+     */
+    bool StackValue::ArrayCastInd::checkArrayCast(CmplVal& arrds, CmplVal& nds)
+    {
+        if (_multPart || !_hasNS || _cntRank1 == 0)
+            return false;
+
+        if (!_infPart && !_openrank && _cnt != SetBase::cnt(arrds))
+            return false;
+
+        if (_cntRank1 != 1 || !checkArrayCastSimple(arrds, nds)) {
+            unsigned mir = SetBase::minRank(arrds);
+            unsigned mar = SetBase::maxRank(arrds);
+            if ((!_openrank && (mar != _cntRank1 || mir != _cntRank1)) || (_openrank && mir < _cntRank1))
+                return false;
+
+            if (!checkArrayCastPartRec(arrds, nds, 0))
+                return false;
+        }
+
+        if (nds) {
+            CmplValAuto t;
+            if (SetUtil::canonicalSet(t, nds))
+                nds.moveFrom(t, true);
+        }
+
+        return true;
+    }
+
+    /**
+     * check if definition set of array can be casted to this set, when this set is a simple set with rank 1
+     * @param arrds     definition set of array
+     * @param nds       return of new definition set / TP_EMPTY: use arrds
+     * @return          true if cast is possible
+     */
+    bool StackValue::ArrayCastInd::checkArrayCastSimple(CmplVal& arrds, CmplVal& nds)
+    {
+        CmplValAuto vs(_parts[_frstNS]);
+        if (vs.t == TP_SET_R1_1_UB || vs.t == TP_SET_R1_0_UB || (vs.t == TP_SET_R1_LB_INF && (vs.v.i == 0 || vs.v.i == 1))) {
+            unsigned long cnt = SetBase::cnt(arrds);
+            if (vs.isSetInf()) {
+                if (vs.v.i == 0)
+                    vs.set(TP_SET_R1_0_UB, (intType)(cnt - 1));
+                else
+                    vs.set(TP_SET_R1_1_UB, (intType)cnt);
+            }
+            else if (cnt != SetBase::cnt(vs)) {
+                return false;
+            }
+
+            if (_parts.size() > 1) {
+                Tuple *tpl;
+                CmplValAuto vtpl(TP_TUPLE, tpl = new Tuple(_parts.size()));
+                for (unsigned p = 0; p < _parts.size(); p++)
+                    tpl->at(p)->copyFrom((p == _frstNS ? vs : _parts[p]));
+
+                SetUtil::tupleToSetFin(_ctx, nds, tpl, true, true);
+            }
+            else if (arrds.t == vs.t && arrds.v.i == vs.v.i) {
+                nds.dispUnset();
+            }
+            else {
+                nds.copyFrom(vs);
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * recursive check if part of definition set of array can be casted to part of this set
+     * @param arrds     part of definition set of array
+     * @param nds       return of new definition set / TP_EMPTY: use arrds
+     * @param start     index of start part of this set
+     * @return          true if cast is possible
+     */
+    bool StackValue::ArrayCastInd::checkArrayCastPartRec(CmplVal& arrds, CmplVal& nds, unsigned start)
+    {
+        vector<CmplValAuto> dsparts;
+        SetBase::partsToVector(arrds, dsparts, true);
+
+        vector<CmplValAuto> nparts;
+        bool chgds = false, rec = false;
+        unsigned i, p;
+
+        for (i = 0, p = start; i < dsparts.size(); i++, p++) {
+            while (p < _parts.size() && _parts[p].isScalarIndex()) {
+                nparts.emplace_back(_parts[p++]);
+                chgds = true;
+            }
+
+            CmplVal& pds = dsparts[i];
+            CmplVal* pp = (p < _parts.size() ? &(_parts[p]) : NULL);
+            if (!pp && !_openrank)
+                return false;
+
+            if (pp && (SetBase::minRank(pds) != 1 || SetBase::maxRank(pds) != 1)) {
+                // handle SetFinite by recursive calls
+                if (i < dsparts.size() - 1 || dsparts[i].t != TP_SET_FIN)
+                    return false;
+
+                SetFinite *sf = pds.setFinite();
+                if (sf->baseRank() != 1 || sf->minRank() == 0)
+                    return false;
+
+                nparts.emplace_back();
+                CmplValAuto& npp = nparts.back();
+                if (!checkArrayCastPartSetFin(sf, p, npp, chgds))
+                    return false;
+                else
+                    rec = true;
+            }
+            else {
+                nparts.emplace_back();
+                CmplValAuto& npp = nparts.back();
+
+                if (!pp)
+                    npp.copyFrom(pds);
+                else if (!checkArrayCastPart(pds, *pp, npp, chgds))
+                    return false;
+            }
+        }
+
+        if (p < _parts.size() && !rec) {
+            chgds = true;
+            for (; p < _parts.size(); p++) {
+                if (_parts[p].isScalarIndex())
+                    nparts.emplace_back(_parts[p]);
+                else
+                    return false;
+            }
+        }
+
+        // create new definition set
+        if (!chgds) {
+            nds.dispUnset();
+        }
+        else if (nparts.size() == 1) {
+            nds.moveFrom(nparts[0], true);
+        }
+        else {
+            Tuple *tpl;
+            CmplValAuto vtpl(TP_TUPLE, tpl = new Tuple(nparts.size()));
+            for (p = 0; p < nparts.size(); p++)
+                tpl->at(p)->moveFrom(nparts[p]);
+
+            SetUtil::tupleToSetFin(_ctx, nds, tpl, true, true);
+        }
+
+        return true;
+    }
+
+    /**
+     * check if finite set can be casted to part of this set
+     * @param sf        finite set (part of definition set of array)
+     * @param start     index of start part of this set
+     * @param npp       return of new part set for this
+     * @param chg       set to true if npp not equal to sf
+     * @return          true if cast is possible
+     */
+    bool StackValue::ArrayCastInd::checkArrayCastPartSetFin(SetFinite *sf, unsigned start, CmplVal& npp, bool& chg)
+    {
+        CmplVal *sfbase = sf->baseSet();
+        unsigned long bcnt = sf->baseCnt();
+
+        CmplValAuto nbase;
+        if (!checkArrayCastPart(*sfbase, _parts[start], nbase, chg))
+            return false;
+
+        SetFinite *nsf;
+        CmplValAuto vnsf(TP_SET_FIN, nsf = new SetFinite(nbase, false, 0, false, 0, 0));
+
+        unsigned long *ords, *ordn;
+        unique_ptr<unsigned long[]> ordsp(ords = (SetBase::hasUserOrder(*sfbase) ? SetIterator::copyOrder(*sfbase) : NULL));
+        unique_ptr<unsigned long[]> ordnp(ordn = (SetBase::hasUserOrder(nbase) ? SetIterator::copyOrder(nbase) : NULL));
+
+        for (unsigned long i = 0; i < bcnt; i++) {
+            CmplVal *ss = sf->subSet(ords ? ords[i] : i);
+            CmplVal *nss = nsf->subSet(ordn ? ordn[i] : i);
+
+            if (*ss) {
+                if (!checkArrayCastPartRec(*ss, *nss, start + 1))
+                    return false;
+
+                if (*nss)
+                    chg = true;
+                else
+                    nss->copyFrom(ss);
+            }
+            else {
+                if (!_openrank || start < _parts.size() - 1)
+                    return false;
+
+                nss->set(TP_EMPTY);
+            }
+        }
+
+        nsf->setCount();
+        nsf->setRank();
+        npp.moveFrom(vnsf, true);
+
+        return true;
+    }
+
+    /**
+     * check if part of array cast is valid
+     * @param pds       part set with rank 1 of definition set of array
+     * @param pp        part set of this
+     * @param npp       return of new part set for this
+     * @param chg       set to true if npp not equal to pds
+     * @return          true if cast is valid for this part
+     */
+    bool StackValue::ArrayCastInd::checkArrayCastPart(CmplVal& pds, CmplVal &pp, CmplVal& npp, bool &chg)
+    {
+        bool ppsimple = (pp.t == TP_SET_R1_1_UB || pp.t == TP_SET_R1_0_UB || (pp.t == TP_SET_R1_LB_INF && (pp.v.i == 0 || pp.v.i == 1)));
+        bool pdssimple = (pds.t == TP_SET_R1_1_UB || pds.t == TP_SET_R1_0_UB);
+        unsigned long cnt = SetBase::cnt(pds);
+
+        if (!ppsimple && (!pdssimple || pp.isSetInf())) {
+            if (pdssimple && pp.isSetInf() && pp.rank1() && pp.elemInt() && (pp.useInt() || pp.useNothing())) {
+                if (pp.boundHasLow())
+                    npp.set(TP_SET_R1_ALG, new SetAlg(pp.v.i, 1, cnt));
+                else if (pp.boundHasUpp())
+                    npp.set(TP_SET_R1_ALG, new SetAlg((intType)(pp.v.i + 1 - cnt), 1, cnt));
+                else
+                    npp.set(TP_SET_R1_1_UB, (intType)cnt);
+            }
+            else {
+                return false;
+            }
+        }
+        else if (pp.isSetFin()) {
+            if (cnt != SetBase::cnt(pp))
+                return false;
+
+            npp.copyFrom(pp);
+        }
+        else {
+            if (pp.v.i == 0)
+                npp.set(TP_SET_R1_0_UB, (intType)(cnt - 1));
+            else
+                npp.set(TP_SET_R1_1_UB, (intType)cnt);
+        }
+
+        if (pds.t != npp.t || !pds.useInt() || pds.v.i != npp.v.i)
+            chg = true;
+
+        return true;
+    }
 }
 

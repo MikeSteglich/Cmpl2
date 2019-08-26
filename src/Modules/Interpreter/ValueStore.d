@@ -14,4 +14,5 @@ ValueStore.o ValueStore.d : ValueStore.cc ValueStore.hh ../../CommonData/CmplVal
  ../../Control/ModuleBase.hh ../../CommonData/OptModel.hh \
  ../../CommonData/ValueTree.hh ../../CommonData/CmplArray.hh \
  ../../CommonData/../Control/StringStore.hh \
- ../../CommonData/ExternDataInfo.hh
+ ../../CommonData/ExternDataInfo.hh OperationBase.hh \
+ ../../CommonData/ValFormula.hh ../../CommonData/OptModel.hh

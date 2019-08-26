@@ -226,21 +226,17 @@ namespace cmpl
 		 */
         void setValue(ExecContext *ctx, StackValue *sv, bool disp, const char *srn = NULL, CmplVal *va = NULL, unsigned se = 0);
 
-		/**
-		 * set value from a single value
-		 * @param ctx				execution context
-		 * @param v					value to copy
-		 * @param disp				discard all previous values
-		 */
-		void setValue(ExecContext *ctx, CmplVal& v, bool disp);
-
-		/**
-		 * set value to a value described only by its type
-		 * @param ctx				execution context
-		 * @param tp				type for value
-		 * @param disp				discard all previous values
-		 */
-		void setValue(ExecContext *ctx, tp_e tp, bool disp);
+        /**
+         * set single value within the array
+         * @param ctx				execution context
+         * @param tpl               indexing tuple for the value within the array / NULL: not given
+         * @param ind1              direct index+1 for the value within the array / 0: not given (at least tpl or ind1 must be given, if both given it must match)
+         * @param val				value to set within the array, must be a single value (no array or list)
+         * @param se                syntax element
+         * @param srn				set row/col name for result matrix to this name
+         * @param op                assign operation (+,-,*,/) or '\0'
+         */
+        void setSingleValue(ExecContext *ctx, const CmplVal *tpl, unsigned long ind1, CmplVal& val, unsigned se, const char *srn = NULL, char op = '\0');
 
         /**
          * fetch and increment single int value
