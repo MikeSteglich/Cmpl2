@@ -102,7 +102,7 @@ void SolverGlpk::run()
 
         generateCmdLine(sol);
 
-        cout << _solverCmdLine << endl;
+        //cout << _solverCmdLine << endl;
 
         int ret = solve();
 
@@ -187,10 +187,12 @@ void SolverGlpk::readSolFile(Solution* sol) {
                         solution.setStatus("optimal");
 
                     int vPos;
-                    if ( StringStore::lrTrim(solList[4])=="u")
-                        vPos=6;
-                    else
-                        vPos=5;
+                    vPos = solList.size() -1;
+
+//                    if ( StringStore::lrTrim(solList[4])=="u")
+//                        vPos=6;
+//                    else
+//                        vPos=5;
 
                     double objVal;
                     if (!StringStore::toDouble(solList[vPos],objVal))
