@@ -75,6 +75,8 @@ namespace cmpl
                     cp->back().add(_factor, !lhs);
                 else
                     cp->push_back(LinearModel::Coefficient(row, _factor, !lhs));
+
+                _optVar.optVar()->setUsedByCon(1);
             }
         }
     }
@@ -100,6 +102,8 @@ namespace cmpl
                     colMap[n] = coeffs->size();
                     coeffs->push_back(LinearModel::Coefficient(n, _factor, !lhs));
                 }
+
+                _optVar.optVar()->setUsedByCon(1);
             }
         }
     }
@@ -191,6 +195,9 @@ namespace cmpl
         vpl->cvp.emplace_back(_optVars[0].optVar()->id(), _optVars[1].optVar()->id(), _factor, neg);
         if (fact && !(fact->isNumOne(true)))
             vpl->cvp.back().mult(*fact);
+
+        _optVars[0].optVar()->setUsedByCon(1);
+        _optVars[1].optVar()->setUsedByCon(1);
     }
 
 
@@ -264,6 +271,8 @@ namespace cmpl
                         cp->back().add(_terms[i], !lhs);
                     else
                         cp->push_back(LinearModel::Coefficient(row, _terms[i], !lhs));
+
+                    _terms[i+1].optVar()->setUsedByCon(1);
                 }
                 else if (qp) {
                     ValFormulaVarProd *vp = dynamic_cast<ValFormulaVarProd *>(_terms[i+1].valFormula());
@@ -299,6 +308,8 @@ namespace cmpl
                         colMap[n] = coeffs->size();
                         coeffs->push_back(LinearModel::Coefficient(n, _terms[i], !lhs));
                     }
+
+                    _terms[i+1].optVar()->setUsedByCon(1);
                 }
                 else if (qp) {
                     ValFormulaVarProd *vp = dynamic_cast<ValFormulaVarProd *>(_terms[i+1].valFormula());

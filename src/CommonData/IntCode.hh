@@ -342,6 +342,7 @@ namespace cmpl
 
 	#define ICS_OPER_INDEX				22		// indexation
 	#define ICS_OPER_FUNC				23		// function call
+	#define ICS_OPER_ARRCAST			24		// array cast
 
 	// parameters
     #define ICPAR_OPER_CNT				0x00ff	// bit 0 - 7: count of source values for the operation (can be only in the range 0 to 2)
@@ -360,10 +361,12 @@ namespace cmpl
 
 	// minor numbers
 	#define ICS_CONSTRUCT_ARRAY			1		// construct array
-	#define ICS_CONSTRUCT_TUPEL			2		// construct tupel
-	#define ICS_CONSTRUCT_IV_WOLB		3		// construct interval without lower bound (can have 0 - 1 source values)
-	#define ICS_CONSTRUCT_IV_LB			4		// construct interval with lower bound (can have 1 - 2 source values)
-	#define ICS_CONSTRUCT_SET			5		// construct set (only algorithmic set) (must have 3 source values)
+	#define ICS_CONSTRUCT_ARRAY_IND		2		// construct array, with adding new index part
+	#define ICS_CONSTRUCT_ARRAY_WOI		3		// construct array, without adding new index part
+    #define ICS_CONSTRUCT_TUPLE			4		// construct tuple
+	#define ICS_CONSTRUCT_IV_WOLB		5		// construct interval without lower bound (can have 0 - 1 source values)
+	#define ICS_CONSTRUCT_IV_LB			6		// construct interval with lower bound (can have 1 - 2 source values)
+	#define ICS_CONSTRUCT_SET			7		// construct set (only algorithmic set) (must have 3 source values)
 
 	// parameters
 	// 	only if no arg: count of source values (if within boundary of unsigned short)

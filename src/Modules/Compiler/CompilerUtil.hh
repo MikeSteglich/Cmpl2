@@ -862,9 +862,11 @@ namespace cmpl
     #define EXPR_INFO_OP_SET			11			// set construction or interval construction
     #define EXPR_INFO_OP_IND			12			// index operation
     #define EXPR_INFO_OP_CALL			13			// function call
-    #define EXPR_INFO_OP_CAT			14			// list concatenation
-    #define EXPR_INFO_OP_CBHCAT			15			// codeblock header concatenation
-    #define EXPR_INFO_OP_INC			16			// increment or decrement
+	#define EXPR_INFO_OP_ARRC			14			// array cast
+    #define EXPR_INFO_OP_CAT			15			// list concatenation
+    #define EXPR_INFO_OP_CBHCAT			16			// codeblock header concatenation
+    #define EXPR_INFO_OP_INC			17			// increment or decrement
+	#define EXPR_INFO_OP_CODEBL			18			// expression is an codeblock
 
     /**
 	 * class for info about a parsed expression
@@ -937,6 +939,17 @@ namespace cmpl
 		 * reset expression after processing a codeblock header
 		 */
 		void resetCbhExpr()											{ _assignOp = NULL; }
+
+		/**
+		 * check whether expression is an array expression
+		 * @param cb			check also for codeblock
+		 */
+		bool expTypeArray(bool cb = true)							{ return (_expOp == EXPR_INFO_OP_ARR || (cb && _expOp == EXPR_INFO_OP_CODEBL)); }
+
+		/**
+		 * check whether expression is a tuple expression
+		 */
+		bool expTypeTuple()											{ return (_expOp == EXPR_INFO_OP_TUP); }
 
 		/**
 		 * set expression as left hand side of assignment, and define the lvalue symbols

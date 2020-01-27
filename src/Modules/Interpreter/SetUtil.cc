@@ -342,6 +342,12 @@ namespace cmpl
         if (!SetBase::finite(*s1))
             return false;
 
+        if (SetBase::finite(*s2) && SetBase::cnt(*s1) > SetBase::cnt(*s2))
+            return false;
+
+        if (SetBase::minRank(*s1) < SetBase::minRank(*s2) || SetBase::maxRank(*s1) > SetBase::maxRank(*s2))
+            return false;
+
         SetIterator iter(*s1);
         unsigned long num;
 
@@ -2721,10 +2727,10 @@ namespace cmpl
 		for (map<unsigned long, CmplVal>::iterator it = _subSet.begin(); it != _subSet.end(); it++)
 			it->second.dispose();
 
-		for (map<unsigned long, SetConstructHelper *>::iterator it = _subCtx.begin(); it != _subCtx.end(); it++) {
-			if (it->second)
-				delete it->second;
-		}
+//		for (map<unsigned long, SetConstructHelper *>::iterator it = _subCtx.begin(); it != _subCtx.end(); it++) {
+//			if (it->second)
+//				delete it->second;
+//		}
 	}
 
 
@@ -2809,6 +2815,7 @@ namespace cmpl
                     _maxRank = r + 1;
             }
         }
+
         return added;
     }
 
@@ -2949,30 +2956,30 @@ namespace cmpl
 	void SetConstructHelper::construct(CmplVal &res)
 	{
 		// SetFinite is needed if the set has subsets or if it contains the null tuple and other elements
-		if (_subSet.size() > 0 || _subCtx.size() > 0 || (_nNull && _mode != TP_SET_EMPTY))
+        if (_subSet.size() > 0 /* || _subCtx.size() > 0 */ || (_nNull && _mode != TP_SET_EMPTY))
 		{
             CmplValAuto bs;
 			constructBase(bs);
 
             //TODO: _minRank
 
-			// construct subsets
-			if (_subCtx.size() > 0) {
-				for (map<unsigned long, SetConstructHelper *>::iterator it = _subCtx.begin(); it != _subCtx.end(); it++) {
-					if (_subSet.count(it->first)) {
-						//TODO: Situation generell verbieten? Oder hier dann Sets geeignet zusammenfassen (den vorhandenen Set _subSet[it->first] und den zu konstruierenden it->second->construct())?
-					}
-					else if (it->second) {
-						it->second->construct(_subSet[it->first]);
-                        unsigned r = SetBase::rank(_subSet[it->first]);
-						if (_maxRank <= r)
-							_maxRank = r + 1;
+//			// construct subsets
+//			if (_subCtx.size() > 0) {
+//				for (map<unsigned long, SetConstructHelper *>::iterator it = _subCtx.begin(); it != _subCtx.end(); it++) {
+//					if (_subSet.count(it->first)) {
+//						//TODO: Situation generell verbieten? Oder hier dann Sets geeignet zusammenfassen (den vorhandenen Set _subSet[it->first] und den zu konstruierenden it->second->construct())?
+//					}
+//					else if (it->second) {
+//						it->second->construct(_subSet[it->first]);
+//                        unsigned r = SetBase::rank(_subSet[it->first]);
+//						if (_maxRank <= r)
+//							_maxRank = r + 1;
 
-						delete it->second;
-						it->second = NULL;
-					}
-				}
-			}
+//						delete it->second;
+//						it->second = NULL;
+//					}
+//				}
+//			}
 
 			// compare subsets
 			unsigned eqr = 0;
@@ -3011,6 +3018,107 @@ namespace cmpl
 				constructBase(res);
 		}
 	}
+
+    /**
+     * construct resulting set with no index from base elements
+     * @param ctx		execution context
+     * @param res		store for result set
+     * @param se		syntax element id of source values
+     * @param arr       reorder elements in this array according result set
+     * @return          true if success, false if indizes from subsets are not unique
+     */
+    bool SetConstructHelper::constructWoi(ExecContext *ctx, CmplVal &res, unsigned se, CmplVal *arr)
+    {
+        if (_nNull) {
+            return false;
+        }
+
+        else if (_mode == TP_SET_EMPTY) {
+            res.set(TP_SET_EMPTY);
+        }
+
+        else if (_subSet.size() < _cnt - 1) {
+            return false;
+        }
+
+        else if (_subSet.empty()) {
+            res.set(TP_SET_NULL);
+        }
+
+        else {
+            CmplValAuto r(TP_SET_EMPTY);
+            CmplVal n(TP_SET_NULL);
+            unsigned long rc = 0;
+
+            for (unsigned long i = (_rev ? _cnt : 1); i >= 1 && i <= _cnt; i += (_rev ? -1 : 1))
+            {
+                CmplVal& s = (_subSet.count(i) ? _subSet[i] : n);
+
+                if (r.t == TP_SET_EMPTY) {
+                    r.copyFrom(s);
+                    rc = SetBase::cnt(r);
+                }
+                else {
+                    CmplValAuto rn;
+                    SetUtil::addSet(ctx, &rn, se, &r, &s, true, false);
+                    r.moveFrom(rn);
+
+                    rc += SetBase::cnt(s);
+                    if (rc > SetBase::cnt(r))
+                        return false;
+                }
+            }
+
+            if (!SetUtil::canonicalSet(res, r))
+                res.moveFrom(r);
+
+            if (arr && SetBase::hasUserOrder(res)) {
+                // arr umsortieren
+                //  Ausgangssituation:
+                //      Elemente in arr sind nach den Subsets sortiert:
+                //              zuerst alle des ersten Subsets (wenn _rev das mit Index _cnt), dann alle des naechsten Subsets, usw.
+                //      Innerhalb jedes Subsets stehen die Elemente in arr dagegen schon in kanonischer Reihenfolge
+                //  Zielreihenfolge:
+                //      Alle Elemente in kanonischer Reihenfolge des Ergebnissets res
+                //  Vorgehen:
+                //      Durchgehen der Subsets (wie oben)
+                //          Elemente des Subsets stehen fortlaufend kanonisch in einem Bereich in arr: start .. (start + cnt(subset) - 1)
+                //          Also Subset in kanonischer Reihenfolge iterieren, damit Quellindex einfach fortlaufend aufsteigend
+                //              Aktuelles Subset-Element in res suchen, in kanonischer Reihenfolge, Position ist Zielindex
+                //              Wenn Zielindex != Quellindex: Quellelement in temporaerem Mapping zu Zielindex speichern
+                //      Alle im Mapping gespeicherte Elemente nach arr zum Zielindex
+
+                map<unsigned long, CmplVal> tm;
+                CmplVal *src = arr;
+
+                for (unsigned long i = (_rev ? _cnt : 1); i >= 1 && i <= _cnt; i += (_rev ? -1 : 1)) {
+                    if (_subSet.count(i)) {
+                        SetIterator iter(_subSet[i]);
+                        for (iter.begin(); iter; iter++) {
+                            unsigned long di;
+                            if (!SetUtil::tupleInSet(ctx, res, *iter, di))
+                                throw invalid_argument("inserted element not found in set");
+
+                            if (di != (unsigned long)(src - arr))
+                                tm[di].moveFrom(src);
+
+                            src++;
+                        }
+                    }
+                    else {
+                        if (src != arr)
+                            tm[0].moveFrom(src);
+                        src++;
+                    }
+                }
+
+                for (auto i : tm)
+                    arr[i.first].moveFrom(i.second);
+            }
+        }
+
+        return true;
+    }
 
 	/**
 	 * construct resulting base set

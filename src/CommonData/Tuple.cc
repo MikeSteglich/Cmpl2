@@ -168,8 +168,8 @@ namespace cmpl
                 res.copyFrom(_array + f, true, false);
             }
             else {
-                Tuple *tp = new Tuple(r);
-                res.set(TP_TUPLE, tp);
+                Tuple *tp = new Tuple(r, 0, _tupleType);
+                res.set((_tupleType==tupleIndexOnly ? TP_ITUPLE : TP_TUPLE), tp);
 
                 CmplVal *p = _array + f;
                 for (unsigned i = 0; i < r; i++)

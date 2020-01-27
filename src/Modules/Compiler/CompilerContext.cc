@@ -1425,6 +1425,36 @@ namespace cmpl
         PROTO_MOD_OUT_IC(_modp, addr, p);
     }
 
+    /**
+     * change mode for previous array construction
+     * @param elem		syntax element
+     * @param arrind    true: change to construct with adding new index part / false: change to construct without adding new index part
+     * @return			address of code element
+     */
+    unsigned CompilerContext::compArrayConstructMode(SyntaxElement *elem, bool arrind)
+    {
+        // get previous command
+        unsigned a = _codeCnt;
+        IntCode::IcElem *p = NULL;
+
+        if (a > 0) {
+            p = _code + a;
+            for (a--, p--; a > 0 && p->tp != IntCode::icTypeCommand; a--, p--) ;
+        }
+
+        if (!p || p->v.c.major != INTCODE_CONSTRUCT || p->v.c.minor != ICS_CONSTRUCT_ARRAY) {
+            if (arrind) {
+                // compile new array construction
+                return compOperation(elem, true, ICS_CONSTRUCT_ARRAY_IND, 1);
+            }
+        }
+        else {
+            p->v.c.minor = (arrind ? ICS_CONSTRUCT_ARRAY_IND : ICS_CONSTRUCT_ARRAY_WOI);
+        }
+
+        return a;
+    }
+
 	/**
 	 * compile start or end of function definition, also for global start and end
 	 * @param elem		syntax element

@@ -111,10 +111,11 @@ namespace cmpl
                 return true;
 
             case OPTION_EXT_EXEC_PRECOMP_DATA:
+            case OPTION_EXT_EXEC_PRECOMP_DATA2:
                 {
                     DataImportExtensionPar *dpar = (DataImportExtensionPar *)par;
                     ExternDataFileHandleOpt *edf;
-                    dpar->setData((edf = new ExternDataFileHandleOpt((Precompiler *)mod, this, opt)));
+                    dpar->setData((edf = new ExternDataFileHandleOpt((Precompiler *)mod, this, opt, (ref == OPTION_EXT_EXEC_PRECOMP_DATA2))));
                     dpar->setHandlePrio(edf->checkData());
                 }
                 return true;
@@ -208,35 +209,38 @@ namespace cmpl
      */
     int ExternDataFileHandleOpt::checkData()
     {
-        // skip first arg if it is the order number (handled already by the precompiler module)
         unsigned ocf = 0;
-        if (_opt->sepArgStart() == 1 && _opt->size() > 1)
-            ocf = 1;
 
-        // check whether first arg is a valid file name
-        if (_opt->size() > ocf) {
-            // get file name
-            string& fn = (*_opt)[ocf];
-            FileInput dataFile;
-            dataFile.setFile(ctrl()->data(), IO_MODE_FILE, &fn, IO_FILE_STANDARD_CDAT);
-            dataFile.setAliases(&(_mod->fileAlias()));
+        if (!_optWithColon) {
+            // skip first arg if it is the order number (handled already by the precompiler module)
+            if (_opt->sepArgStart() == 1 && _opt->size() > 1)
+                ocf = 1;
 
-            // get directory name if necessary
-            string dataDir;
-            bool chgToDataDir = false;
-            DataImportBase::getDataDir(_mod, &dataFile, dataDir, chgToDataDir);
+            // check whether first arg is a valid file name
+            if (_opt->size() > ocf) {
+                // get file name
+                string& fn = (*_opt)[ocf];
+                FileInput dataFile;
+                dataFile.setFile(ctrl()->data(), IO_MODE_FILE, &fn, IO_FILE_STANDARD_CDAT);
+                dataFile.setAliases(&(_mod->fileAlias()));
 
-            // try to open file
-            string ffn = dataDir + dataFile.fileNameReplaced();
-            FILE *fp = fopen(ffn.c_str(), "r");
-            if (fp) {
-                fclose(fp);
+                // get directory name if necessary
+                string dataDir;
+                bool chgToDataDir = false;
+                DataImportBase::getDataDir(_mod, &dataFile, dataDir, chgToDataDir);
 
-                int res = checkData(true, ocf);
-                if (!_errorInfo)
-                    return res;
+                // try to open file
+                string ffn = dataDir + dataFile.fileNameReplaced();
+                FILE *fp = fopen(ffn.c_str(), "r");
+                if (fp) {
+                    fclose(fp);
 
-                deleteInfo();
+                    int res = checkData(true, ocf);
+                    if (!_errorInfo)
+                        return res;
+
+                    deleteInfo();
+                }
             }
         }
 
@@ -247,11 +251,11 @@ namespace cmpl
      * check command line option for external data
      * @param fnf   true: first arg is used as filename / false: scan also first arg for words
      * @param ocf   start of scanned args
-     * @return       priority of handling the given external data import by this extension
+     * @return      priority of handling the given external data import by this extension
      */
     int ExternDataFileHandleOpt::checkData(bool fnf, unsigned ocf)
     {
-        unsigned mode = 0;      // 0: filename/namespace; 1: symbol name; 2: index or type assertion
+        unsigned mode = (_optWithColon ? 1 : 0);      // 0: filename/namespace; 1: symbol name; 2: index or type assertion
         unsigned cnt = 0;
         unsigned oc;
         DataImportBase::TxtWord *cont = NULL;

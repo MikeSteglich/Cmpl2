@@ -141,6 +141,35 @@ namespace cmpl
         return indexation(ctx, ci, its, ind);
     }
 
+
+    /**
+     * perform array cast operation, result is stored in execution context
+     * @param ctx			execution context
+     * @param ind			tuple or set to cast to
+     */
+    void StackValue::arraycast(ExecContext *ctx, StackValue *ind)
+    {
+        if (isList()) {
+            StackValue arr;
+            arr.init(_syntaxElem);
+            arrayFromList(ctx, arr._val, this, false);
+
+            arr.arraycast(ctx, ind);
+            return;
+        }
+
+        CmplVal *ci = ind->simpleValue();
+        if (ci) {
+            StackValue *res = castArray(ctx, this, *ci, ind->syntaxElem());
+            ctx->opResult().moveFrom(res->val(), false);
+        }
+        else {
+            ctx->valueError("indexation within array cast must be a set or tuple", ind);
+            ctx->opResult().moveFrom(val(), false);
+        }
+    }
+
+
     /**
      * perform indexation operation
      * @param ctx			execution context
@@ -351,7 +380,7 @@ namespace cmpl
             //      damit bei naechster aehnlicher Indexierung nicht erneut das Array neu aufgebaut werden muss.
             StackValue arr;
             arr.init(_syntaxElem);
-            arrayFromList(ctx, arr._val, this);
+            arrayFromList(ctx, arr._val, this, false);
 
             bool res = arr.indexation(ctx, ind, 1, orgInd);
             arr.unsetValue();
@@ -1031,10 +1060,12 @@ namespace cmpl
 	 * @param ctx			execution context
 	 * @param res			store for resulting list header
      * @param cnt			count of components for list on stack
-     * @param top			topmost component for list on stack / NULL: if cnt==0
+     * @param top			topmost component for list on stack, must be top element on stack / NULL: if cnt==0
+     * @param woi           no count of direct list element with an additional first index
+     * @param se            syntax element id
      * @return				stack element to pop to before pushing result list / NULL: no element to pop
 	 */
-	StackValue *StackValue::constructList(ExecContext *ctx, CmplVal &res, unsigned long cnt, StackValue *top)
+    StackValue *StackValue::constructList(ExecContext *ctx, CmplVal &res, unsigned long cnt, StackValue *top, bool woi, unsigned se)
 	{
 		// discard trailing nulls and blanks
 		StackValue *ptop = NULL;
@@ -1047,10 +1078,19 @@ namespace cmpl
 		if (cnt == 0) {
 			res.set(TP_NULL);
 		}
-		else {
+        else if (woi) {
+            // construct array instead of list
+            if (ptop)
+                ctx->stackPopTo(ptop);
+
+            StackValue *lst = ctx->pushPre(se);
+            lst->_val.set(TP_LIST_COMP, (intType)cnt);
+            ptop = arrayFromList(ctx, res, lst, true);
+        }
+        else {
 			// just mark the values as list; don't inspect list here to avoid an extra iteration over the values (so because list type is not known now use TP_LIST_COMP)
 			res.set(TP_LIST_COMP, (intType)cnt);
-		}
+        }
 
 		return ptop;
 	}
@@ -1062,7 +1102,7 @@ namespace cmpl
 	 * @param lst			topmost component for tuple on stack, must be the list header
 	 * @return				stack element to pop to before pushing result tuple
 	 */
-	StackValue *StackValue::arrayFromList(ExecContext *ctx, CmplVal &res, StackValue *lst)
+    StackValue *StackValue::arrayFromList(ExecContext *ctx, CmplVal &res, StackValue *lst, bool woi)
 	{
 		StackValue *pt = lst;
 
@@ -1092,7 +1132,7 @@ namespace cmpl
 			CmplVal defset;
 
 			CmplVal *dst = arr + size;
-			StackValue *lb = arrayFromListRec(ctx, &dst, defset, lst, 0);
+            StackValue *lb = arrayFromListRec(ctx, &dst, defset, lst, 0, woi);
 
 			CmplArray *n = new CmplArray(arr, defset, allValid, hasInvalid);
 			res.set(TP_ARRAY, n);
@@ -1193,7 +1233,7 @@ namespace cmpl
 		else
 			lst->_val.t = (rank == 1 ? TP_LIST_SIMPLE : TP_LIST_COMP);
 
-		return cnt;
+        return size;
 	}
 
 	/**
@@ -1203,9 +1243,10 @@ namespace cmpl
 	 * @param defset		store for resulting definition set
 	 * @param lst			topmost component for tuple on stack, must be the list header of a list
 	 * @param rec			recursion counter
-	 * @return				first stack element to pop for this list
+     * @param woi           no count of direct list element with an additional first index
+     * @return				first stack element to pop for this list
 	 */
-	StackValue *StackValue::arrayFromListRec(ExecContext *ctx, CmplVal **dstp, CmplVal &defset, StackValue *lst, unsigned rec)
+    StackValue *StackValue::arrayFromListRec(ExecContext *ctx, CmplVal **dstp, CmplVal &defset, StackValue *lst, unsigned rec, bool woi)
 	{
 		PROTO_MOD_OUTL(ctx->modp(), "  array from list: start rec #" << rec);
 
@@ -1221,6 +1262,11 @@ namespace cmpl
 		unsigned long sz = lst->_val.v.i;
 		StackValue *sv = lst - 1;
 
+        if (woi && sz > 1 && (lst->_val.t == TP_LIST_SIMPLE || lst->_val.t == TP_LIST_SPARSE)) {
+            ctx->valueError("indices not unique for array", lst);
+            woi = false;
+        }
+
 		CmplVal *dst = *dstp;
 
 		if (lst->_val.t == TP_LIST_SIMPLE) {
@@ -1232,7 +1278,10 @@ namespace cmpl
 					sv = ExecContext::stackPrevStatic(sv);
 			}
 
-			defset.set(TP_SET_R1_1_UB, (intType)sz);
+            if (woi && sz == 1)
+                defset.set(TP_SET_NULL);
+            else
+                defset.set(TP_SET_R1_1_UB, (intType)sz);
 		}
 		else if (lst->_val.t == TP_LIST_SPARSE) {
 			SetConstructHelper sh(ctx->modp(), true);
@@ -1249,10 +1298,13 @@ namespace cmpl
 					sv = ExecContext::stackPrevStatic(sv);
 			}
 
-			sh.construct(defset);
+            if (woi && sz == 1)
+                defset.set(TP_SET_NULL);
+            else
+                sh.construct(defset);
 		}
 		else {
-			SetConstructHelper sh(ctx->modp(), true);
+            SetConstructHelper sh(ctx->modp(), true);
 			StackValue *lb;
 
 			for (unsigned long i = sz; i > 0; i--) {
@@ -1261,7 +1313,7 @@ namespace cmpl
 				if (sv->_val.t != TP_NULL && sv->_val.t != TP_BLANK) {
 					if (sv->_val.isList() && sv->_val.t != TP_LIST_TUPLE) {
 						CmplVal subset;
-						lb = arrayFromListRec(ctx, &dst, subset, sv, rec+1);
+                        lb = arrayFromListRec(ctx, &dst, subset, sv, rec+1, false);
                         PROTO_MOD_OUTL(ctx->modp(), "    " << rec << '@' << i << ": list (size: " << SetBase::cnt(subset) << ')');
 
 						sh.addBaseAndSubset(i, true, subset);
@@ -1288,10 +1340,22 @@ namespace cmpl
 					sv = ExecContext::stackPrevStatic(sv);
 			}
 
-			sh.construct(defset);
+            if (woi) {
+                if (!sh.constructWoi(ctx, defset, lst->syntaxElem(), dst)) {
+                    ctx->valueError("indices not unique for array", lst);
+                    sh.construct(defset);
+                }
+            }
+            else {
+                sh.construct(defset);
+            }
 		}
 
 		*dstp = dst;
+
+        //TODO: _minRank ist in SetConstructHelper noch nicht immer richtig gesetzt; deshalb vorlaeufig hier hilfsweise neu bestimmen fuer TP_SET_FIN
+        if (defset.t == TP_SET_FIN)
+            defset.setFinite()->setRank();
 
 		PROTO_MOD_OUTL(ctx->modp(), "  array from list: end rec #" << rec);
 		return (pt ?: sv);
@@ -1484,14 +1548,14 @@ namespace cmpl
 
         CmplVal& arrv = arr->_val;
         if (arrv.t != TP_ARRAY && arrv.t != TP_NULL && !arr->isSimple()) {
-            ctx->valueError("array expected", arr);
+            ctx->valueError("source array expected for array cast", arr);
             return res;
         }
         CmplVal *arrds = (arrv.t == TP_ARRAY ? &(arrv.array()->defset()) : NULL);
 
         CmplValAuto indset;
         if (!SetUtil::convertToSetOrTuple(ctx, indset, ind, typeConversionExact, false)) {
-            ctx->valueError("indexation must be a set or tuple", ind, se);
+            ctx->valueError("indexation within array cast must be a set or tuple", ind, se);
             return res;
         }
         if (!SetBase::isCanonical(indset)) {
@@ -1500,25 +1564,27 @@ namespace cmpl
                 indset.moveFrom(t, true);
         }
 
-        bool arrsimple = (!arrds || arrds->t == TP_SET_R1_1_UB || arrds->t == TP_SET_R1_0_UB || arrds->t == TP_SET_NULL || arrds->t == TP_SET_EMPTY);
-        if (arrsimple && indset.isSetFin()) {
-            unsigned long arrcnt = (arrds ? SetBase::cnt(*arrds) : (arrv.t == TP_NULL ? 0 : 1));
-            if (arrcnt != SetBase::cnt(indset)) {
-                ctx->valueError("wrong element count in array", arr);
+        unsigned long arrcnt = (arrds ? SetBase::cnt(*arrds) : (arrv.t == TP_NULL ? 0 : 1));
+        bool arrsimple = (arrcnt <= 1 || !arrds || arrds->t == TP_SET_R1_1_UB || arrds->t == TP_SET_R1_0_UB);
+        if (arrsimple && (indset.isSetFin() || arrcnt == 0)) {
+            if (indset.isSetFin() && arrcnt != SetBase::cnt(indset)) {
+                ctx->valueError("wrong element count in array for array cast", arr);
                 return res;
             }
 
-            if (arrds && arrds->t != TP_SET_EMPTY)
-                res->_val.set(TP_ARRAY, new CmplArray(arrv.array(), indset, true));
-            else if (!arrds && arrv.t != TP_NULL)
-                res->_val.set(TP_ARRAY, new CmplArray(indset, arrv));
+            if (arrcnt) {
+                if (arrds && arrds->t != TP_SET_EMPTY)
+                    res->_val.set(TP_ARRAY, new CmplArray(arrv.array(), indset, true));
+                else if (!arrds && arrv.t != TP_NULL)
+                    res->_val.set(TP_ARRAY, new CmplArray(indset, arrv));
+            }
 
             return res;
         }
 
         ArrayCastInd acinfo(ctx, indset);
         if (!acinfo._valid) {
-            ctx->valueError("invalid set for indexation", ind, se);
+            ctx->valueError("invalid set for indexation within array cast", ind, se);
             return res;
         }
 
@@ -1526,7 +1592,7 @@ namespace cmpl
             if (acinfo._infPart || acinfo._cnt == 0 || (acinfo._openrank && !acinfo._hasNS))
                 res->_val.set(TP_NULL);
             else
-                ctx->valueError("wrong element count in array", arr);
+                ctx->valueError("wrong element count in array for array cast", arr);
 
             return res;
         }
@@ -1733,26 +1799,72 @@ namespace cmpl
      */
     bool StackValue::ArrayCastInd::checkArrayCast(CmplVal& arrds, CmplVal& nds)
     {
-        if (_multPart || !_hasNS || _cntRank1 == 0)
-            return false;
-
-        if (!_infPart && !_openrank && _cnt != SetBase::cnt(arrds))
-            return false;
-
-        if (_cntRank1 != 1 || !checkArrayCastSimple(arrds, nds)) {
-            unsigned mir = SetBase::minRank(arrds);
-            unsigned mar = SetBase::maxRank(arrds);
-            if ((!_openrank && (mar != _cntRank1 || mir != _cntRank1)) || (_openrank && mir < _cntRank1))
+        unsigned long ca = SetBase::cnt(arrds);
+        if (ca > 1 || !_infPart || !checkArrayCastCnt1(arrds, nds)) {
+            if (_multPart || !_hasNS || _cntRank1 == 0)
                 return false;
 
-            if (!checkArrayCastPartRec(arrds, nds, 0))
+            if (!_infPart && !_openrank && _cnt != ca)
                 return false;
+
+            if (_cntRank1 != 1 || !checkArrayCastSimple(arrds, nds)) {
+                unsigned mir = SetBase::minRank(arrds);
+                unsigned mar = SetBase::maxRank(arrds);
+                if ((!_openrank && (mar != _cntRank1 || mir != _cntRank1)) || (_openrank && mir < _cntRank1))
+                    return false;
+
+                if (!checkArrayCastPartRec(arrds, nds, 0))
+                    return false;
+            }
         }
 
         if (nds) {
             CmplValAuto t;
             if (SetUtil::canonicalSet(t, nds))
                 nds.moveFrom(t, true);
+        }
+
+        return true;
+    }
+
+    /**
+     * check if definition set of array can be casted to this set, when array contains only one element
+     * @param arrds     definition set of array, must consists of exactly one element
+     * @param nds       return of new definition set / TP_EMPTY: use arrds
+     * @return          true if cast is possible
+     */
+    bool StackValue::ArrayCastInd::checkArrayCastCnt1(CmplVal& arrds, CmplVal& nds)
+    {
+        if (_multPart || (arrds.t != TP_SET_NULL && _openrank) || (!_infPart && _cnt != 1))
+            return false;
+
+        if (_parts.size() == 0) {
+            nds.set(TP_SET_NULL);
+        }
+        else {
+            for (unsigned p = 0; p < _parts.size(); p++) {
+                CmplVal& ps = _parts[p];
+                if (!ps.isScalarIndex() && ps.t != TP_SET_R1_LB_INF && (!ps.isSetFin() || SetBase::cnt(ps) != 1))
+                    return false;
+            }
+
+            Tuple *tpl = NULL;
+            CmplValAuto vtpl;
+            if (_parts.size() > 1)
+                vtpl.set(TP_TUPLE, tpl = new Tuple(_parts.size()));
+
+            for (unsigned p = 0; p < _parts.size(); p++) {
+                CmplVal& ps = _parts[p];
+                CmplVal *np = (tpl ? tpl->at(p) : &nds);
+
+                if (ps.isScalarIndex() || ps.isSetFin())
+                    np->copyFrom(ps);
+                else
+                    np->set(TP_SET_1INT, ps.v.i);
+            }
+
+            if (_parts.size() > 1)
+                SetUtil::tupleToSetFin(_ctx, nds, tpl, true, true);
         }
 
         return true;
@@ -1946,8 +2058,8 @@ namespace cmpl
     bool StackValue::ArrayCastInd::checkArrayCastPart(CmplVal& pds, CmplVal &pp, CmplVal& npp, bool &chg)
     {
         bool ppsimple = (pp.t == TP_SET_R1_1_UB || pp.t == TP_SET_R1_0_UB || (pp.t == TP_SET_R1_LB_INF && (pp.v.i == 0 || pp.v.i == 1)));
-        bool pdssimple = (pds.t == TP_SET_R1_1_UB || pds.t == TP_SET_R1_0_UB);
         unsigned long cnt = SetBase::cnt(pds);
+        bool pdssimple = (pds.t == TP_SET_R1_1_UB || pds.t == TP_SET_R1_0_UB || cnt == 1);
 
         if (!ppsimple && (!pdssimple || pp.isSetInf())) {
             if (pdssimple && pp.isSetInf() && pp.rank1() && pp.elemInt() && (pp.useInt() || pp.useNothing())) {

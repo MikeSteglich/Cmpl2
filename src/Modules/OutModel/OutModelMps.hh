@@ -90,6 +90,8 @@ namespace cmpl
         bool _exportOnly;
         string _objName;
 
+        int _addConForUnusedVar;                ///< add pseudo constraint for otherwise unused variable: 0: no / 1: yes if unused because of deletion of a constraint / 2: yes for all)
+
         map<int, list<OutModelExtDataBase::Info>> _mki;
 
 	public:

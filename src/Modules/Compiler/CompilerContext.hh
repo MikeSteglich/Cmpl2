@@ -834,6 +834,14 @@ namespace cmpl
          */
         void compSetCompareCont(unsigned addr);
 
+        /**
+         * change mode for previous array construction
+         * @param elem		syntax element
+         * @param arrind    true: change to construct with adding new index part / false: change to construct without adding new index part
+         * @return			address of code element
+         */
+        unsigned compArrayConstructMode(SyntaxElement *elem, bool arrind);
+
 		/**
 		 * compile start or end of function definition, also for global start and end
 		 * @param elem		syntax element

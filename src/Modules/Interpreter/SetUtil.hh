@@ -369,13 +369,15 @@ namespace cmpl
 
         intType _algStart;				///< start element in mode TP_SET_R1_ALG (also the only element in TP_SET_1INT / TP_SET_1STR)
         intType _algDiff;				///< difference between two adjacent elements in mode TP_SET_R1_ALG
-        unsigned long _nNull;			///< index number of the null tuple if exists in set (count fron 1; 0: no null tuple)
+        unsigned long _nNull;			///< index number of the null tuple if exists in set (count from 1; 0: no null tuple)
 
         map<intType, unsigned long> _enumInt;	///< int elements for mode TP_SET_R1_ENUM (value of map counts from 1)
         map<intType, unsigned long> _enumStr;	///< string elements for mode TP_SET_R1_ENUM (value of map counts from 1)
 
         map<unsigned long, CmplVal> _subSet;				///< subset per number of base element (if subset are directly given) (key of map counts from 1)
-        map<unsigned long, SetConstructHelper *> _subCtx;	///< subset per number of base element (if subset is to construct) (key of map counts from 1)
+
+        //map<unsigned long, SetConstructHelper *> _subCtx;	///< subset per number of base element (if subset is to construct) (key of map counts from 1)
+            // Offenbar nie verwendet, kann wohl ganz weg
 
 	public:
 		/**
@@ -418,6 +420,16 @@ namespace cmpl
 		 * @param res		store for result set
 		 */
 		void construct(CmplVal &res);
+
+        /**
+         * construct resulting set with no index from base elements
+         * @param ctx		execution context
+         * @param res		store for result set
+         * @param se		syntax element id of source values
+         * @param arr       reorder elements in this array according result set
+         * @return          true if success, false if indizes from subsets are not unique
+         */
+        bool constructWoi(ExecContext *ctx, CmplVal &res, unsigned se, CmplVal *arr = NULL);
 
     private:
         /**

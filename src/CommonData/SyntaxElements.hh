@@ -225,6 +225,7 @@ namespace cmpl
 		SyntaxElementSubSymbolOp,				///< sub symbol operation
 		SyntaxElementIndexation,				///< indexation operation
 		SyntaxElementFuncCall,					///< function call operation
+		SyntaxElementArrayCast,					///< array cast operation
 
 		SyntaxElementArray,						///< array construction expression
 		SyntaxElementTupel,						///< tupel construction expression

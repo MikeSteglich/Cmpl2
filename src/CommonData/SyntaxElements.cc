@@ -107,7 +107,7 @@ namespace cmpl
 	void SyntaxElement::writeXML(ostream& ostr, const string &indent, int childIndentAdd)
 	{
 		// names of element types in the order of enum SyntaxElementType
-        const char **elemTypeNames = new const char*[31] {
+        const char **elemTypeNames = new const char*[32] {
 			"Code",
 			"Directive",
 			"Modificator",
@@ -128,6 +128,7 @@ namespace cmpl
 			"SubSymbolOp",
 			"Indexation",
 			"FuncCall",
+			"ArrayCast",
 			"Array",
 			"Tupel",
 			"Set",

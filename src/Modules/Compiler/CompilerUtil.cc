@@ -991,7 +991,7 @@ namespace cmpl
 		_loc = loc;
 		_sym = NULL;
 		_special = spec;
-        _expOp = 0;
+        _expOp = (cb ? EXPR_INFO_OP_CODEBL : 0);
 		_lval = false;
 		_indexLval = false;
 		_subSymLval = false;

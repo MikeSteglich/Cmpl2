@@ -209,36 +209,38 @@ namespace cmpl {
         OPERATOR_OF = 275,
         INTERSECT_RR = 276,
         OPERATOR_TRANSPOSE = 277,
-        POINTS = 278,
-        NUMBER_SIGN = 279,
-        INDEX_SIGN = 280,
-        LOG_NOT = 281,
-        CODEBLOCK_BEGIN = 282,
-        SUBSYM_OP = 283,
-        INT_NUMBER = 284,
-        DOUBLE_NUMBER = 285,
-        STRING = 286,
-        LINENAME_PREF = 287,
-        INT_NUMBER_MULT = 288,
-        DOUBLE_NUMBER_MULT = 289,
-        SYMBOL = 290,
-        SUBSYMBOL = 291,
-        SYMBOL_OBJTYPE = 292,
-        SYMBOL_DATATYPE = 293,
-        MOD_ASSIGN = 294,
-        MOD_ORDERED = 295,
-        ASSIGN_ND = 296,
-        ASSIGN_ND_ADD = 297,
-        ASSIGN_ND_SUB = 298,
-        ASSIGN_ND_MUL = 299,
-        ASSIGN_ND_DIV = 300,
-        INCDEC = 301,
-        COLON = 302,
-        CODEBLOCK_END = 303,
-        CODEBLOCK_ALT = 304,
-        REF_CODEBLOCK = 305,
-        CB_SYMBOL_MARK = 306,
-        EOSTATEMENT = 307
+        ARRCAST = 278,
+        POINTS = 279,
+        NUMBER_SIGN = 280,
+        INDEX_SIGN = 281,
+        LOG_NOT = 282,
+        CODEBLOCK_BEGIN = 283,
+        SUBSYM_OP = 284,
+        INT_NUMBER = 285,
+        DOUBLE_NUMBER = 286,
+        STRING = 287,
+        LINENAME_PREF = 288,
+        INT_NUMBER_MULT = 289,
+        DOUBLE_NUMBER_MULT = 290,
+        SYMBOL = 291,
+        SUBSYMBOL = 292,
+        SYMBOL_OBJTYPE = 293,
+        SYMBOL_DATATYPE = 294,
+        MOD_ASSIGN = 295,
+        MOD_ORDERED = 296,
+        ASSIGN_ND = 297,
+        ASSIGN_ND_ADD = 298,
+        ASSIGN_ND_SUB = 299,
+        ASSIGN_ND_MUL = 300,
+        ASSIGN_ND_DIV = 301,
+        INCDEC = 302,
+        COLON = 303,
+        TUPLE_END = 304,
+        CODEBLOCK_END = 305,
+        CODEBLOCK_ALT = 306,
+        REF_CODEBLOCK = 307,
+        CB_SYMBOL_MARK = 308,
+        EOSTATEMENT = 309
       };
     };
 
@@ -546,12 +548,12 @@ namespace cmpl {
     enum
     {
       yyeof_ = 0,
-      yylast_ = 1002,     ///< Last index in yytable_.
-      yynnts_ = 58,  ///< Number of nonterminal symbols.
+      yylast_ = 1057,     ///< Last index in yytable_.
+      yynnts_ = 59,  ///< Number of nonterminal symbols.
       yyfinal_ = 16, ///< Termination state number.
       yyterror_ = 1,
       yyerrcode_ = 256,
-      yyntokens_ = 63  ///< Number of tokens.
+      yyntokens_ = 64  ///< Number of tokens.
     };
 
 
@@ -562,7 +564,7 @@ namespace cmpl {
 
 
 } // cmpl
-#line 566 "_CMPL_Parser.hh" // lalr1.cc:377
+#line 568 "_CMPL_Parser.hh" // lalr1.cc:377
 
 
 

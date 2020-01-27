@@ -60,6 +60,7 @@ namespace cmpl
         _dataType.copyFrom(tp, true, false);
         _hasDataType = !defTp;
         _syntaxElem = se;
+        _usedByCon = 0;
 
         ValueTreeRoot& vtr = om->cols();
         vtr.insertNewElem(this);
@@ -99,6 +100,35 @@ namespace cmpl
 
 
     /****** LinearModel ****/
+
+    /**
+     * constructor: RHS for using in additional pseudo constraint when variable is not used in at least one constraint
+     * @param ov    optimization variable
+     */
+    LinearModel::Coefficient::Coefficient(OptVar *ov): LinearModel::Coefficient()
+    {
+        CmplVal& lb = ov->lowBound();
+        CmplVal& ub = ov->uppBound();
+
+        if ((lb && lb.numAsReal() > 0) || (ub && ub.numAsReal() < 0)) {
+            if (lb) {
+                if (lb.t == TP_INT)
+                    iCoeff = lb.v.i;
+                else if (!ov->intVar())
+                    rCoeff = lb.v.r;
+                else
+                    iCoeff = (intType) ceil(lb.v.r);
+            }
+            else {
+                if (ub.t == TP_INT)
+                    iCoeff = ub.v.i;
+                else if (!ov->intVar())
+                    rCoeff = ub.v.r;
+                else
+                    iCoeff = (intType) floor(ub.v.r);
+            }
+        }
+    }
 
     /**
      * add another value to the coefficient

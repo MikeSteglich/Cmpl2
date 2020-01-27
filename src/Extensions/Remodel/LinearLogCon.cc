@@ -152,7 +152,11 @@ namespace cmpl
 
                     CmplValAuto res;
                     if (remodelRec(modp, om, oc, rv, false, name, tpl, res)) {
-                        formulaToCon(modp, om, oc, res, name, tpl, true);
+                        if (formulaToCon(modp, om, oc, res, name, tpl, true)) {
+                            // delete original constraint
+                            oc->removeFromValueTree(&(om->rows()));
+                            CmplObjBase::dispose(oc);
+                        }
                         return 1;
                     }
                 }
@@ -171,14 +175,15 @@ namespace cmpl
      * @param name      base name for new constraints
      * @param tpl       base tuple for new constraints
      * @param repl      replace original constraint
+     * @return          new value for repl
      */
-    void LinearLogCon::formulaToCon(Interpreter *modp, OptModel *om, OptCon *oc, CmplVal& frml, string& name, CmplVal& tpl, bool repl)
+    bool LinearLogCon::formulaToCon(Interpreter *modp, OptModel *om, OptCon *oc, CmplVal& frml, string& name, CmplVal& tpl, bool repl)
     {
         // check for single compare formula
         ValFormulaCompare *fc = dynamic_cast<ValFormulaCompare *>(frml.valFormula());
         if (fc) {
             newOptCon(modp, om, oc, oc->syntaxElem(), frml, (repl ? NULL : &name), &tpl);
-            return;
+            return false;
         }
 
         // check for single binary variable (negated or not)
@@ -189,7 +194,7 @@ namespace cmpl
             CmplVal rhs(TP_INT, (intType)(fv ? 1 : 0));
             CmplValAuto f(TP_FORMULA, new ValFormulaCompareOp(oc->syntaxElem(), (fv ? &frml : &(fl->formulas()[0])), &rhs, (fv != NULL), (fv == NULL), false));
             newOptCon(modp, om, oc, oc->syntaxElem(), f, (repl ? NULL : &name), &tpl);
-            return;
+            return false;
         }
 
         // formula must be and-connected
@@ -214,15 +219,11 @@ namespace cmpl
                 else if (tp2.useInt())
                     tp2.v.i++;
 
-                formulaToCon(modp, om, oc, parts[i], nm2, tp2, false);
-            }
-
-            if (repl) {
-                // delete original constraint
-                oc->removeFromValueTree(&(om->rows()));
-                CmplObjBase::dispose(oc);
+                repl = formulaToCon(modp, om, oc, parts[i], nm2, tp2, repl);
             }
         }
+
+        return repl;
     }
 
     /**

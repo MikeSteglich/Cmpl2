@@ -47,6 +47,7 @@ using namespace std;
 namespace cmpl
 {
     class OptModel;
+    class LinearModel;
     class ValFormula;
 
 
@@ -88,6 +89,7 @@ namespace cmpl
         CmplVal _lowBound;								///< lower bound (can only be TP_EMPTY, TP_INT, TP_REAL)
         CmplVal _uppBound;								///< upper bound (can only be TP_EMPTY, TP_INT, TP_REAL)
 
+        int _usedByCon;                                ///< mark variable as used by at least one constraint: 0: not used, 1: used, -1: used only in constraint deleted by remodelation
 
     public:
         /**
@@ -155,6 +157,16 @@ namespace cmpl
          * set upper bound (must be TP_EMPTY, TP_INT or TP_REAL)
          */
         inline void setUppBound(CmplVal& lb)		{ _uppBound.copyFrom(lb); }
+
+        /**
+         * get whether variable is used by at least one constraint: 0: not used, 1: used, -1: used only in constraint deleted by remodelation
+         */
+        inline int usedByCon()                     { return _usedByCon; }
+
+        /**
+         * set whether variable is used by at least one constraint: 0: not used, 1: used, -1: used only in constraint deleted by remodelation
+         */
+        inline void setUsedByCon(int i)            { _usedByCon = i; }
 
         //TODO
 	};
@@ -258,6 +270,12 @@ namespace cmpl
              * constructor
              */
             inline Coefficient(unsigned long id, CmplVal& v, bool neg = false)		{ idRC = id; iCoeff = (!v ? (neg ? -1 : 1) : (v.t == TP_INT || v.t == TP_BIN ? (neg ? -v.v.i : v.v.i) : 0)); rCoeff = (v.t == TP_REAL ? (neg ? -v.v.r : v.v.r) : 0.0); }
+
+            /**
+             * constructor: RHS for using in additional pseudo constraint when variable is not used in at least one constraint
+             * @param ov    optimization variable
+             */
+            Coefficient(OptVar *ov);
 
             /**
              * initialize coefficient

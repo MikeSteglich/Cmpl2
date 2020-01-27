@@ -99,6 +99,7 @@ namespace cmpl
 #define COMP_ASSIGN(e,lhs,rhs)				{ if (!PARSE_CONTEXT.checkOnly()) PARSE_CONTEXT.compAssign(e, lhs, rhs); }
 #define COMP_OPERATION(e,op,c)				{ if (!PARSE_CONTEXT.checkOnly()) PARSE_CONTEXT.compOperation(e, false, op, c); }
 #define COMP_CONSTRUCT(e,op,c)				{ if (!PARSE_CONTEXT.checkOnly()) PARSE_CONTEXT.compOperation(e, true, op, c); }
+#define COMP_ARRCONSTRUCT_MODE(e,b)			{ if (!PARSE_CONTEXT.checkOnly()) PARSE_CONTEXT.compArrayConstructMode(e, b); }
 #define COMP_FUNC_START(e,ar)				{ if (!PARSE_CONTEXT.checkOnly()) ar = PARSE_CONTEXT.compFunction(e, true, true, 0, 0, false); }
 #define COMP_FUNC_END(e,a,cl,us)			{ if (!PARSE_CONTEXT.checkOnly()) PARSE_CONTEXT.compFunction(e, true, false, a, cl, us); }
 #define COMP_LNP_COMPAT(e,s)				{ if (!PARSE_CONTEXT.checkOnly()) PARSE_CONTEXT.compLineNamePrefCompat(e, s); }
@@ -110,7 +111,7 @@ namespace cmpl
 // does nothing, only to suppress warnings about not used token values, that bison prints out when use %destructor
 #define NOT_USED(a)
 
-#line 114 "_CMPL_Parser.cc" // lalr1.cc:412
+#line 115 "_CMPL_Parser.cc" // lalr1.cc:412
 
 
 #ifndef YY_
@@ -196,7 +197,7 @@ namespace cmpl
 
 
 namespace cmpl {
-#line 200 "_CMPL_Parser.cc" // lalr1.cc:479
+#line 201 "_CMPL_Parser.cc" // lalr1.cc:479
 
   /* Return YYSTR after stripping away unnecessary quotes and
      backslashes, so that it's suitable for yyerror.  The heuristic is
@@ -447,716 +448,737 @@ namespace cmpl {
     {
             case 1: // error
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 453 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 454 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
       case 3: // "operator `->`"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 460 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 461 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
       case 4: // "assign operator `:=`"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 467 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 468 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
       case 9: // "operator `||`"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 474 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 475 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
       case 10: // "operator `&&`"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 481 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 482 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
       case 11: // "operator `=`"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 488 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 489 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
       case 12: // "operator `==`"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 495 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 496 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
       case 13: // "operator `<>`"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 502 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 503 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
       case 14: // "operator `!=`"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 509 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 510 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
       case 15: // "operator `<`"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 516 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 517 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
       case 16: // "operator `>`"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 523 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 524 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
       case 17: // "operator `<=`"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 530 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 531 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
       case 18: // "operator `>=`"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 537 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 538 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
       case 19: // "operator `in`"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 544 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 545 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
       case 20: // "operator `of`"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 551 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 552 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
       case 25: // "operator `*>`"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 558 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 559 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
       case 26: // "transpose operator `T`"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 565 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 566 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 28: // "operator `..`"
+      case 27: // "array cast operation"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 572 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 573 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 31: // "operator `!`"
+      case 29: // "operator `..`"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 579 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 580 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 34: // "`{`"
+      case 32: // "operator `!`"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 586 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 587 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 35: // "subsymbol operator `.`"
+      case 35: // "`{`"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 593 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 594 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 36: // "int literal"
+      case 36: // "subsymbol operator `.`"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 600 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 601 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 37: // "double literal"
+      case 37: // "int literal"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 607 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 608 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 38: // "string literal"
+      case 38: // "double literal"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 614 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 615 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 39: // "linename prefix"
+      case 39: // "string literal"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 621 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 622 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 40: // "int literal factor"
+      case 40: // "linename prefix"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 628 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 629 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 41: // "double literal factor"
+      case 41: // "int literal factor"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 635 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 636 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 42: // "symbol"
+      case 42: // "double literal factor"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 642 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 643 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 43: // "subsymbol"
+      case 43: // "symbol"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 649 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 650 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 44: // "object type symbol"
+      case 44: // "subsymbol"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 656 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 657 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 45: // "data type symbol"
+      case 45: // "object type symbol"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 663 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 664 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 46: // "assign modificator"
+      case 46: // "data type symbol"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 670 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 671 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 47: // "order modificator"
+      case 47: // "assign modificator"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 677 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 678 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 48: // "assign operator `::=`"
+      case 48: // "order modificator"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 684 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 685 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 49: // "assign operator `+=`"
+      case 49: // "assign operator `::=`"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 691 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 692 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 50: // "assign operator `-=`"
+      case 50: // "assign operator `+=`"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 698 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 699 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 51: // "assign operator `*=`"
+      case 51: // "assign operator `-=`"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 705 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 706 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 52: // "assign operator `/=`"
+      case 52: // "assign operator `*=`"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 712 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 713 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 53: // "increment/decrement operator"
+      case 53: // "assign operator `/=`"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 719 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 720 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 54: // "`:`"
+      case 54: // "increment/decrement operator"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 726 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 727 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 55: // "`}`"
+      case 55: // "`:`"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 733 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 734 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 56: // "`|`"
+      case 56: // "`]`"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 740 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 741 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 57: // "`&`"
+      case 57: // "`}`"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 747 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 748 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 58: // "`@`"
+      case 58: // "`|`"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 754 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 755 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 59: // "`;`"
+      case 59: // "`&`"
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 761 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 762 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 64: // cmpl
+      case 60: // "`@`"
 
-#line 228 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
+        { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
+#line 769 "_CMPL_Parser.cc" // lalr1.cc:614
+        break;
+
+      case 61: // "`;`"
+
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
+        { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
+#line 776 "_CMPL_Parser.cc" // lalr1.cc:614
+        break;
+
+      case 65: // cmpl
+
+#line 232 "CMPL_Parser.yy" // lalr1.cc:614
         { }
-#line 768 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 783 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 65: // cmplParts
+      case 66: // cmplParts
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 775 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 790 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 66: // cmplPart
+      case 67: // cmplPart
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 782 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 797 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 67: // directive
+      case 68: // directive
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 789 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 804 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 68: // directiveParts
+      case 69: // directiveParts
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 796 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 811 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 69: // directivePart
+      case 70: // directivePart
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 803 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 818 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 70: // objDataType
+      case 71: // objDataType
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 810 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 825 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 71: // statement
+      case 72: // statement
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 817 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 832 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 72: // statementExpr
+      case 73: // statementExpr
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 824 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 839 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 73: // assignLhsOp
+      case 74: // assignLhsOp
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 831 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 846 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 74: // assignRhs
+      case 75: // assignRhs
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 838 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 853 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 75: // objDataTypeRhs
+      case 76: // objDataTypeRhs
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 845 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 860 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 76: // assignOp
+      case 77: // assignOp
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 852 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 867 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 77: // codeblock
+      case 78: // codeblock
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 859 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 874 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 78: // blockStart
+      case 79: // blockStart
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 866 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 881 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 79: // blockParts
+      case 80: // blockParts
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 873 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 888 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 80: // blockAltStart
+      case 81: // blockAltStart
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 880 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 895 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 81: // blockPart
+      case 82: // blockPart
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 887 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 902 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 82: // blockPartStart
+      case 83: // blockPartStart
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 894 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 909 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 83: // blockModifiers
+      case 84: // blockModifiers
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 901 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 916 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 84: // blockModifier
+      case 85: // blockModifier
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 908 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 923 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 85: // blockHeaders
+      case 86: // blockHeaders
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 915 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 930 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 86: // blockHeader
+      case 87: // blockHeader
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 922 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 937 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 87: // blockHeaderStart
+      case 88: // blockHeaderStart
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 929 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 944 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 88: // blockBody
+      case 89: // blockBody
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 936 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 951 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 89: // expressionWithCodeblockSymbolDef
+      case 90: // expressionWithCodeblockSymbolDef
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 943 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 958 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 90: // refcodeblock
+      case 91: // refcodeblock
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 950 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 965 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 91: // expression
+      case 92: // expression
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 957 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 972 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 92: // symbolIncDec
+      case 93: // symbolIncDec
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 964 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 979 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 93: // symbol
+      case 94: // symbol
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 971 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 986 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 94: // expressionList
+      case 95: // expressionList
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 978 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 993 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 95: // literal
+      case 96: // literal
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 985 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 1000 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 96: // literalMult
+      case 97: // literalMult
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 992 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 1007 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 97: // arrayExpr
+      case 98: // arrayExpr
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 999 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 1014 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 98: // arrayStart
+      case 99: // arrayStart
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 1006 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 1021 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 99: // tupleExpr
+      case 100: // tupleExpr
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 1013 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 1028 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 100: // tupleStart
+      case 101: // tupleStart
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 1020 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 1035 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 101: // listParts
+      case 102: // listParts
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 1027 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 1042 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 102: // listPart
+      case 103: // listPart
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 1034 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 1049 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 103: // intervalExpr
+      case 104: // intervalExpr
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 1041 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 1056 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 104: // intervalOp
+      case 105: // intervalOp
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 1048 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 1063 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 105: // setExpr
+      case 106: // setExpr
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 1055 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 1070 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 106: // setExprEnd
+      case 107: // setExprEnd
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 1062 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 1077 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 107: // unaryOp
+      case 108: // unaryOp
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 1069 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 1084 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 108: // binaryOp
+      case 109: // binaryOp
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 1076 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 1091 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 109: // numOpSignAdd
+      case 110: // numOpSignAdd
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 1083 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 1098 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 110: // numOpSignMult
+      case 111: // numOpSignMult
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 1090 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 1105 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 111: // logOpSignNot
+      case 112: // logOpSignNot
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 1097 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 1112 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 112: // inOpPre
+      case 113: // inOpPre
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 1104 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 1119 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 113: // ofOpPre
+      case 114: // ofOpPre
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 1111 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 1126 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 114: // compareOp
+      case 115: // compareOp
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 1118 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 1133 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 115: // subsymbolOp
+      case 116: // subsymbolOp
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 1125 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 1140 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 116: // subsymbolIncDec
+      case 117: // subsymbolIncDec
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 1132 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 1147 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 117: // subsymbol
+      case 118: // subsymbol
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 1139 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 1154 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 118: // functionCall
+      case 119: // functionCall
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 1146 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 1161 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 119: // indexation
+      case 120: // indexation
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 1153 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 1168 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
-      case 120: // errorExpression
+      case 121: // arraycast
 
-#line 229 "CMPL_Parser.yy" // lalr1.cc:614
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
         { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
-#line 1160 "_CMPL_Parser.cc" // lalr1.cc:614
+#line 1175 "_CMPL_Parser.cc" // lalr1.cc:614
+        break;
+
+      case 122: // errorExpression
+
+#line 233 "CMPL_Parser.yy" // lalr1.cc:614
+        { if (!(yysym.value.s)._empty) { PARSE_CONTEXT.insertErrElem((yysym.value.s)._elem); }  /*if ($$._tp == semanticValueExpr) { delete $$._u.exp; }*/ }
+#line 1182 "_CMPL_Parser.cc" // lalr1.cc:614
         break;
 
 
@@ -1393,117 +1415,117 @@ namespace cmpl {
           switch (yyn)
             {
   case 2:
-#line 237 "CMPL_Parser.yy" // lalr1.cc:859
+#line 241 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); PROTO_PC_OUTL("Parse cmpl End"); SET_CMPLELEM((yystack_[0].value.s), yystack_[0].location); COMP_END((yystack_[0].value.s)._elem); }
-#line 1399 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1421 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 3:
-#line 240 "CMPL_Parser.yy" // lalr1.cc:859
+#line 244 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); }
-#line 1405 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1427 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 4:
-#line 241 "CMPL_Parser.yy" // lalr1.cc:859
+#line 245 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); CMPLELEM_CONCAT((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s)); }
-#line 1411 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1433 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 5:
-#line 244 "CMPL_Parser.yy" // lalr1.cc:859
+#line 248 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.setCbExprModeStatementStart(); PARSE_CONTEXT.setDirectiveFromCurrent(&yystack_[0].location); }
-#line 1417 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1439 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 6:
-#line 245 "CMPL_Parser.yy" // lalr1.cc:859
+#line 249 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.setCbExprModeStatementStart(); PARSE_CONTEXT.clearModificators(); }
-#line 1423 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1445 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 7:
-#line 248 "CMPL_Parser.yy" // lalr1.cc:859
+#line 252 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); CMPLELEMENTRY((yylhs.value.s), SyntaxElementDirective, yystack_[1].location, yystack_[0].location); CMPLELEM_CHILD((yylhs.value.s), (yystack_[1].value.s)); NOT_USED((yystack_[0].value.s)); }
-#line 1429 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1451 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 8:
-#line 251 "CMPL_Parser.yy" // lalr1.cc:859
+#line 255 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); }
-#line 1435 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1457 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 9:
-#line 252 "CMPL_Parser.yy" // lalr1.cc:859
+#line 256 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); CMPLELEM_CONCAT((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s)); }
-#line 1441 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1463 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 10:
-#line 255 "CMPL_Parser.yy" // lalr1.cc:859
+#line 259 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementModificator, yystack_[0].location, yystack_[0].location, (yystack_[0].value.s)._name); PARSE_CONTEXT.setModificator(&yystack_[0].location, (ModificatorKey) (yystack_[0].value.s)._u.i); }
-#line 1447 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1469 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 11:
-#line 256 "CMPL_Parser.yy" // lalr1.cc:859
+#line 260 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementModificator, yystack_[0].location, yystack_[0].location, (yystack_[0].value.s)._name); PARSE_CONTEXT.setModificator(&yystack_[0].location, (ModificatorKey) (yystack_[0].value.s)._u.i); }
-#line 1453 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1475 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 12:
-#line 257 "CMPL_Parser.yy" // lalr1.cc:859
+#line 261 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); CMPLELEM_SET((yylhs.value.s), (yystack_[0].value.s)); PARSE_CONTEXT.setModificator(&yystack_[0].location, (yystack_[0].value.s)._u.exp->sym(), (SPECIALSYMBOL_IS_OBJTYPE((yystack_[0].value.s)._u.exp->sym()->special())));
 																				  delete (yystack_[0].value.s)._u.exp; }
-#line 1460 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1482 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 13:
-#line 259 "CMPL_Parser.yy" // lalr1.cc:859
+#line 263 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); CMPLELEMENTRY((yylhs.value.s), SyntaxElementLineNamePrefix, yystack_[0].location, yystack_[0].location);
 																				  PARSE_CONTEXT.setLineNamePref((yylhs.value.s)._elem, &yystack_[0].location, (yystack_[0].value.s)._u.s); }
-#line 1467 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1489 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 14:
-#line 263 "CMPL_Parser.yy" // lalr1.cc:859
+#line 267 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); CMPLELEMENTRY_SYM((yylhs.value.s), SyntaxElementSymbol, yystack_[0].location, yystack_[0].location, (yystack_[0].value.s)._u.exp->sym()); }
-#line 1473 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1495 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 15:
-#line 264 "CMPL_Parser.yy" // lalr1.cc:859
+#line 268 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); CMPLELEMENTRY_SYM((yylhs.value.s), SyntaxElementSymbol, yystack_[0].location, yystack_[0].location, (yystack_[0].value.s)._u.exp->sym()); }
-#line 1479 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1501 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 16:
-#line 272 "CMPL_Parser.yy" // lalr1.cc:859
+#line 276 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init();
 		   																		  if (!(yystack_[1].value.s)._empty && PARSE_CONTEXT.testCompControlCB((yystack_[1].value.s)._elem, yystack_[1].location, false)) { CMPLELEMENTRY((yylhs.value.s), SyntaxElementStatement, yystack_[1].location, yystack_[0].location); CMPLELEM_CHILD((yylhs.value.s), (yystack_[1].value.s)); }
 																				  else { CMPLELEMENTRY_EMPTY((yystack_[0].value.s), yystack_[0].location); CMPLELEMENTRY((yylhs.value.s), SyntaxElementStatement, yystack_[0].location, yystack_[0].location); CMPLELEM_CHILD((yylhs.value.s), (yystack_[0].value.s)); }
 																				  PARSE_CONTEXT.endOfStatement((yylhs.value.s)._elem); }
-#line 1488 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1510 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 17:
-#line 276 "CMPL_Parser.yy" // lalr1.cc:859
+#line 280 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init();
 																				  if ((yystack_[1].value.s)._u.b) PARSE_CONTEXT.testCompControlCB((yystack_[2].value.s)._elem, yystack_[2].location, true);
 																				  CMPLELEMENTRY((yylhs.value.s), SyntaxElementStatement, ((yystack_[2].value.s)._empty ? (yystack_[1].location) : (yystack_[2].location)), yystack_[0].location); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[1].value.s)); PARSE_CONTEXT.endOfStatement((yylhs.value.s)._elem); NOT_USED((yystack_[0].value.s)); }
-#line 1496 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1518 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 18:
-#line 279 "CMPL_Parser.yy" // lalr1.cc:859
+#line 283 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); CMPLELEMENTRY_ERR((yystack_[1].value.s), yystack_[1].location); CMPLELEMENTRY((yylhs.value.s), SyntaxElementStatement, yystack_[1].location, yystack_[0].location); CMPLELEM_CHILD((yylhs.value.s), (yystack_[1].value.s)); PARSE_CONTEXT.endOfStatement((yylhs.value.s)._elem); NOT_USED((yystack_[0].value.s));
 																				  yyerrok; }
-#line 1503 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1525 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 19:
-#line 283 "CMPL_Parser.yy" // lalr1.cc:859
+#line 287 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); CMPLELEMENTRY((yylhs.value.s), SyntaxElementAssignRhs, yystack_[0].location, yystack_[0].location); CMPLELEM_CHILD((yylhs.value.s), (yystack_[0].value.s)); CMPLELEM_SET((yystack_[0].value.s), (yylhs.value.s));
 			  																	  CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementAssignment, yystack_[1].location, yystack_[0].location, (yystack_[1].value.s)._u.exp->assignOp()); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s));
 																				  if ((yystack_[1].value.s)._u.exp->isRefAssign()) { (yystack_[0].value.s)._u.exp->compChangeFetchLvalue(&PARSE_CONTEXT); }
@@ -1511,11 +1533,11 @@ namespace cmpl {
 																				  (yystack_[0].value.s)._u.exp->checkClearLvalSyms(&PARSE_CONTEXT);
 																				  (yystack_[1].value.s)._u.exp->assignSpecialToConst((yystack_[0].value.s)._u.exp->special());
 																				  delete (yystack_[1].value.s)._u.exp; delete (yystack_[0].value.s)._u.exp; (yylhs.value.s)._u.b = false; }
-#line 1515 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1537 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 20:
-#line 290 "CMPL_Parser.yy" // lalr1.cc:859
+#line 294 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s);
 																				  bool controlCB = false;
 																				  bool amEmpty = PARSE_CONTEXT.assignModCurrentEmpty(true);
@@ -1529,196 +1551,196 @@ namespace cmpl {
 																				  		if (!amEmpty) PARSE_CONTEXT.outParseError(ERROR_LVL_NORMAL, "statement cannot have assign modificators", yystack_[0].location);
 																						COMP_ASSIGN((yylhs.value.s)._elem, NULL, (yystack_[0].value.s)._u.exp); } }
 																				  delete (yystack_[0].value.s)._u.exp; (yylhs.value.s)._u.b = controlCB; }
-#line 1533 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1555 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 21:
-#line 305 "CMPL_Parser.yy" // lalr1.cc:859
+#line 309 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[1].value.s); CMPLELEMENTRY((yylhs.value.s), SyntaxElementAssignLhs, yystack_[1].location, yystack_[1].location); CMPLELEM_CHILD((yylhs.value.s), (yystack_[1].value.s));
 			 																	  (yystack_[1].value.s)._u.exp->checkLNPError(&PARSE_CONTEXT);
 			 																	  (yylhs.value.s)._u.exp->setAssignLhs(&PARSE_CONTEXT, (yystack_[0].value.s)._name, &yystack_[0].location); }
-#line 1541 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1563 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 22:
-#line 310 "CMPL_Parser.yy" // lalr1.cc:859
+#line 314 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); (yystack_[0].value.s)._u.exp->checkLNPError(&PARSE_CONTEXT); }
-#line 1547 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1569 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 23:
-#line 311 "CMPL_Parser.yy" // lalr1.cc:859
+#line 315 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); }
-#line 1553 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1575 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 24:
-#line 312 "CMPL_Parser.yy" // lalr1.cc:859
+#line 316 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); CMPLELEMENTRY((yylhs.value.s), SyntaxElementIndexation, yystack_[1].location, yystack_[0].location); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s));
 																				  (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_IND, (yystack_[0].value.s)._u.exp, true)); }
-#line 1560 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1582 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 25:
-#line 316 "CMPL_Parser.yy" // lalr1.cc:859
+#line 320 "CMPL_Parser.yy" // lalr1.cc:859
     { COMP_FETCH_SYM((yylhs.value.s)._elem, (yystack_[0].value.s)._u.exp); (yylhs.value.s)._u.exp->checkSetCbhExpr(&PARSE_CONTEXT); }
-#line 1566 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1588 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 26:
-#line 319 "CMPL_Parser.yy" // lalr1.cc:859
+#line 323 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.setCbExprModeReset(); }
-#line 1572 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1594 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 27:
-#line 320 "CMPL_Parser.yy" // lalr1.cc:859
+#line 324 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.setCbExprModeReset(); }
-#line 1578 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1600 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 28:
-#line 321 "CMPL_Parser.yy" // lalr1.cc:859
+#line 325 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.setCbExprModeReset(); }
-#line 1584 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1606 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 29:
-#line 322 "CMPL_Parser.yy" // lalr1.cc:859
+#line 326 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.setCbExprModeReset(); }
-#line 1590 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1612 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 30:
-#line 323 "CMPL_Parser.yy" // lalr1.cc:859
+#line 327 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.setCbExprModeReset(); }
-#line 1596 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1618 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 31:
-#line 324 "CMPL_Parser.yy" // lalr1.cc:859
+#line 328 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.setCbExprModeReset(); }
-#line 1602 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1624 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 32:
-#line 325 "CMPL_Parser.yy" // lalr1.cc:859
+#line 329 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.setCbExprModeReset(); }
-#line 1608 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1630 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 33:
-#line 332 "CMPL_Parser.yy" // lalr1.cc:859
+#line 336 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); CMPLELEMENTRY((yylhs.value.s), SyntaxElementCodeblock, yystack_[2].location, yystack_[0].location); CMPLELEM_CHILD((yylhs.value.s), (yystack_[1].value.s)); NOT_USED((yystack_[2].value.s)); NOT_USED((yystack_[0].value.s));
 		   																		  (yylhs.value.s).setExp(new ExprParseInfo(&PARSE_CONTEXT, (yylhs.value.s)._elem->loc(), specialSymbolNo, false, true));
 																				  (yylhs.value.s)._u.fnc.exp = (yylhs.value.s)._u.exp; (yylhs.value.s)._u.fnc.cntLocal = PARSE_CONTEXT.funcParseScopeInfo((yylhs.value.s)._u.fnc.useSubs);
 		   																		  PARSE_CONTEXT.endParseScope((yylhs.value.s)._elem, yystack_[0].location); }
-#line 1617 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1639 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 34:
-#line 336 "CMPL_Parser.yy" // lalr1.cc:859
+#line 340 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); CMPLELEMENTRY_ERR((yystack_[1].value.s), yystack_[1].location); CMPLELEMENTRY((yylhs.value.s), SyntaxElementCodeblock, yystack_[2].location, yystack_[0].location); CMPLELEM_CHILD((yylhs.value.s), (yystack_[1].value.s)); NOT_USED((yystack_[2].value.s)); NOT_USED((yystack_[0].value.s));
 																				  (yylhs.value.s).setExp(new ExprParseInfo(&PARSE_CONTEXT, (yylhs.value.s)._elem->loc(), specialSymbolNo, false, true));
 																				  (yylhs.value.s)._u.fnc.exp = (yylhs.value.s)._u.exp; (yylhs.value.s)._u.fnc.cntLocal = PARSE_CONTEXT.funcParseScopeInfo((yylhs.value.s)._u.fnc.useSubs);
 																				  PARSE_CONTEXT.endParseScope((yylhs.value.s)._elem, yystack_[0].location);
 																				  yyerrok; }
-#line 1627 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1649 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 35:
-#line 343 "CMPL_Parser.yy" // lalr1.cc:859
+#line 347 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.startParseScope((yylhs.value.s)._elem, yystack_[0].location, parseScopeTypeBlock, (yystack_[0].value.s)._u.sptt);
 																				  PARSE_CONTEXT.setCbExprModeReset(); }
-#line 1634 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1656 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 36:
-#line 347 "CMPL_Parser.yy" // lalr1.cc:859
+#line 351 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); }
-#line 1640 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1662 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 37:
-#line 348 "CMPL_Parser.yy" // lalr1.cc:859
+#line 352 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); CMPLELEM_CONCAT((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); NOT_USED((yystack_[1].value.s)); }
-#line 1646 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1668 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 38:
-#line 351 "CMPL_Parser.yy" // lalr1.cc:859
+#line 355 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.startParseScope((yylhs.value.s)._elem, yystack_[0].location, parseScopeTypePart); PARSE_CONTEXT.setCbExprModeReset(); }
-#line 1652 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1674 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 39:
-#line 354 "CMPL_Parser.yy" // lalr1.cc:859
+#line 358 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); CMPLELEMENTRY((yylhs.value.s), SyntaxElementBlockPart, yystack_[1].location, yystack_[0].location); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s)); delete (yystack_[1].value.s)._u.exp; PARSE_CONTEXT.setPartParseScopeElem((yylhs.value.s)._elem); }
-#line 1658 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1680 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 40:
-#line 357 "CMPL_Parser.yy" // lalr1.cc:859
+#line 361 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[1].value.s); PARSE_CONTEXT.startParseScope((yystack_[0].value.s)._elem, yystack_[0].location, parseScopeTypeBody); PARSE_CONTEXT.setCbExprModeCBBodyStart(); NOT_USED((yystack_[2].value.s)); }
-#line 1664 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1686 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 41:
-#line 360 "CMPL_Parser.yy" // lalr1.cc:859
+#line 364 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); }
-#line 1670 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1692 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 42:
-#line 361 "CMPL_Parser.yy" // lalr1.cc:859
+#line 365 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); CMPLELEM_CONCAT((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s)); }
-#line 1676 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1698 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 43:
-#line 364 "CMPL_Parser.yy" // lalr1.cc:859
+#line 368 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementModificator, yystack_[0].location, yystack_[0].location, (yystack_[0].value.s)._name); PARSE_CONTEXT.setParseScopeParBlockPart(ICPAR_BLOCK_ORDERED); }
-#line 1682 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1704 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 44:
-#line 367 "CMPL_Parser.yy" // lalr1.cc:859
+#line 371 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init();
 			 																	  if ((yystack_[0].value.s)._empty) { CMPLELEMENTRY_EMPTY((yystack_[0].value.s), yystack_[0].location); (yystack_[0].value.s).setExp(new ExprParseInfo(&PARSE_CONTEXT, yystack_[0].location)); }
 			 																	  CMPLELEMENTRY((yylhs.value.s), SyntaxElementBlockHeader, yystack_[0].location, yystack_[0].location); CMPLELEM_CHILD((yylhs.value.s), (yystack_[0].value.s));
 																				  (yylhs.value.s).setExp((yystack_[0].value.s)._u.exp); }
-#line 1691 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1713 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 45:
-#line 371 "CMPL_Parser.yy" // lalr1.cc:859
+#line 375 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init();
 																				  if ((yystack_[2].value.s)._empty) { CMPLELEMENTRY_EMPTY((yystack_[2].value.s), yystack_[2].location); (yystack_[2].value.s).setExp(new ExprParseInfo(&PARSE_CONTEXT, yystack_[2].location)); }
 																				  CMPLELEMENTRY((yylhs.value.s), SyntaxElementBlockHeader, yystack_[2].location, yystack_[2].location); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s));
 																				  (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CBHCAT, (yystack_[0].value.s)._u.exp, true)); }
-#line 1700 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1722 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 46:
-#line 377 "CMPL_Parser.yy" // lalr1.cc:859
+#line 381 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); }
-#line 1706 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1728 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 47:
-#line 378 "CMPL_Parser.yy" // lalr1.cc:859
+#line 382 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); (yylhs.value.s)._u.exp->setAssignCbh(&PARSE_CONTEXT); COMP_CBHEADER_END((yylhs.value.s)._elem, (yylhs.value.s)._u.exp, (yystack_[1].value.s)._u.cbr.a); (yylhs.value.s)._u.exp->resetCbhExpr(); }
-#line 1712 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1734 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 48:
-#line 381 "CMPL_Parser.yy" // lalr1.cc:859
+#line 385 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); COMP_CBHEADER_START(NULL, (yylhs.value.s)._u.cbr.a); }
-#line 1718 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1740 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 49:
-#line 384 "CMPL_Parser.yy" // lalr1.cc:859
+#line 388 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); CMPLELEMENTRY((yylhs.value.s), SyntaxElementBlockBody, yystack_[1].location, yystack_[0].location); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s));
 		   																		  if (!(yystack_[1].value.s)._empty) {
 																				  	if (!PARSE_CONTEXT.assignModCurrentEmpty()) PARSE_CONTEXT.outParseError(ERROR_LVL_NORMAL, "expression as code block body cannot have assign modificators", yystack_[1].location);
@@ -1727,607 +1749,618 @@ namespace cmpl {
 																				  (yystack_[0].value.s)._u.exp->checkLNPError(&PARSE_CONTEXT); (yystack_[0].value.s)._u.exp->checkClearLvalSyms(&PARSE_CONTEXT);
 																				  if ((yystack_[0].value.s)._u.exp->ncSymAccess()) PARSE_CONTEXT.setParseScopeParBlockPart(ICPAR_BLOCK_NCSYM);
 		   																		  delete (yystack_[0].value.s)._u.exp; }
-#line 1731 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1753 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 50:
-#line 392 "CMPL_Parser.yy" // lalr1.cc:859
+#line 396 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); CMPLELEMENTRY((yylhs.value.s), SyntaxElementBlockBody, yystack_[0].location, yystack_[0].location); CMPLELEM_CHILD((yylhs.value.s), (yystack_[0].value.s)); PARSE_CONTEXT.setParseScopeParBlockPart(ICPAR_BLOCK_STMNT); }
-#line 1737 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1759 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 51:
-#line 395 "CMPL_Parser.yy" // lalr1.cc:859
+#line 399 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); (yystack_[0].value.s)._u.exp->checkLNPError(&PARSE_CONTEXT); }
-#line 1743 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1765 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 52:
-#line 396 "CMPL_Parser.yy" // lalr1.cc:859
+#line 400 "CMPL_Parser.yy" // lalr1.cc:859
     { (yystack_[2].value.s)._u.exp->checkCbhAssignError(&PARSE_CONTEXT, yystack_[1].location);
 																				  (yylhs.value.s).init(); CMPLELEMENTRY_ALT((yylhs.value.s), SyntaxElementCompareOp, yystack_[2].location, yystack_[0].location, (yystack_[2].value.s)._name, "=="); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); NOT_USED((yystack_[1].value.s));
 																				  (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, ICS_OPER_EQ2, (yystack_[0].value.s)._u.exp, true));
 																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_EQ, 2); }
-#line 1752 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1774 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 53:
-#line 402 "CMPL_Parser.yy" // lalr1.cc:859
+#line 406 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.setCbExprModeReset(); (yylhs.value.s)._u.cbr.b = (yystack_[0].value.s)._u.b; COMP_FUNC_START((yylhs.value.s)._elem, (yylhs.value.s)._u.cbr.a); }
-#line 1758 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1780 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 54:
-#line 408 "CMPL_Parser.yy" // lalr1.cc:859
+#line 412 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.setCbExprModeResetStorePrv(); }
-#line 1764 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1786 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 55:
-#line 409 "CMPL_Parser.yy" // lalr1.cc:859
+#line 413 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.setCbExprModeReset(); }
-#line 1770 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1792 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 56:
-#line 410 "CMPL_Parser.yy" // lalr1.cc:859
+#line 414 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.setCbExprModeReset(); }
-#line 1776 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1798 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 57:
-#line 411 "CMPL_Parser.yy" // lalr1.cc:859
+#line 415 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.setCbExprModeReset(); }
-#line 1782 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1804 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 58:
-#line 412 "CMPL_Parser.yy" // lalr1.cc:859
+#line 416 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.setCbExprModeReset(); }
-#line 1788 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1810 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 59:
-#line 413 "CMPL_Parser.yy" // lalr1.cc:859
+#line 417 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.setCbExprModeReset(); }
-#line 1794 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1816 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 60:
-#line 414 "CMPL_Parser.yy" // lalr1.cc:859
+#line 418 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.setCbExprModeReset(); }
-#line 1800 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1822 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 61:
-#line 415 "CMPL_Parser.yy" // lalr1.cc:859
+#line 419 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.setCbExprModeReset(); }
-#line 1806 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1828 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 62:
-#line 416 "CMPL_Parser.yy" // lalr1.cc:859
+#line 420 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.setCbExprModeReset(); }
-#line 1812 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1834 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 63:
-#line 417 "CMPL_Parser.yy" // lalr1.cc:859
+#line 421 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.setCbExprModeReset(); }
-#line 1818 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1840 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 64:
-#line 418 "CMPL_Parser.yy" // lalr1.cc:859
+#line 422 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.setCbExprModeReset(); }
-#line 1824 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1846 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 65:
-#line 419 "CMPL_Parser.yy" // lalr1.cc:859
+#line 423 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.setCbExprModeReset(); }
-#line 1830 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1852 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 66:
-#line 420 "CMPL_Parser.yy" // lalr1.cc:859
+#line 424 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.setCbExprModeReset(); }
-#line 1836 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1858 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 67:
-#line 421 "CMPL_Parser.yy" // lalr1.cc:859
+#line 425 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.setCbExprModeReset(); }
+#line 1864 "_CMPL_Parser.cc" // lalr1.cc:859
+    break;
+
+  case 68:
+#line 426 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); (yylhs.value.s)._u.exp = (yystack_[0].value.s)._u.fnc.exp; (yylhs.value.s)._u.exp->resetVolaExp();
 																				  CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementFunction, yystack_[1].location, yystack_[0].location, ((yystack_[1].value.s)._u.cbr.b ? "pure" : "nonpure")); CMPLELEM_CHILD((yylhs.value.s), (yystack_[0].value.s));
 																				  COMP_FUNC_END((yylhs.value.s)._elem, (yystack_[1].value.s)._u.cbr.a, (yystack_[0].value.s)._u.fnc.cntLocal, (yystack_[0].value.s)._u.fnc.useSubs);
 																				  PARSE_CONTEXT.setCbExprModeReset(); }
-#line 1845 "_CMPL_Parser.cc" // lalr1.cc:859
-    break;
-
-  case 68:
-#line 425 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.setCbExprModeReset();
-																				  PARSE_CONTEXT.outParseError(ERROR_LVL_NORMAL, "illegal expression, maybe missing operation sign", yystack_[0].location); }
-#line 1852 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1873 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 69:
-#line 429 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s) = (yystack_[0].value.s); (yylhs.value.s)._u.exp->checkSetCbhExpr(&PARSE_CONTEXT); }
-#line 1858 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 430 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.setCbExprModeReset();
+																				  PARSE_CONTEXT.outParseError(ERROR_LVL_NORMAL, "illegal expression, maybe missing operation sign", yystack_[0].location); }
+#line 1880 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 70:
-#line 430 "CMPL_Parser.yy" // lalr1.cc:859
+#line 434 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s) = (yystack_[0].value.s); (yylhs.value.s)._u.exp->checkSetCbhExpr(&PARSE_CONTEXT); }
+#line 1886 "_CMPL_Parser.cc" // lalr1.cc:859
+    break;
+
+  case 71:
+#line 435 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementIncDec, yystack_[1].location, yystack_[0].location, ((yystack_[1].value.s)._u.i > 0 ? "prefix inc" : "prefix dec")); CMPLELEM_CHILD((yylhs.value.s), (yystack_[0].value.s));
 																				  (yylhs.value.s).setExp((yystack_[0].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_INC, NULL, false));
 																				  (yylhs.value.s)._u.exp->checkSetCbhExpr(&PARSE_CONTEXT);
 																				  COMP_INCDEC_FETCH((yylhs.value.s)._elem, true, (yystack_[1].value.s)._u.i); }
-#line 1867 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1895 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
-  case 71:
-#line 434 "CMPL_Parser.yy" // lalr1.cc:859
+  case 72:
+#line 439 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[1].value.s); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementIncDec, yystack_[1].location, yystack_[0].location, ((yystack_[0].value.s)._u.i > 0 ? "postfix inc" : "postfix dec")); CMPLELEM_CHILD((yylhs.value.s), (yystack_[1].value.s));
 																				  (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_INC, NULL, false));
 																				  (yylhs.value.s)._u.exp->checkSetCbhExpr(&PARSE_CONTEXT);
 																				  COMP_INCDEC_FETCH((yylhs.value.s)._elem, false, (yystack_[0].value.s)._u.i); }
-#line 1876 "_CMPL_Parser.cc" // lalr1.cc:859
-    break;
-
-  case 72:
-#line 440 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s) = (yystack_[0].value.s); CMPLELEMENTRY_SYM((yylhs.value.s), SyntaxElementSymbol, yystack_[0].location, yystack_[0].location, (yystack_[0].value.s)._u.exp->sym());
-		 																		  COMP_FETCH_SYM((yylhs.value.s)._elem, (yystack_[0].value.s)._u.exp);
-																				  (yylhs.value.s)._u.exp->setLvalueSyntaxElem((yylhs.value.s)._elem); }
-#line 1884 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 1904 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 73:
 #line 445 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s) = (yystack_[0].value.s); }
-#line 1890 "_CMPL_Parser.cc" // lalr1.cc:859
+    { (yylhs.value.s) = (yystack_[0].value.s); CMPLELEMENTRY_SYM((yylhs.value.s), SyntaxElementSymbol, yystack_[0].location, yystack_[0].location, (yystack_[0].value.s)._u.exp->sym());
+		 																		  COMP_FETCH_SYM((yylhs.value.s)._elem, (yystack_[0].value.s)._u.exp);
+																				  (yylhs.value.s)._u.exp->setLvalueSyntaxElem((yylhs.value.s)._elem); }
+#line 1912 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 74:
-#line 446 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEM_CONCAT((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CAT, (yystack_[0].value.s)._u.exp, true)); }
-#line 1896 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 450 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s) = (yystack_[0].value.s); }
+#line 1918 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 75:
-#line 449 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s) = (yystack_[0].value.s); CMPLELEMENTRY((yylhs.value.s), SyntaxElementLitDouble, yystack_[0].location, yystack_[0].location);
-		  																		  COMP_LIT_VALUE((yylhs.value.s)._elem, (yystack_[0].value.s)._u.s, ICS_LIT_REAL); (yylhs.value.s).setExp(new ExprParseInfo(&PARSE_CONTEXT, yystack_[0].location)); }
-#line 1903 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 451 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEM_CONCAT((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CAT, (yystack_[0].value.s)._u.exp, true)); }
+#line 1924 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 76:
-#line 451 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s) = (yystack_[0].value.s); CMPLELEMENTRY((yylhs.value.s), SyntaxElementLitInt, yystack_[0].location, yystack_[0].location);
-																				  COMP_LIT_VALUE((yylhs.value.s)._elem, (yystack_[0].value.s)._u.s, ICS_LIT_INT); (yylhs.value.s).setExp(new ExprParseInfo(&PARSE_CONTEXT, yystack_[0].location)); }
-#line 1910 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 454 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s) = (yystack_[0].value.s); CMPLELEMENTRY((yylhs.value.s), SyntaxElementLitDouble, yystack_[0].location, yystack_[0].location);
+		  																		  COMP_LIT_VALUE((yylhs.value.s)._elem, (yystack_[0].value.s)._u.s, ICS_LIT_REAL); (yylhs.value.s).setExp(new ExprParseInfo(&PARSE_CONTEXT, yystack_[0].location)); }
+#line 1931 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 77:
-#line 453 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s) = (yystack_[0].value.s); CMPLELEMENTRY((yylhs.value.s), SyntaxElementLitString, yystack_[0].location, yystack_[0].location);
-																				  COMP_LIT_VALUE((yylhs.value.s)._elem, (yystack_[0].value.s)._u.s, ICS_LIT_STR); (yylhs.value.s).setExp(new ExprParseInfo(&PARSE_CONTEXT, yystack_[0].location)); }
-#line 1917 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 456 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s) = (yystack_[0].value.s); CMPLELEMENTRY((yylhs.value.s), SyntaxElementLitInt, yystack_[0].location, yystack_[0].location);
+																				  COMP_LIT_VALUE((yylhs.value.s)._elem, (yystack_[0].value.s)._u.s, ICS_LIT_INT); (yylhs.value.s).setExp(new ExprParseInfo(&PARSE_CONTEXT, yystack_[0].location)); }
+#line 1938 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 78:
-#line 457 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s) = (yystack_[0].value.s); CMPLELEMENTRY((yylhs.value.s), SyntaxElementLitDouble, yystack_[0].location, yystack_[0].location);
-			 																	  COMP_LIT_VALUE((yylhs.value.s)._elem, (yystack_[0].value.s)._u.s, ICS_LIT_REAL); (yylhs.value.s).setExp(new ExprParseInfo(&PARSE_CONTEXT, yystack_[0].location));
-			 																	  PARSE_CONTEXT.setCbExprModeReset(); }
-#line 1925 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 458 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s) = (yystack_[0].value.s); CMPLELEMENTRY((yylhs.value.s), SyntaxElementLitString, yystack_[0].location, yystack_[0].location);
+																				  COMP_LIT_VALUE((yylhs.value.s)._elem, (yystack_[0].value.s)._u.s, ICS_LIT_STR); (yylhs.value.s).setExp(new ExprParseInfo(&PARSE_CONTEXT, yystack_[0].location)); }
+#line 1945 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 79:
-#line 460 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s) = (yystack_[0].value.s); CMPLELEMENTRY((yylhs.value.s), SyntaxElementLitInt, yystack_[0].location, yystack_[0].location);
-																				  COMP_LIT_VALUE((yylhs.value.s)._elem, (yystack_[0].value.s)._u.s, ICS_LIT_INT); (yylhs.value.s).setExp(new ExprParseInfo(&PARSE_CONTEXT, yystack_[0].location));
-																				  PARSE_CONTEXT.setCbExprModeReset(); }
-#line 1933 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 462 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s) = (yystack_[0].value.s); CMPLELEMENTRY((yylhs.value.s), SyntaxElementLitDouble, yystack_[0].location, yystack_[0].location);
+			 																	  COMP_LIT_VALUE((yylhs.value.s)._elem, (yystack_[0].value.s)._u.s, ICS_LIT_REAL); (yylhs.value.s).setExp(new ExprParseInfo(&PARSE_CONTEXT, yystack_[0].location));
+			 																	  PARSE_CONTEXT.setCbExprModeReset(); }
+#line 1953 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 80:
-#line 466 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY((yylhs.value.s), SyntaxElementArray, yystack_[2].location, yystack_[0].location); CMPLELEM_CHILD((yylhs.value.s), (yystack_[1].value.s)); NOT_USED((yystack_[2].value.s));
-		   																		  if ((yystack_[1].value.s)._u.exp->listCnt() || (yystack_[1].value.s)._u.exp->empty()) { COMP_CONSTRUCT((yylhs.value.s)._elem, ICS_CONSTRUCT_ARRAY, ((yystack_[1].value.s)._u.exp->listCnt() ?: 1)); }
-		   																		  (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_ARR, NULL, false)); }
-#line 1941 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 465 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s) = (yystack_[0].value.s); CMPLELEMENTRY((yylhs.value.s), SyntaxElementLitInt, yystack_[0].location, yystack_[0].location);
+																				  COMP_LIT_VALUE((yylhs.value.s)._elem, (yystack_[0].value.s)._u.s, ICS_LIT_INT); (yylhs.value.s).setExp(new ExprParseInfo(&PARSE_CONTEXT, yystack_[0].location));
+																				  PARSE_CONTEXT.setCbExprModeReset(); }
+#line 1961 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 81:
-#line 469 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_ERR((yystack_[1].value.s), yystack_[1].location); CMPLELEMENTRY((yylhs.value.s), SyntaxElementArray, yystack_[2].location, yystack_[0].location); CMPLELEM_CHILD((yylhs.value.s), (yystack_[1].value.s)); NOT_USED((yystack_[2].value.s));
-																				  (yylhs.value.s).setExp(new ExprParseInfo(&PARSE_CONTEXT, yystack_[2].location));
-																				  yyerrok; }
-#line 1949 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 471 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY((yylhs.value.s), SyntaxElementArray, yystack_[2].location, yystack_[0].location); CMPLELEM_CHILD((yylhs.value.s), (yystack_[1].value.s)); NOT_USED((yystack_[2].value.s));
+		   																		  if ((yystack_[1].value.s)._u.exp->listCnt() || (yystack_[1].value.s)._u.exp->empty()) { COMP_CONSTRUCT((yylhs.value.s)._elem, ICS_CONSTRUCT_ARRAY, ((yystack_[1].value.s)._u.exp->listCnt() ?: 1)); }
+		   																		  (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_ARR, NULL, false)); }
+#line 1969 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 82:
 #line 474 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); PARSE_CONTEXT.setCbExprModeReset(); }
-#line 1955 "_CMPL_Parser.cc" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY_ERR((yystack_[1].value.s), yystack_[1].location); CMPLELEMENTRY((yylhs.value.s), SyntaxElementArray, yystack_[2].location, yystack_[0].location); CMPLELEM_CHILD((yylhs.value.s), (yystack_[1].value.s)); NOT_USED((yystack_[2].value.s));
+																				  (yylhs.value.s).setExp(new ExprParseInfo(&PARSE_CONTEXT, yystack_[2].location));
+																				  yyerrok; }
+#line 1977 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 83:
-#line 477 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY((yylhs.value.s), SyntaxElementTupel, yystack_[2].location, yystack_[0].location); CMPLELEM_CHILD((yylhs.value.s), (yystack_[1].value.s)); NOT_USED((yystack_[2].value.s));
-		   																		  COMP_CONSTRUCT((yylhs.value.s)._elem, ICS_CONSTRUCT_TUPEL, ((yystack_[1].value.s)._u.exp->listCnt() ?: 1));
-		   																		  (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_TUP, NULL, false)); }
-#line 1963 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 479 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); PARSE_CONTEXT.setCbExprModeReset(); }
+#line 1983 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 84:
-#line 480 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_ERR((yystack_[1].value.s), yystack_[1].location); CMPLELEMENTRY((yylhs.value.s), SyntaxElementTupel, yystack_[2].location, yystack_[0].location); CMPLELEM_CHILD((yylhs.value.s), (yystack_[1].value.s)); NOT_USED((yystack_[2].value.s));
-																				  (yylhs.value.s).setExp(new ExprParseInfo(&PARSE_CONTEXT, yystack_[2].location));
-																				  yyerrok; }
-#line 1971 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 482 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY((yylhs.value.s), SyntaxElementTupel, yystack_[2].location, yystack_[0].location); CMPLELEM_CHILD((yylhs.value.s), (yystack_[1].value.s)); NOT_USED((yystack_[2].value.s)); NOT_USED((yystack_[0].value.s))
+                                                                                  COMP_CONSTRUCT((yylhs.value.s)._elem, ICS_CONSTRUCT_TUPLE, ((yystack_[1].value.s)._u.exp->listCnt() ?: 1));
+		   																		  (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_TUP, NULL, false)); }
+#line 1991 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 85:
 #line 485 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); PARSE_CONTEXT.setCbExprModeReset(); }
-#line 1977 "_CMPL_Parser.cc" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY_ERR((yystack_[1].value.s), yystack_[1].location); CMPLELEMENTRY((yylhs.value.s), SyntaxElementTupel, yystack_[2].location, yystack_[0].location); CMPLELEM_CHILD((yylhs.value.s), (yystack_[1].value.s)); NOT_USED((yystack_[2].value.s)); NOT_USED((yystack_[0].value.s));
+																				  (yylhs.value.s).setExp(new ExprParseInfo(&PARSE_CONTEXT, yystack_[2].location));
+																				  yyerrok; }
+#line 1999 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 86:
-#line 488 "CMPL_Parser.yy" // lalr1.cc:859
+#line 490 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); PARSE_CONTEXT.setCbExprModeReset(); }
+#line 2005 "_CMPL_Parser.cc" // lalr1.cc:859
+    break;
+
+  case 87:
+#line 493 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); 
 		   																		  if ((yystack_[0].value.s)._empty) { CMPLELEMENTRY_EMPTY((yylhs.value.s), yystack_[0].location); COMP_SET_SYNTAXELEM((yystack_[0].value.s)._u.u, (yylhs.value.s)._elem); (yystack_[0].value.s).setExp(new ExprParseInfo(&PARSE_CONTEXT, yystack_[0].location, specialSymbolKnownVal, true)); }
 		   																		  else { CMPLELEM_SET((yylhs.value.s), (yystack_[0].value.s)); };
 		   																		  (yylhs.value.s).setExp((yystack_[0].value.s)._u.exp); }
-#line 1986 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 2014 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
-  case 87:
-#line 492 "CMPL_Parser.yy" // lalr1.cc:859
+  case 88:
+#line 497 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); 
 																				  if ((yystack_[2].value.s)._empty) { CMPLELEMENTRY_EMPTY((yystack_[2].value.s), yystack_[2].location); COMP_SET_SYNTAXELEM((yystack_[2].value.s)._u.u, (yystack_[2].value.s)._elem); (yystack_[2].value.s).setExp(new ExprParseInfo(&PARSE_CONTEXT, yystack_[2].location, specialSymbolKnownVal, true)); }
 																				  CMPLELEM_CONCAT((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s));
 																				  (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CAT, (yystack_[0].value.s)._u.exp, true)); }
-#line 1995 "_CMPL_Parser.cc" // lalr1.cc:859
-    break;
-
-  case 88:
-#line 498 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); COMP_LIT_BLANK((yylhs.value.s)._u.u); }
-#line 2001 "_CMPL_Parser.cc" // lalr1.cc:859
-    break;
-
-  case 89:
-#line 499 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s) = (yystack_[0].value.s); (yystack_[0].value.s)._u.exp->checkLNPError(&PARSE_CONTEXT); }
-#line 2007 "_CMPL_Parser.cc" // lalr1.cc:859
-    break;
-
-  case 90:
-#line 502 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY((yylhs.value.s), SyntaxElementInterval, yystack_[2].location, yystack_[0].location); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); NOT_USED((yystack_[1].value.s));
-			 																	  (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_SET, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_CONSTRUCT((yylhs.value.s)._elem, ICS_CONSTRUCT_IV_LB, 2); }
-#line 2015 "_CMPL_Parser.cc" // lalr1.cc:859
-    break;
-
-  case 91:
-#line 505 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY((yylhs.value.s), SyntaxElementInterval, yystack_[1].location, yystack_[0].location); CMPLELEMENTRY_EMPTY((yystack_[0].value.s), yystack_[0].location); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s));
-																				  (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_SET, NULL, false));
-																				  COMP_CONSTRUCT((yylhs.value.s)._elem, ICS_CONSTRUCT_IV_LB, 1); }
 #line 2023 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
+  case 89:
+#line 503 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); COMP_LIT_BLANK((yylhs.value.s)._u.u); }
+#line 2029 "_CMPL_Parser.cc" // lalr1.cc:859
+    break;
+
+  case 90:
+#line 504 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s) = (yystack_[0].value.s); (yystack_[0].value.s)._u.exp->checkLNPError(&PARSE_CONTEXT); }
+#line 2035 "_CMPL_Parser.cc" // lalr1.cc:859
+    break;
+
+  case 91:
+#line 507 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY((yylhs.value.s), SyntaxElementInterval, yystack_[2].location, yystack_[0].location); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); NOT_USED((yystack_[1].value.s));
+			 																	  (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_SET, (yystack_[0].value.s)._u.exp, true));
+																				  COMP_CONSTRUCT((yylhs.value.s)._elem, ICS_CONSTRUCT_IV_LB, 2); }
+#line 2043 "_CMPL_Parser.cc" // lalr1.cc:859
+    break;
+
   case 92:
-#line 508 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_EMPTY((yystack_[1].value.s), yystack_[1].location); CMPLELEMENTRY((yylhs.value.s), SyntaxElementInterval, yystack_[1].location, yystack_[0].location); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s));
-																				  (yylhs.value.s).setExp((yystack_[0].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_SET, NULL, false));
-																				  COMP_CONSTRUCT((yylhs.value.s)._elem, ICS_CONSTRUCT_IV_WOLB, 1); }
-#line 2031 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 510 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY((yylhs.value.s), SyntaxElementInterval, yystack_[1].location, yystack_[0].location); CMPLELEMENTRY_EMPTY((yystack_[0].value.s), yystack_[0].location); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s));
+																				  (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_SET, NULL, false));
+																				  COMP_CONSTRUCT((yylhs.value.s)._elem, ICS_CONSTRUCT_IV_LB, 1); }
+#line 2051 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 93:
-#line 511 "CMPL_Parser.yy" // lalr1.cc:859
+#line 513 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY_EMPTY((yystack_[1].value.s), yystack_[1].location); CMPLELEMENTRY((yylhs.value.s), SyntaxElementInterval, yystack_[1].location, yystack_[0].location); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s));
+																				  (yylhs.value.s).setExp((yystack_[0].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_SET, NULL, false));
+																				  COMP_CONSTRUCT((yylhs.value.s)._elem, ICS_CONSTRUCT_IV_WOLB, 1); }
+#line 2059 "_CMPL_Parser.cc" // lalr1.cc:859
+    break;
+
+  case 94:
+#line 516 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); CMPLELEMENTRY((yylhs.value.s), SyntaxElementInterval, yystack_[0].location, yystack_[0].location);
 																				  CMPLELEMENTRY_EMPTY((yystack_[0].value.s), yystack_[0].location); CMPLELEM_CHILD((yylhs.value.s), (yystack_[0].value.s));
 																				  CMPLELEMENTRY_EMPTY((yystack_[0].value.s), yystack_[0].location); CMPLELEM_CHILD((yylhs.value.s), (yystack_[0].value.s));
 																				  (yylhs.value.s).setExp(new ExprParseInfo(&PARSE_CONTEXT, yystack_[0].location));
 																				  COMP_CONSTRUCT((yylhs.value.s)._elem, ICS_CONSTRUCT_IV_WOLB, 0); }
-#line 2041 "_CMPL_Parser.cc" // lalr1.cc:859
-    break;
-
-  case 94:
-#line 518 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.setCbExprModeReset(); }
-#line 2047 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 2069 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 95:
-#line 521 "CMPL_Parser.yy" // lalr1.cc:859
+#line 523 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.setCbExprModeReset(); }
+#line 2075 "_CMPL_Parser.cc" // lalr1.cc:859
+    break;
+
+  case 96:
+#line 526 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); CMPLELEMENTRY((yylhs.value.s), SyntaxElementSet, yystack_[2].location, yystack_[0].location); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[1].value.s)); CMPLELEM_CHILD((yylhs.value.s), (yystack_[0].value.s));
 		  																		  if (!(yystack_[1].value.s)._u.exp->oneElemArr()) PARSE_CONTEXT.outParseError(ERROR_LVL_NORMAL, "step for algorithmic set must be a single value", yystack_[1].location);
 		  																		  (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_SET, (yystack_[0].value.s)._u.exp, true)); delete (yystack_[1].value.s)._u.exp;
 																				  COMP_CONSTRUCT((yylhs.value.s)._elem, ICS_CONSTRUCT_SET, 3); }
-#line 2056 "_CMPL_Parser.cc" // lalr1.cc:859
-    break;
-
-  case 96:
-#line 527 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s) = (yystack_[0].value.s); }
-#line 2062 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 2084 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 97:
-#line 528 "CMPL_Parser.yy" // lalr1.cc:859
+#line 532 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s) = (yystack_[0].value.s); }
-#line 2068 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 2090 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 98:
-#line 535 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementUnaryOp, yystack_[1].location, yystack_[0].location, ((yystack_[1].value.s)._u.b ? "+" : "-")); CMPLELEM_CHILD((yylhs.value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[0].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, NULL, false));
-		  																		  COMP_OPERATION((yylhs.value.s)._elem, ((yystack_[1].value.s)._u.b ? ICS_OPER_ADD : ICS_OPER_SUB), 1); }
-#line 2075 "_CMPL_Parser.cc" // lalr1.cc:859
-    break;
-
-  case 99:
-#line 537 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_EMPTY((yystack_[0].value.s), yystack_[0].location); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementUnaryOp, yystack_[0].location, yystack_[0].location, ((yystack_[0].value.s)._u.b ? "*" : "/")); CMPLELEM_CHILD((yylhs.value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp(new ExprParseInfo(&PARSE_CONTEXT, yystack_[0].location));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ((yystack_[0].value.s)._u.b ? ICS_OPER_MUL : ICS_OPER_DIV), 0); }
-#line 2082 "_CMPL_Parser.cc" // lalr1.cc:859
-    break;
-
-  case 100:
-#line 539 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementUnaryOp, yystack_[1].location, yystack_[0].location, ((yystack_[1].value.s)._u.b ? "*" : "/")); CMPLELEM_CHILD((yylhs.value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[0].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, NULL, false));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ((yystack_[1].value.s)._u.b ? ICS_OPER_MUL : ICS_OPER_DIV), 1); }
-#line 2089 "_CMPL_Parser.cc" // lalr1.cc:859
-    break;
-
-  case 101:
-#line 541 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementUnaryOp, yystack_[1].location, yystack_[0].location, (yystack_[0].value.s)._name); CMPLELEM_CHILD((yylhs.value.s), (yystack_[1].value.s)); (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, NULL, false));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_TRP, 1); }
+#line 533 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s) = (yystack_[0].value.s); }
 #line 2096 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
-  case 102:
-#line 543 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementUnaryOp, yystack_[1].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD((yylhs.value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[0].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_LOG, NULL, false));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_NOT, 1); }
+  case 99:
+#line 540 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementUnaryOp, yystack_[1].location, yystack_[0].location, ((yystack_[1].value.s)._u.b ? "+" : "-")); CMPLELEM_CHILD((yylhs.value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[0].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, NULL, false));
+		  																		  COMP_OPERATION((yylhs.value.s)._elem, ((yystack_[1].value.s)._u.b ? ICS_OPER_ADD : ICS_OPER_SUB), 1); }
 #line 2103 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
-  case 103:
-#line 547 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[2].location, yystack_[0].location, ((yystack_[1].value.s)._u.b ? "+" : "-")); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, (yystack_[0].value.s)._u.exp, true));
-		  																		  COMP_OPERATION((yylhs.value.s)._elem, ((yystack_[1].value.s)._u.b ? ICS_OPER_ADD : ICS_OPER_SUB), 2); }
+  case 100:
+#line 542 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY_EMPTY((yystack_[0].value.s), yystack_[0].location); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementUnaryOp, yystack_[0].location, yystack_[0].location, ((yystack_[0].value.s)._u.b ? "*" : "/")); CMPLELEM_CHILD((yylhs.value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp(new ExprParseInfo(&PARSE_CONTEXT, yystack_[0].location));
+																				  COMP_OPERATION((yylhs.value.s)._elem, ((yystack_[0].value.s)._u.b ? ICS_OPER_MUL : ICS_OPER_DIV), 0); }
 #line 2110 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
+  case 101:
+#line 544 "CMPL_Parser.yy" // lalr1.cc:859
+    { bool arr = (yystack_[0].value.s)._u.exp->expTypeArray(false);
+                                                                                  (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementUnaryOp, yystack_[1].location, yystack_[0].location, ((yystack_[1].value.s)._u.b ? "*" : "/")); CMPLELEM_CHILD((yylhs.value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[0].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, NULL, false));
+                                                                                  if (arr) {
+                                                                                    COMP_ARRCONSTRUCT_MODE((yylhs.value.s)._elem, (yystack_[1].value.s)._u.b);
+																				  } else {
+																					COMP_OPERATION((yylhs.value.s)._elem, ((yystack_[1].value.s)._u.b ? ICS_OPER_MUL : ICS_OPER_DIV), 1);
+																				} }
+#line 2122 "_CMPL_Parser.cc" // lalr1.cc:859
+    break;
+
+  case 102:
+#line 551 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementUnaryOp, yystack_[1].location, yystack_[0].location, (yystack_[0].value.s)._name); CMPLELEM_CHILD((yylhs.value.s), (yystack_[1].value.s)); (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, NULL, false));
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_TRP, 1); }
+#line 2129 "_CMPL_Parser.cc" // lalr1.cc:859
+    break;
+
+  case 103:
+#line 553 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementUnaryOp, yystack_[1].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD((yylhs.value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[0].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_LOG, NULL, false));
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_NOT, 1); }
+#line 2136 "_CMPL_Parser.cc" // lalr1.cc:859
+    break;
+
   case 104:
-#line 549 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[2].location, yystack_[0].location, ((yystack_[1].value.s)._u.b ? "*" : "/")); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ((yystack_[1].value.s)._u.b ? ICS_OPER_MUL : ICS_OPER_DIV), 2); }
-#line 2117 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 557 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[2].location, yystack_[0].location, ((yystack_[1].value.s)._u.b ? "+" : "-")); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, (yystack_[0].value.s)._u.exp, true));
+		  																		  COMP_OPERATION((yylhs.value.s)._elem, ((yystack_[1].value.s)._u.b ? ICS_OPER_ADD : ICS_OPER_SUB), 2); }
+#line 2143 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 105:
-#line 551 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[2].location, yystack_[0].location, "^"); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_EXP, 2); }
-#line 2124 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 559 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[2].location, yystack_[0].location, ((yystack_[1].value.s)._u.b ? "*" : "/")); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, (yystack_[0].value.s)._u.exp, true));
+																				  COMP_OPERATION((yylhs.value.s)._elem, ((yystack_[1].value.s)._u.b ? ICS_OPER_MUL : ICS_OPER_DIV), 2); }
+#line 2150 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 106:
-#line 553 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_LOG_AND, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_AND, 2); }
-#line 2131 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 561 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[2].location, yystack_[0].location, "^"); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, (yystack_[0].value.s)._u.exp, true));
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_EXP, 2); }
+#line 2157 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 107:
-#line 555 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_LOG, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_OR, 2); }
-#line 2138 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 563 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_LOG_AND, (yystack_[0].value.s)._u.exp, true));
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_AND, 2); }
+#line 2164 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 108:
-#line 557 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_IRR, 2); }
-#line 2145 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 565 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_LOG, (yystack_[0].value.s)._u.exp, true));
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_OR, 2); }
+#line 2171 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 109:
-#line 559 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_OBJTO, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_OBJTO, 2); }
-#line 2152 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 567 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, (yystack_[0].value.s)._u.exp, true));
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_IRR, 2); }
+#line 2178 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 110:
-#line 561 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[1].location, yystack_[0].location, "in"); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_IN, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_IN, 2); }
-#line 2159 "_CMPL_Parser.cc" // lalr1.cc:859
-    break;
-
-  case 111:
-#line 563 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[1].location, yystack_[0].location, "of"); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_IN, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_OF, 2); }
-#line 2166 "_CMPL_Parser.cc" // lalr1.cc:859
-    break;
-
-  case 112:
-#line 565 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_ALT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[1].location, yystack_[0].location, "", "*"); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_MUL, 2); }
-#line 2173 "_CMPL_Parser.cc" // lalr1.cc:859
-    break;
-
-  case 113:
 #line 569 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); (yylhs.value.s)._u.b = true; PARSE_CONTEXT.setCbExprModeReset(); }
-#line 2179 "_CMPL_Parser.cc" // lalr1.cc:859
-    break;
-
-  case 114:
-#line 570 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); (yylhs.value.s)._u.b = false; PARSE_CONTEXT.setCbExprModeReset(); }
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_OBJTO, (yystack_[0].value.s)._u.exp, true));
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_OBJTO, 2); }
 #line 2185 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
-  case 115:
+  case 111:
+#line 571 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[1].location, yystack_[0].location, "in"); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_IN, (yystack_[0].value.s)._u.exp, true));
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_IN, 2); }
+#line 2192 "_CMPL_Parser.cc" // lalr1.cc:859
+    break;
+
+  case 112:
 #line 573 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[1].location, yystack_[0].location, "of"); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_IN, (yystack_[0].value.s)._u.exp, true));
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_OF, 2); }
+#line 2199 "_CMPL_Parser.cc" // lalr1.cc:859
+    break;
+
+  case 113:
+#line 575 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY_ALT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[1].location, yystack_[0].location, "", "*"); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, (yystack_[0].value.s)._u.exp, true));
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_MUL, 2); }
+#line 2206 "_CMPL_Parser.cc" // lalr1.cc:859
+    break;
+
+  case 114:
+#line 579 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); (yylhs.value.s)._u.b = true; PARSE_CONTEXT.setCbExprModeReset(); }
-#line 2191 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 2212 "_CMPL_Parser.cc" // lalr1.cc:859
+    break;
+
+  case 115:
+#line 580 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); (yylhs.value.s)._u.b = false; PARSE_CONTEXT.setCbExprModeReset(); }
+#line 2218 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 116:
-#line 574 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); (yylhs.value.s)._u.b = false; PARSE_CONTEXT.setCbExprModeReset(); }
-#line 2197 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 583 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); (yylhs.value.s)._u.b = true; PARSE_CONTEXT.setCbExprModeReset(); }
+#line 2224 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 117:
-#line 577 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.setCbExprModeReset(); }
-#line 2203 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 584 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); (yylhs.value.s)._u.b = false; PARSE_CONTEXT.setCbExprModeReset(); }
+#line 2230 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 118:
-#line 580 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s) = (yystack_[1].value.s); NOT_USED((yystack_[0].value.s)); }
-#line 2209 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 587 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.setCbExprModeReset(); }
+#line 2236 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 119:
-#line 581 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s) = (yystack_[1].value.s); NOT_USED((yystack_[0].value.s)); /* $1 doesn't mean multiplication here, but is delivered so by flex, because "in" is a keyword operator */ }
-#line 2215 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 590 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s) = (yystack_[1].value.s); NOT_USED((yystack_[0].value.s)); }
+#line 2242 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 120:
-#line 584 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s) = (yystack_[1].value.s); NOT_USED((yystack_[0].value.s)); }
-#line 2221 "_CMPL_Parser.cc" // lalr1.cc:859
-    break;
-
-  case 121:
-#line 585 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s) = (yystack_[1].value.s); NOT_USED((yystack_[0].value.s)); /* $1 doesn't mean multiplication here, but is delivered so by flex, because "of" is a keyword operator */ }
-#line 2227 "_CMPL_Parser.cc" // lalr1.cc:859
-    break;
-
-  case 122:
-#line 588 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementCompareOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CMP, (yystack_[0].value.s)._u.exp, true));
-		   																		  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_EQ, 2); }
-#line 2234 "_CMPL_Parser.cc" // lalr1.cc:859
-    break;
-
-  case 123:
-#line 590 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementCompareOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CMP2, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_EQ2, 2); }
-#line 2241 "_CMPL_Parser.cc" // lalr1.cc:859
-    break;
-
-  case 124:
-#line 592 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementCompareOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CMP, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_NE, 2); }
+#line 591 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s) = (yystack_[1].value.s); NOT_USED((yystack_[0].value.s)); /* $1 doesn't mean multiplication here, but is delivered so by flex, because "in" is a keyword operator */ }
 #line 2248 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
-  case 125:
+  case 121:
 #line 594 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s) = (yystack_[1].value.s); NOT_USED((yystack_[0].value.s)); }
+#line 2254 "_CMPL_Parser.cc" // lalr1.cc:859
+    break;
+
+  case 122:
+#line 595 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s) = (yystack_[1].value.s); NOT_USED((yystack_[0].value.s)); /* $1 doesn't mean multiplication here, but is delivered so by flex, because "of" is a keyword operator */ }
+#line 2260 "_CMPL_Parser.cc" // lalr1.cc:859
+    break;
+
+  case 123:
+#line 598 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementCompareOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CMP, (yystack_[0].value.s)._u.exp, true));
+		   																		  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_EQ, 2); }
+#line 2267 "_CMPL_Parser.cc" // lalr1.cc:859
+    break;
+
+  case 124:
+#line 600 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementCompareOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CMP2, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_NE2, 2); }
-#line 2255 "_CMPL_Parser.cc" // lalr1.cc:859
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_EQ2, 2); }
+#line 2274 "_CMPL_Parser.cc" // lalr1.cc:859
+    break;
+
+  case 125:
+#line 602 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementCompareOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CMP, (yystack_[0].value.s)._u.exp, true));
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_NE, 2); }
+#line 2281 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 126:
-#line 596 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementCompareOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CMP, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_LT, 2); }
-#line 2262 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 604 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementCompareOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CMP2, (yystack_[0].value.s)._u.exp, true));
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_NE2, 2); }
+#line 2288 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 127:
-#line 598 "CMPL_Parser.yy" // lalr1.cc:859
+#line 606 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementCompareOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CMP, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_GT, 2); }
-#line 2269 "_CMPL_Parser.cc" // lalr1.cc:859
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_LT, 2); }
+#line 2295 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 128:
-#line 600 "CMPL_Parser.yy" // lalr1.cc:859
+#line 608 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementCompareOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CMP, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_LE, 2); }
-#line 2276 "_CMPL_Parser.cc" // lalr1.cc:859
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_GT, 2); }
+#line 2302 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 129:
-#line 602 "CMPL_Parser.yy" // lalr1.cc:859
+#line 610 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementCompareOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CMP, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_GE, 2); }
-#line 2283 "_CMPL_Parser.cc" // lalr1.cc:859
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_LE, 2); }
+#line 2309 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 130:
-#line 607 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementSubSymbolOp, yystack_[2].location, yystack_[0].location, "."); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); NOT_USED((yystack_[1].value.s));
-			 																	  (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_SUB, (yystack_[0].value.s)._u.exp, true)); }
-#line 2290 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 612 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementCompareOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CMP, (yystack_[0].value.s)._u.exp, true));
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_GE, 2); }
+#line 2316 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 131:
-#line 611 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s) = (yystack_[0].value.s); }
-#line 2296 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 617 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementSubSymbolOp, yystack_[2].location, yystack_[0].location, "."); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); NOT_USED((yystack_[1].value.s));
+			 																	  (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_SUB, (yystack_[0].value.s)._u.exp, true)); }
+#line 2323 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 132:
-#line 612 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s) = (yystack_[0].value.s); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementIncDec, yystack_[1].location, yystack_[0].location, ((yystack_[1].value.s)._u.i > 0 ? "prefix inc" : "prefix dec")); CMPLELEM_CHILD((yylhs.value.s), (yystack_[0].value.s));
-																				  (yylhs.value.s).setExp((yystack_[0].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_INC, NULL, false));
-																				  COMP_INCDEC_FETCH((yylhs.value.s)._elem, true, (yystack_[1].value.s)._u.i); }
-#line 2304 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 621 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s) = (yystack_[0].value.s); }
+#line 2329 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 133:
-#line 615 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s) = (yystack_[1].value.s); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementIncDec, yystack_[1].location, yystack_[0].location, ((yystack_[0].value.s)._u.i > 0 ? "postfix inc" : "postfix dec")); CMPLELEM_CHILD((yylhs.value.s), (yystack_[1].value.s));
-																				  (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_INC, NULL, false));
-																				  COMP_INCDEC_FETCH((yylhs.value.s)._elem, false, (yystack_[0].value.s)._u.i); }
-#line 2312 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 622 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s) = (yystack_[0].value.s); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementIncDec, yystack_[1].location, yystack_[0].location, ((yystack_[1].value.s)._u.i > 0 ? "prefix inc" : "prefix dec")); CMPLELEM_CHILD((yylhs.value.s), (yystack_[0].value.s));
+																				  (yylhs.value.s).setExp((yystack_[0].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_INC, NULL, false));
+																				  COMP_INCDEC_FETCH((yylhs.value.s)._elem, true, (yystack_[1].value.s)._u.i); }
+#line 2337 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 134:
-#line 620 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s) = (yystack_[0].value.s); CMPLELEMENTRY_SYM((yylhs.value.s), SyntaxElementSymbol, yystack_[0].location, yystack_[0].location, (yystack_[0].value.s)._u.exp->sym());
-																				  COMP_FETCH_SYM((yylhs.value.s)._elem, (yystack_[0].value.s)._u.exp); (yylhs.value.s)._u.exp->setLvalueSyntaxElem((yylhs.value.s)._elem); }
-#line 2319 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 625 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s) = (yystack_[1].value.s); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementIncDec, yystack_[1].location, yystack_[0].location, ((yystack_[0].value.s)._u.i > 0 ? "postfix inc" : "postfix dec")); CMPLELEM_CHILD((yylhs.value.s), (yystack_[1].value.s));
+																				  (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_INC, NULL, false));
+																				  COMP_INCDEC_FETCH((yylhs.value.s)._elem, false, (yystack_[0].value.s)._u.i); }
+#line 2345 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 135:
-#line 625 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY((yylhs.value.s), SyntaxElementFuncCall, yystack_[1].location, yystack_[0].location); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s)); /* auch als Set-Konstruktor der Art 1(1)(n-1) */
-			 																	  (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CALL, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_FUNC, 2); }
-#line 2327 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 630 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s) = (yystack_[0].value.s); CMPLELEMENTRY_SYM((yylhs.value.s), SyntaxElementSymbol, yystack_[0].location, yystack_[0].location, (yystack_[0].value.s)._u.exp->sym());
+																				  COMP_FETCH_SYM((yylhs.value.s)._elem, (yystack_[0].value.s)._u.exp); (yylhs.value.s)._u.exp->setLvalueSyntaxElem((yylhs.value.s)._elem); }
+#line 2352 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 136:
-#line 628 "CMPL_Parser.yy" // lalr1.cc:859
+#line 635 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY((yylhs.value.s), SyntaxElementFuncCall, yystack_[1].location, yystack_[0].location); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s)); /* auch als Set-Konstruktor der Art 1(1)(n-1) */
+			 																	  (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CALL, (yystack_[0].value.s)._u.exp, true));
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_FUNC, 2); }
+#line 2360 "_CMPL_Parser.cc" // lalr1.cc:859
+    break;
+
+  case 137:
+#line 638 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init();
 																				  if (PARSE_CONTEXT.modpt()->compatLineNamePref() && (yystack_[1].value.s)._u.exp->sym() && (yystack_[1].value.s)._u.exp->sym()->notDefined()) {
 																					// no function call, $1 is a line name prefix
@@ -2339,31 +2372,58 @@ namespace cmpl {
 																				  	(yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CALL, (yystack_[0].value.s)._u.exp, true));
 																					COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_FUNC, 2);
 																				} }
-#line 2343 "_CMPL_Parser.cc" // lalr1.cc:859
-    break;
-
-  case 137:
-#line 641 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY((yylhs.value.s), SyntaxElementIndexation, yystack_[1].location, yystack_[0].location); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s));
-																				  (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_IND, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_INDEX, 2); }
-#line 2351 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 2376 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 138:
-#line 646 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementError, yystack_[1].location, yystack_[0].location, "illegal expression"); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, (yystack_[0].value.s)._u.exp, true)); }
-#line 2357 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 651 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY((yylhs.value.s), SyntaxElementIndexation, yystack_[1].location, yystack_[0].location); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s));
+																				  (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_IND, (yystack_[0].value.s)._u.exp, true));
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_INDEX, 2); }
+#line 2384 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 139:
-#line 647 "CMPL_Parser.yy" // lalr1.cc:859
+#line 656 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); NOT_USED((yystack_[1].value.s));
+		   																		  if ((yystack_[2].value.s)._u.exp->expTypeTuple()) {
+																					CMPLELEMENTRY((yylhs.value.s), SyntaxElementArrayCast, yystack_[2].location, yystack_[0].location); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s));
+																					(yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_ARRC, (yystack_[0].value.s)._u.exp, true));
+																					COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_ARRCAST, 2);
+																				  } else {
+																				  	if ((yystack_[0].value.s)._u.exp->expTypeTuple()) {
+																						// indexation
+																						CMPLELEMENTRY((yylhs.value.s), SyntaxElementIndexation, yystack_[2].location, yystack_[0].location); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s));
+																						(yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_IND, (yystack_[0].value.s)._u.exp, true));
+																						COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_INDEX, 2);
+																					} else if ((yystack_[0].value.s)._u.exp->expTypeArray()) {
+																						// function call
+																						CMPLELEMENTRY((yylhs.value.s), SyntaxElementFuncCall, yystack_[2].location, yystack_[0].location); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s));
+																						(yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CALL, (yystack_[0].value.s)._u.exp, true));
+																						COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_FUNC, 2);
+																					} else {
+																						// error
+																						CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementError, yystack_[2].location, yystack_[0].location, "illegal expression"); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s));
+																						(yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, (yystack_[0].value.s)._u.exp, true));
+																					}
+																				} }
+#line 2411 "_CMPL_Parser.cc" // lalr1.cc:859
+    break;
+
+  case 140:
+#line 680 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementError, yystack_[1].location, yystack_[0].location, "illegal expression"); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, (yystack_[0].value.s)._u.exp, true)); }
-#line 2363 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 2417 "_CMPL_Parser.cc" // lalr1.cc:859
+    break;
+
+  case 141:
+#line 681 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementError, yystack_[1].location, yystack_[0].location, "illegal expression"); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, (yystack_[0].value.s)._u.exp, true)); }
+#line 2423 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
 
-#line 2367 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 2427 "_CMPL_Parser.cc" // lalr1.cc:859
             default:
               break;
             }
@@ -2618,333 +2678,344 @@ namespace cmpl {
   }
 
 
-  const signed char CMPL_Parser::yypact_ninf_ = -63;
+  const signed char CMPL_Parser::yypact_ninf_ = -91;
 
-  const signed char CMPL_Parser::yytable_ninf_ = -89;
+  const signed char CMPL_Parser::yytable_ninf_ = -90;
 
   const short int
   CMPL_Parser::yypact_[] =
   {
-     535,   -46,   -63,   -63,   -63,   -63,   -63,    16,   -63,   487,
-     -63,   743,   -22,   -63,   -63,   -63,   -63,   -63,   -63,   -63,
-     -63,   -63,   -63,   -63,   -63,   -63,   -63,   -63,   -63,   -63,
-     -63,   -63,   -63,   -23,   -63,   -63,   -63,   -25,   811,   -63,
-     577,     1,   728,   -63,   -32,     3,   -63,   784,   -63,   444,
-     -63,   402,   -63,   416,   -63,   -63,   -63,   838,   416,   838,
-     838,   838,   -63,   -63,   -63,   -63,   -63,   -63,   -63,   -63,
-     -63,   -63,     8,   916,     4,   -63,    10,   -12,   619,   -40,
-      -2,   -63,   -23,   838,   838,   838,   838,   838,   838,   838,
-     838,   838,   838,   -63,   -63,   838,   -63,   838,   -35,   838,
-     -63,    25,   -63,   416,   838,   838,   -63,   -63,   -63,   -63,
-     -63,   -63,   -63,   -63,   -63,   -63,   -63,   -63,   -63,    76,
-      -5,   916,    -3,     6,     7,     9,   117,   117,   117,   117,
-     176,   176,   -63,   -63,   -63,   -63,    -2,   -63,   743,   -63,
-      31,    27,   838,   -63,   -63,   942,   967,   691,   691,   691,
-     691,   691,   691,   691,   691,    76,   106,   -63,    47,   -63,
-      42,   -63,   -63,   -63,   -63,   117,     5,    76,   -63,   -63,
-     838,   -63,   -63,   -63,   674,   -63,   -40,   -63,   889,   -63,
-     -63,   -63,   -63,   838,   916
+     524,   -57,   -91,   -91,   -91,   -91,   -91,     8,   -91,   475,
+     -91,   778,    66,   -91,   -91,   -91,   -91,   -91,   -91,   -91,
+     -91,   -91,   -91,   -91,   -91,   -91,   -91,   -91,   -91,   -91,
+     -91,   -91,   -91,   -38,   -91,   -91,   -91,   -45,   191,   -91,
+     567,   -17,   762,   -91,   -28,     2,   -91,   821,   -91,   431,
+     -91,   610,   -91,   929,   -91,   -91,   -91,   844,   929,   844,
+     844,   844,   -91,   -91,   -91,   -91,   -91,   -91,   -91,   -91,
+     -91,   -91,   -91,   -14,   924,   -36,   -91,   -35,   -33,   653,
+     -43,   -25,   -91,   -38,   844,   844,   844,   844,   844,   844,
+     844,   844,   844,   844,   -91,   -91,   844,   -91,   844,   844,
+     -37,   844,   -91,    87,   -91,   929,   844,   844,   -91,   -91,
+     -91,   -91,   -91,   -91,   -91,   -91,   -91,   -91,   -91,   -91,
+     -91,     4,   -29,   924,   -22,   -27,   -12,     0,   114,   114,
+     114,   114,  1021,  1021,   -91,   -91,   -91,   -91,   -25,   -91,
+     778,   -91,    13,   -19,   844,   -91,   -91,   979,  1005,   724,
+     724,   724,   724,   724,   724,   724,   724,     4,    31,    64,
+     -91,     1,   -91,    16,   -91,   -91,   -91,   -91,   114,   304,
+       4,   -91,   -91,   844,   -91,   -91,   -91,   706,   -91,   -43,
+     -91,   896,   -91,   -91,   -91,   -91,   844,   924
   };
 
   const unsigned char
   CMPL_Parser::yydefact_[] =
   {
        0,     0,    13,    14,    15,    10,    11,     0,     2,     0,
-       5,     0,     8,    12,     6,    18,     1,     4,   113,   114,
-     115,   116,    94,   117,    82,    85,    35,    76,    75,    77,
-      79,    78,    72,     0,     7,    53,    16,     0,     0,    66,
-       0,     0,    73,    54,    69,    20,    55,     0,    56,     0,
-      57,     0,    58,    93,    59,    60,    61,     0,    99,     0,
-       0,     0,    62,    63,    64,    65,    68,     9,    70,    17,
-      25,    19,    23,    22,     0,    43,     0,    36,     0,    48,
-      41,    67,     0,     0,     0,     0,     0,     0,     0,     0,
-       0,     0,     0,   118,   120,     0,   101,     0,     0,     0,
-     136,   135,   137,    91,     0,     0,    71,   138,   139,    26,
-      27,    28,    29,    30,    31,    32,    21,   119,   121,   112,
-       0,    89,     0,    86,     0,     0,    92,    98,   100,   102,
-     110,   111,    24,    34,    33,    38,    41,    50,     0,    39,
-       0,    44,     0,    42,   109,   107,   106,   122,   123,   124,
-     125,   126,   127,   128,   129,   108,   105,   134,     0,   130,
-     131,    74,    97,    96,    95,    90,   103,   104,    81,    80,
-      88,    84,    83,    37,    73,    40,    48,    47,    51,   132,
-     133,    87,    45,     0,    52
+       5,     0,     8,    12,     6,    18,     1,     4,   114,   115,
+     116,   117,    95,   118,    83,    86,    35,    77,    76,    78,
+      80,    79,    73,     0,     7,    53,    16,     0,     0,    67,
+       0,     0,    74,    54,    70,    20,    55,     0,    56,     0,
+      57,     0,    58,    94,    59,    60,    61,     0,   100,     0,
+       0,     0,    62,    63,    64,    65,    66,    69,     9,    71,
+      17,    25,    19,    23,    22,     0,    43,     0,    36,     0,
+      48,    41,    68,     0,     0,     0,     0,     0,     0,     0,
+       0,     0,     0,     0,   119,   121,     0,   102,     0,     0,
+       0,     0,   137,   136,   138,    92,     0,     0,    72,   140,
+     141,    26,    27,    28,    29,    30,    31,    32,    21,   120,
+     122,   113,     0,    90,     0,    87,     0,     0,    93,    99,
+     101,   103,   111,   112,    24,    34,    33,    38,    41,    50,
+       0,    39,     0,    44,     0,    42,   110,   108,   107,   123,
+     124,   125,   126,   127,   128,   129,   130,   109,   139,   106,
+     135,     0,   131,   132,    75,    98,    97,    96,    91,   104,
+     105,    82,    81,    89,    85,    84,    37,    74,    40,    48,
+      47,    51,   133,   134,    88,    45,     0,    52
   };
 
   const short int
   CMPL_Parser::yypgoto_[] =
   {
-     -63,   -63,    -8,   -63,   -63,   -10,   -63,    67,   -63,   -63,
-     -63,   -63,   -63,   -63,   -30,   -63,   -29,   -63,   -63,   -63,
-      26,   -63,   -62,   -63,   -63,   -63,   -63,   -63,   -11,   -63,
-     -18,    30,   -41,   -63,   100,   -63,    40,   -63,   -42,   -63,
-     -63,   142,   -63,   -63,   -63,   -63,   202,   244,   -63,   -63,
-     -63,   -63,   -63,   -63,   -28,   -63,   -63,   -63
+     -91,   -91,     5,   -91,   -91,   -10,   -91,    33,   -91,   -91,
+     -91,   -91,   -91,   -91,   -13,   -91,   -52,   -91,   -91,   -91,
+      10,   -91,   -90,   -91,   -91,   -91,   -91,   -91,   -11,   -91,
+     -20,     6,   -41,   -91,   123,   -91,    30,   -91,   -50,   -91,
+     -91,   166,   -91,   -91,   -91,   -91,   227,   270,   -91,   -91,
+     -91,   -91,   -91,   -91,   -60,   -91,   -91,   -91,   -91
   };
 
   const short int
   CMPL_Parser::yydefgoto_[] =
   {
       -1,     7,     8,     9,    10,    11,    12,    13,    14,    37,
-      38,    71,    72,   116,    39,    40,    76,   136,    77,    78,
-      79,    80,   140,   141,   142,   139,   177,    41,   121,    43,
-      44,    45,    46,    47,    48,    49,    50,    51,   122,   123,
-      52,    53,    54,   164,    55,    56,    57,    58,    59,    60,
-      61,    62,    63,   159,   160,    64,    65,    66
+      38,    72,    73,   118,    39,    40,    77,   138,    78,    79,
+      80,    81,   142,   143,   144,   141,   180,    41,   123,    43,
+      44,    45,    46,    47,    48,    49,    50,    51,   124,   125,
+      52,    53,    54,   167,    55,    56,    57,    58,    59,    60,
+      61,    62,    63,   162,   163,    64,    65,    66,    67
   };
 
   const short int
   CMPL_Parser::yytable_[] =
   {
-      42,    17,    67,   108,    27,    28,    29,   109,   157,   125,
-      32,    81,   100,    15,   -46,    68,    16,     2,   158,    32,
-     -46,   106,     3,     4,     5,     6,   107,    73,    20,    21,
-      95,    96,    97,    22,    69,    26,   119,    24,    25,    26,
-      98,    25,   126,   100,   135,    75,   127,   128,   129,   130,
-     131,   110,   111,   112,   113,   114,   168,   115,   169,   133,
-     163,    27,    28,    29,   144,   134,   170,    32,   138,   171,
-     137,   172,   145,   146,   147,   148,   149,   150,   151,   152,
-     153,   154,   102,   162,   155,   175,   156,   176,    42,   100,
-     157,   100,   165,   166,   167,   180,   100,   100,   100,   100,
-     100,   100,    96,    97,    22,    70,   143,   173,    24,    25,
-      26,    98,   132,   102,   182,   100,   100,   100,   100,   100,
-     100,   100,   100,   100,   100,   100,   100,   174,   181,   161,
-     179,   178,     0,    97,    22,   100,   100,   100,    24,    25,
-      26,    98,   101,     0,   100,     0,     0,     0,   100,    24,
-      25,    26,    98,     0,   100,     0,     0,     0,     0,   102,
-       0,   102,     0,     0,     0,     0,   102,   102,   102,   102,
-     102,   102,   184,   101,     0,     0,     0,     0,     0,     0,
-       0,     0,     0,     0,   103,   102,   102,   102,   102,   102,
-     102,   102,   102,   102,   102,   102,   102,    18,    19,    20,
-      21,    95,    96,    97,    22,   102,   102,   102,    24,    25,
-      26,    98,     0,     0,   102,   103,     0,     0,   102,   101,
-       0,   101,     0,     0,   102,     0,   101,   101,   101,   101,
-     101,   101,     0,     0,     0,     0,     0,     0,     0,     0,
-       0,     0,     0,     0,   104,   101,   101,   101,   101,   101,
-     101,   101,   101,   101,   101,   101,   101,     0,     0,     0,
-       0,   103,     0,   103,     0,   101,   101,   101,   103,   103,
-     103,   103,   103,   103,   101,   104,     0,     0,   101,     0,
-       0,     0,     0,     0,   101,     0,   105,   103,   103,   103,
-     103,   103,   103,   103,   103,   103,   103,   103,   103,     0,
-       0,     0,     0,     0,     0,     0,     0,   103,   103,   103,
-       0,     0,     0,     0,     0,     0,   103,   105,     0,     0,
-     103,   104,     0,   104,     0,     0,   103,     0,   104,   104,
-     104,   104,   104,   104,     0,     0,     0,     0,     0,     0,
-       0,     0,     0,     0,     0,     0,     0,   104,   104,   104,
-     104,   104,   104,   104,   104,   104,   104,   104,   104,     0,
-       0,     0,     0,   105,     0,   105,     0,   104,   104,   104,
-     105,   105,   105,   105,   105,   105,   104,     0,     0,     0,
-     104,     0,     0,     0,     0,     0,   104,     0,     0,   105,
-     105,   105,   105,   105,   105,   105,   105,   105,   105,   105,
-     105,     0,     0,   124,     0,     0,     0,     0,     0,   105,
-     105,   105,     0,     0,     0,     0,     0,     0,   105,     0,
-       0,     0,   105,    18,    19,    20,    21,     0,   105,     0,
+      42,   127,    68,   110,    15,    32,   111,   160,    16,    27,
+      28,    29,   -46,    69,    17,    32,    70,   161,    26,   -46,
+      25,   135,   136,    76,   109,   137,   108,    74,    82,   102,
+      97,    98,    99,    22,   171,   173,   121,    24,    25,    26,
+     100,   172,   128,   179,   174,   160,   129,   130,   131,   132,
+     133,   112,   113,   114,   115,   116,   175,   117,    98,    99,
+      22,   102,   166,   146,    24,    25,    26,   100,   178,   140,
+     183,    71,   104,   147,   148,   149,   150,   151,   152,   153,
+     154,   155,   156,   165,   139,   157,   176,   158,   159,   185,
+      42,   145,    99,    22,   168,   169,   170,    24,    25,    26,
+     100,   182,     0,   134,   104,     0,     2,   164,   102,     0,
+     102,     3,     4,     5,     6,   102,   102,   102,   102,   102,
+     102,     0,     0,   184,    27,    28,    29,     0,     0,   177,
+      32,     0,     0,   181,   102,   102,   102,   102,   102,   102,
+     102,   102,   102,   102,   102,   102,   102,    24,    25,    26,
+     100,   104,     0,   104,     0,   102,   102,   102,   104,   104,
+     104,   104,   104,   104,   102,   103,     0,     0,   102,     0,
+       0,     0,     0,     0,   102,   187,     0,   104,   104,   104,
+     104,   104,   104,   104,   104,   104,   104,   104,   104,   104,
+       0,     0,     0,     0,     0,     0,     0,   103,   104,   104,
+     104,     0,     0,     0,     0,     0,     0,   104,   105,     0,
+       0,   104,    18,    19,    20,    21,     0,   104,     0,     0,
       22,     0,     0,    23,    24,    25,    26,     0,    27,    28,
-      29,     0,    30,    31,    32,   120,     0,    23,    24,    25,
-      26,     0,    27,    28,    29,    33,    30,    31,    32,    35,
-       0,     0,   -88,     0,   -88,    18,    19,    20,    21,    33,
-       0,     0,    22,    35,     0,    23,    24,    25,    26,     0,
-      27,    28,    29,     0,    30,    31,    32,    -3,     1,     0,
-       0,     0,     0,     0,     0,     0,     0,    33,     0,     0,
-       0,    35,     0,     0,   -88,   -88,     0,     0,    -8,    -8,
-      -8,    -8,     0,     0,     0,    -8,     0,     0,    -8,    -8,
-      -8,    -8,     0,    -8,    -8,    -8,     2,    -8,    -8,    -8,
-       0,     3,     4,     5,     6,    -3,     1,     0,     0,     0,
-      -8,    -8,    -3,    -3,    -8,     0,    -8,     0,     0,     0,
-       0,     0,     0,     0,     0,     0,    -8,    -8,    -8,    -8,
+      29,     0,    30,    31,    32,     0,     3,     4,     0,     0,
+     105,     0,     0,     0,   103,    33,   103,     0,     0,     0,
+      35,   103,   103,   103,   103,   103,   103,     0,     0,     0,
+       0,     0,     0,     0,     0,     0,     0,     0,     0,   106,
+     103,   103,   103,   103,   103,   103,   103,   103,   103,   103,
+     103,   103,   103,     0,     0,     0,     0,   105,     0,   105,
+       0,   103,   103,   103,   105,   105,   105,   105,   105,   105,
+     103,   106,     0,     0,   103,     0,     0,     0,     0,     0,
+     103,     0,   107,   105,   105,   105,   105,   105,   105,   105,
+     105,   105,   105,   105,   105,   105,     0,    20,    21,    96,
+      97,    98,    99,    22,   105,   105,   105,    24,    25,    26,
+     100,     0,     0,   105,   107,     0,     0,   105,   106,     0,
+     106,     0,     0,   105,     0,   106,   106,   106,   106,   106,
+     106,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+       0,     0,     0,     0,   106,   106,   106,   106,   106,   106,
+     106,   106,   106,   106,   106,   106,   106,     0,     0,     0,
+       0,   107,     0,   107,     0,   106,   106,   106,   107,   107,
+     107,   107,   107,   107,   106,     0,     0,     0,   106,     0,
+       0,     0,     0,     0,   106,     0,     0,   107,   107,   107,
+     107,   107,   107,   107,   107,   107,   107,   107,   107,   107,
+       0,     0,   122,     0,     0,     0,     0,     0,   107,   107,
+     107,     0,     0,     0,     0,     0,     0,   107,     0,     0,
+       0,   107,    18,    19,    20,    21,     0,   107,     0,     0,
+      22,     0,     0,    23,    24,    25,    26,     0,    27,    28,
+      29,     0,    30,    31,    32,    -3,     1,     0,     0,     0,
+       0,     0,     0,     0,     0,    33,     0,     0,     0,     0,
+      35,     0,     0,   -89,   -89,     0,    -8,    -8,    -8,    -8,
+       0,     0,     0,     0,    -8,     0,     0,    -8,    -8,    -8,
+      -8,     0,    -8,    -8,    -8,     2,    -8,    -8,    -8,     0,
+       3,     4,     5,     6,    -3,     1,     0,     0,     0,    -8,
+      -8,     0,    -3,    -3,    -8,     0,    -8,     0,     0,     0,
+       0,     0,     0,     0,     0,    -8,    -8,    -8,    -8,     0,
        0,     0,     0,    -8,     0,     0,    -8,    -8,    -8,    -8,
-       0,    -8,    -8,    -8,     2,    -8,    -8,    -8,    74,     3,
+       0,    -8,    -8,    -8,     2,    -8,    -8,    -8,    75,     3,
        4,     5,     6,     0,     0,     0,     0,     0,    -8,    -8,
-       0,     0,    -8,     0,    -8,     0,     0,     0,   -41,   -41,
-     -41,   -41,     0,     0,     0,   -41,     0,     0,   -41,   -41,
-     -41,   -41,     0,   -41,   -41,   -41,     0,   -41,   -41,   -41,
-       1,     0,     0,     0,    75,     0,     0,     0,     0,     0,
-     -41,   -41,     0,     0,   -41,     0,     0,   -41,     0,     0,
-      -8,    -8,    -8,    -8,     0,     0,     0,    -8,     0,     0,
-      -8,    -8,    -8,    -8,     0,    -8,    -8,    -8,     2,    -8,
-      -8,    -8,     0,     3,     4,     5,     6,     0,     0,     0,
-       0,     0,    -8,    -8,    -3,    -3,    -8,    82,    -8,     0,
-       0,     0,     0,    83,    84,    85,    86,    87,    88,    89,
-      90,    91,    92,    93,    94,    18,    19,    20,    21,    95,
-      96,    97,    22,     0,     0,     0,    24,    25,    26,    98,
-      93,    94,    18,    19,    20,    21,    95,    96,    97,    22,
-       0,     0,     0,    24,    25,    26,    98,     0,     0,   -49,
-     -49,    82,     0,     0,    99,     0,     0,    83,    84,    85,
-      86,    87,    88,    89,    90,    91,    92,    93,    94,    18,
-      19,    20,    21,    95,    96,    97,    22,     0,     0,     0,
-      24,    25,    26,    98,    18,    19,    20,    21,     0,     0,
-       0,    22,     0,     0,    23,    24,    25,    26,     0,    27,
-      28,    29,     0,    30,    31,    32,     0,     0,    99,     0,
-       0,     0,     0,     0,     0,     0,    33,    34,     0,     0,
-      35,     0,    36,   117,   118,    18,    19,    20,    21,     0,
-       0,     0,    22,     0,     0,    23,    24,    25,    26,     0,
-      27,    28,    29,     0,    30,    31,    32,     0,     0,     0,
-       0,     0,    18,    19,    20,    21,     0,    33,     0,    22,
-       0,    35,    23,    24,    25,    26,     0,    27,    28,    29,
-       0,    30,    31,    32,     0,     3,     4,     0,     0,    18,
-      19,    20,    21,     0,    33,     0,    22,     0,    35,    23,
-      24,    25,    26,     0,    27,    28,    29,     0,    30,    31,
-      32,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-       0,    33,    82,   183,     0,    35,     0,     0,    83,    84,
-      85,    86,    87,    88,    89,    90,    91,    92,    93,    94,
-      18,    19,    20,    21,    95,    96,    97,    22,     0,    82,
-       0,    24,    25,    26,    98,    83,    84,    85,    86,    87,
-      88,    89,    90,    91,    92,    93,    94,    18,    19,    20,
-      21,    95,    96,    97,    22,     0,     0,     0,    24,    25,
-      26,    98,    84,    85,    86,    87,    88,    89,    90,    91,
-      92,    93,    94,    18,    19,    20,    21,    95,    96,    97,
-      22,     0,     0,     0,    24,    25,    26,    98,    85,    86,
-      87,    88,    89,    90,    91,    92,    93,    94,    18,    19,
-      20,    21,    95,    96,    97,    22,     0,     0,     0,    24,
-      25,    26,    98
+       0,     0,     0,    -8,     0,    -8,     0,     0,   -41,   -41,
+     -41,   -41,     0,     0,     0,     0,   -41,     0,     0,   -41,
+     -41,   -41,   -41,     0,   -41,   -41,   -41,     0,   -41,   -41,
+     -41,   126,     0,     0,     0,    76,     0,     0,     0,     0,
+       0,   -41,   -41,     0,     0,     0,   -41,     0,     0,   -41,
+       0,    18,    19,    20,    21,     0,     0,     0,     0,    22,
+       0,     0,    23,    24,    25,    26,     0,    27,    28,    29,
+       0,    30,    31,    32,     1,     0,     0,     0,     0,     0,
+       0,     0,     0,     0,    33,     0,   -89,     0,     0,    35,
+       0,     0,   -89,     0,    -8,    -8,    -8,    -8,     0,     0,
+       0,     0,    -8,     0,     0,    -8,    -8,    -8,    -8,     0,
+      -8,    -8,    -8,     2,    -8,    -8,    -8,     0,     3,     4,
+       5,     6,     0,     0,     0,     0,     0,    -8,    -8,    83,
+      -3,    -3,    -8,     0,    -8,    84,    85,    86,    87,    88,
+      89,    90,    91,    92,    93,    94,    95,    18,    19,    20,
+      21,    96,    97,    98,    99,    22,     0,     0,     0,    24,
+      25,    26,   100,    94,    95,    18,    19,    20,    21,    96,
+      97,    98,    99,    22,     0,     0,     0,    24,    25,    26,
+     100,     0,     0,   -49,   -49,    83,     0,     0,   101,     0,
+       0,    84,    85,    86,    87,    88,    89,    90,    91,    92,
+      93,    94,    95,    18,    19,    20,    21,    96,    97,    98,
+      99,    22,     0,     0,     0,    24,    25,    26,   100,    18,
+      19,    20,    21,     0,     0,     0,     0,    22,     0,     0,
+      23,    24,    25,    26,     0,    27,    28,    29,     0,    30,
+      31,    32,     0,     0,   101,     0,     0,     0,     0,     0,
+       0,     0,    33,    34,     0,     0,     0,    35,     0,    36,
+     119,   120,    18,    19,    20,    21,     0,     0,     0,     0,
+      22,     0,     0,    23,    24,    25,    26,     0,    27,    28,
+      29,     0,    30,    31,    32,    18,    19,    20,    21,     0,
+       0,     0,     0,    22,     0,    33,    23,    24,    25,    26,
+      35,    27,    28,    29,     0,    30,    31,    32,     0,     0,
+       0,     0,     0,     0,     0,     0,     0,     0,    33,    83,
+     186,     0,     0,    35,     0,    84,    85,    86,    87,    88,
+      89,    90,    91,    92,    93,    94,    95,    18,    19,    20,
+      21,    96,    97,    98,    99,    22,     0,    83,     0,    24,
+      25,    26,   100,    84,    85,    86,    87,    88,    89,    90,
+      91,    92,    93,    94,    95,    18,    19,    20,    21,    96,
+      97,    98,    99,    22,     0,     0,     0,    24,    25,    26,
+     100,    23,    24,    25,    26,     0,    27,    28,    29,     0,
+      30,    31,    32,     0,     0,     0,     0,     0,     0,     0,
+       0,     0,     0,    33,     0,     0,     0,     0,    35,    85,
+      86,    87,    88,    89,    90,    91,    92,    93,    94,    95,
+      18,    19,    20,    21,    96,    97,    98,    99,    22,     0,
+       0,     0,    24,    25,    26,   100,    86,    87,    88,    89,
+      90,    91,    92,    93,    94,    95,    18,    19,    20,    21,
+      96,    97,    98,    99,    22,     0,     0,     0,    24,    25,
+      26,   100,    18,    19,    20,    21,    96,    97,    98,    99,
+      22,     0,     0,     0,    24,    25,    26,   100
   };
 
   const short int
   CMPL_Parser::yycheck_[] =
   {
-      11,     9,    12,    44,    36,    37,    38,     4,    43,    51,
-      42,    41,    42,    59,    54,    33,     0,    39,    53,    42,
-      60,    53,    44,    45,    46,    47,    44,    38,    23,    24,
-      25,    26,    27,    28,    59,    34,    47,    32,    33,    34,
-      35,    33,    53,    73,    56,    47,    57,    58,    59,    60,
-      61,    48,    49,    50,    51,    52,    61,    54,    61,    55,
-     101,    36,    37,    38,    82,    55,    60,    42,    78,    62,
-      78,    62,    83,    84,    85,    86,    87,    88,    89,    90,
-      91,    92,    42,   101,    95,    54,    97,    60,    99,   119,
-      43,   121,   103,   104,   105,    53,   126,   127,   128,   129,
-     130,   131,    26,    27,    28,    38,    80,   136,    32,    33,
-      34,    35,    72,    73,   176,   145,   146,   147,   148,   149,
-     150,   151,   152,   153,   154,   155,   156,   138,   170,    99,
-     158,   142,    -1,    27,    28,   165,   166,   167,    32,    33,
-      34,    35,    42,    -1,   174,    -1,    -1,    -1,   178,    32,
-      33,    34,    35,    -1,   184,    -1,    -1,    -1,    -1,   119,
-      -1,   121,    -1,    -1,    -1,    -1,   126,   127,   128,   129,
-     130,   131,   183,    73,    -1,    -1,    -1,    -1,    -1,    -1,
-      -1,    -1,    -1,    -1,    42,   145,   146,   147,   148,   149,
-     150,   151,   152,   153,   154,   155,   156,    21,    22,    23,
-      24,    25,    26,    27,    28,   165,   166,   167,    32,    33,
-      34,    35,    -1,    -1,   174,    73,    -1,    -1,   178,   119,
-      -1,   121,    -1,    -1,   184,    -1,   126,   127,   128,   129,
-     130,   131,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
-      -1,    -1,    -1,    -1,    42,   145,   146,   147,   148,   149,
-     150,   151,   152,   153,   154,   155,   156,    -1,    -1,    -1,
-      -1,   119,    -1,   121,    -1,   165,   166,   167,   126,   127,
-     128,   129,   130,   131,   174,    73,    -1,    -1,   178,    -1,
-      -1,    -1,    -1,    -1,   184,    -1,    42,   145,   146,   147,
-     148,   149,   150,   151,   152,   153,   154,   155,   156,    -1,
-      -1,    -1,    -1,    -1,    -1,    -1,    -1,   165,   166,   167,
-      -1,    -1,    -1,    -1,    -1,    -1,   174,    73,    -1,    -1,
-     178,   119,    -1,   121,    -1,    -1,   184,    -1,   126,   127,
-     128,   129,   130,   131,    -1,    -1,    -1,    -1,    -1,    -1,
-      -1,    -1,    -1,    -1,    -1,    -1,    -1,   145,   146,   147,
-     148,   149,   150,   151,   152,   153,   154,   155,   156,    -1,
-      -1,    -1,    -1,   119,    -1,   121,    -1,   165,   166,   167,
-     126,   127,   128,   129,   130,   131,   174,    -1,    -1,    -1,
-     178,    -1,    -1,    -1,    -1,    -1,   184,    -1,    -1,   145,
-     146,   147,   148,   149,   150,   151,   152,   153,   154,   155,
-     156,    -1,    -1,     1,    -1,    -1,    -1,    -1,    -1,   165,
-     166,   167,    -1,    -1,    -1,    -1,    -1,    -1,   174,    -1,
-      -1,    -1,   178,    21,    22,    23,    24,    -1,   184,    -1,
-      28,    -1,    -1,    31,    32,    33,    34,    -1,    36,    37,
-      38,    -1,    40,    41,    42,     1,    -1,    31,    32,    33,
-      34,    -1,    36,    37,    38,    53,    40,    41,    42,    57,
-      -1,    -1,    60,    -1,    62,    21,    22,    23,    24,    53,
-      -1,    -1,    28,    57,    -1,    31,    32,    33,    34,    -1,
-      36,    37,    38,    -1,    40,    41,    42,     0,     1,    -1,
-      -1,    -1,    -1,    -1,    -1,    -1,    -1,    53,    -1,    -1,
-      -1,    57,    -1,    -1,    60,    61,    -1,    -1,    21,    22,
-      23,    24,    -1,    -1,    -1,    28,    -1,    -1,    31,    32,
-      33,    34,    -1,    36,    37,    38,    39,    40,    41,    42,
-      -1,    44,    45,    46,    47,     0,     1,    -1,    -1,    -1,
-      53,    54,    55,    56,    57,    -1,    59,    -1,    -1,    -1,
-      -1,    -1,    -1,    -1,    -1,    -1,    21,    22,    23,    24,
-      -1,    -1,    -1,    28,    -1,    -1,    31,    32,    33,    34,
-      -1,    36,    37,    38,    39,    40,    41,    42,     1,    44,
-      45,    46,    47,    -1,    -1,    -1,    -1,    -1,    53,    54,
-      -1,    -1,    57,    -1,    59,    -1,    -1,    -1,    21,    22,
-      23,    24,    -1,    -1,    -1,    28,    -1,    -1,    31,    32,
-      33,    34,    -1,    36,    37,    38,    -1,    40,    41,    42,
-       1,    -1,    -1,    -1,    47,    -1,    -1,    -1,    -1,    -1,
-      53,    54,    -1,    -1,    57,    -1,    -1,    60,    -1,    -1,
-      21,    22,    23,    24,    -1,    -1,    -1,    28,    -1,    -1,
-      31,    32,    33,    34,    -1,    36,    37,    38,    39,    40,
-      41,    42,    -1,    44,    45,    46,    47,    -1,    -1,    -1,
-      -1,    -1,    53,    54,    55,    56,    57,     3,    59,    -1,
-      -1,    -1,    -1,     9,    10,    11,    12,    13,    14,    15,
-      16,    17,    18,    19,    20,    21,    22,    23,    24,    25,
-      26,    27,    28,    -1,    -1,    -1,    32,    33,    34,    35,
-      19,    20,    21,    22,    23,    24,    25,    26,    27,    28,
-      -1,    -1,    -1,    32,    33,    34,    35,    -1,    -1,    55,
-      56,     3,    -1,    -1,    60,    -1,    -1,     9,    10,    11,
-      12,    13,    14,    15,    16,    17,    18,    19,    20,    21,
-      22,    23,    24,    25,    26,    27,    28,    -1,    -1,    -1,
-      32,    33,    34,    35,    21,    22,    23,    24,    -1,    -1,
-      -1,    28,    -1,    -1,    31,    32,    33,    34,    -1,    36,
-      37,    38,    -1,    40,    41,    42,    -1,    -1,    60,    -1,
-      -1,    -1,    -1,    -1,    -1,    -1,    53,    54,    -1,    -1,
-      57,    -1,    59,    19,    20,    21,    22,    23,    24,    -1,
-      -1,    -1,    28,    -1,    -1,    31,    32,    33,    34,    -1,
-      36,    37,    38,    -1,    40,    41,    42,    -1,    -1,    -1,
-      -1,    -1,    21,    22,    23,    24,    -1,    53,    -1,    28,
-      -1,    57,    31,    32,    33,    34,    -1,    36,    37,    38,
-      -1,    40,    41,    42,    -1,    44,    45,    -1,    -1,    21,
-      22,    23,    24,    -1,    53,    -1,    28,    -1,    57,    31,
-      32,    33,    34,    -1,    36,    37,    38,    -1,    40,    41,
-      42,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
-      -1,    53,     3,     4,    -1,    57,    -1,    -1,     9,    10,
-      11,    12,    13,    14,    15,    16,    17,    18,    19,    20,
-      21,    22,    23,    24,    25,    26,    27,    28,    -1,     3,
-      -1,    32,    33,    34,    35,     9,    10,    11,    12,    13,
+      11,    51,    12,    44,    61,    43,     4,    44,     0,    37,
+      38,    39,    55,    33,     9,    43,    61,    54,    35,    62,
+      34,    57,    57,    48,    44,    58,    54,    38,    41,    42,
+      26,    27,    28,    29,    63,    62,    47,    33,    34,    35,
+      36,    63,    53,    62,    56,    44,    57,    58,    59,    60,
+      61,    49,    50,    51,    52,    53,    56,    55,    27,    28,
+      29,    74,   103,    83,    33,    34,    35,    36,    55,    79,
+      54,    38,    42,    84,    85,    86,    87,    88,    89,    90,
+      91,    92,    93,   103,    79,    96,   138,    98,    99,   179,
+     101,    81,    28,    29,   105,   106,   107,    33,    34,    35,
+      36,   161,    -1,    73,    74,    -1,    40,   101,   121,    -1,
+     123,    45,    46,    47,    48,   128,   129,   130,   131,   132,
+     133,    -1,    -1,   173,    37,    38,    39,    -1,    -1,   140,
+      43,    -1,    -1,   144,   147,   148,   149,   150,   151,   152,
+     153,   154,   155,   156,   157,   158,   159,    33,    34,    35,
+      36,   121,    -1,   123,    -1,   168,   169,   170,   128,   129,
+     130,   131,   132,   133,   177,    42,    -1,    -1,   181,    -1,
+      -1,    -1,    -1,    -1,   187,   186,    -1,   147,   148,   149,
+     150,   151,   152,   153,   154,   155,   156,   157,   158,   159,
+      -1,    -1,    -1,    -1,    -1,    -1,    -1,    74,   168,   169,
+     170,    -1,    -1,    -1,    -1,    -1,    -1,   177,    42,    -1,
+      -1,   181,    21,    22,    23,    24,    -1,   187,    -1,    -1,
+      29,    -1,    -1,    32,    33,    34,    35,    -1,    37,    38,
+      39,    -1,    41,    42,    43,    -1,    45,    46,    -1,    -1,
+      74,    -1,    -1,    -1,   121,    54,   123,    -1,    -1,    -1,
+      59,   128,   129,   130,   131,   132,   133,    -1,    -1,    -1,
+      -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    42,
+     147,   148,   149,   150,   151,   152,   153,   154,   155,   156,
+     157,   158,   159,    -1,    -1,    -1,    -1,   121,    -1,   123,
+      -1,   168,   169,   170,   128,   129,   130,   131,   132,   133,
+     177,    74,    -1,    -1,   181,    -1,    -1,    -1,    -1,    -1,
+     187,    -1,    42,   147,   148,   149,   150,   151,   152,   153,
+     154,   155,   156,   157,   158,   159,    -1,    23,    24,    25,
+      26,    27,    28,    29,   168,   169,   170,    33,    34,    35,
+      36,    -1,    -1,   177,    74,    -1,    -1,   181,   121,    -1,
+     123,    -1,    -1,   187,    -1,   128,   129,   130,   131,   132,
+     133,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
+      -1,    -1,    -1,    -1,   147,   148,   149,   150,   151,   152,
+     153,   154,   155,   156,   157,   158,   159,    -1,    -1,    -1,
+      -1,   121,    -1,   123,    -1,   168,   169,   170,   128,   129,
+     130,   131,   132,   133,   177,    -1,    -1,    -1,   181,    -1,
+      -1,    -1,    -1,    -1,   187,    -1,    -1,   147,   148,   149,
+     150,   151,   152,   153,   154,   155,   156,   157,   158,   159,
+      -1,    -1,     1,    -1,    -1,    -1,    -1,    -1,   168,   169,
+     170,    -1,    -1,    -1,    -1,    -1,    -1,   177,    -1,    -1,
+      -1,   181,    21,    22,    23,    24,    -1,   187,    -1,    -1,
+      29,    -1,    -1,    32,    33,    34,    35,    -1,    37,    38,
+      39,    -1,    41,    42,    43,     0,     1,    -1,    -1,    -1,
+      -1,    -1,    -1,    -1,    -1,    54,    -1,    -1,    -1,    -1,
+      59,    -1,    -1,    62,    63,    -1,    21,    22,    23,    24,
+      -1,    -1,    -1,    -1,    29,    -1,    -1,    32,    33,    34,
+      35,    -1,    37,    38,    39,    40,    41,    42,    43,    -1,
+      45,    46,    47,    48,     0,     1,    -1,    -1,    -1,    54,
+      55,    -1,    57,    58,    59,    -1,    61,    -1,    -1,    -1,
+      -1,    -1,    -1,    -1,    -1,    21,    22,    23,    24,    -1,
+      -1,    -1,    -1,    29,    -1,    -1,    32,    33,    34,    35,
+      -1,    37,    38,    39,    40,    41,    42,    43,     1,    45,
+      46,    47,    48,    -1,    -1,    -1,    -1,    -1,    54,    55,
+      -1,    -1,    -1,    59,    -1,    61,    -1,    -1,    21,    22,
+      23,    24,    -1,    -1,    -1,    -1,    29,    -1,    -1,    32,
+      33,    34,    35,    -1,    37,    38,    39,    -1,    41,    42,
+      43,     1,    -1,    -1,    -1,    48,    -1,    -1,    -1,    -1,
+      -1,    54,    55,    -1,    -1,    -1,    59,    -1,    -1,    62,
+      -1,    21,    22,    23,    24,    -1,    -1,    -1,    -1,    29,
+      -1,    -1,    32,    33,    34,    35,    -1,    37,    38,    39,
+      -1,    41,    42,    43,     1,    -1,    -1,    -1,    -1,    -1,
+      -1,    -1,    -1,    -1,    54,    -1,    56,    -1,    -1,    59,
+      -1,    -1,    62,    -1,    21,    22,    23,    24,    -1,    -1,
+      -1,    -1,    29,    -1,    -1,    32,    33,    34,    35,    -1,
+      37,    38,    39,    40,    41,    42,    43,    -1,    45,    46,
+      47,    48,    -1,    -1,    -1,    -1,    -1,    54,    55,     3,
+      57,    58,    59,    -1,    61,     9,    10,    11,    12,    13,
       14,    15,    16,    17,    18,    19,    20,    21,    22,    23,
-      24,    25,    26,    27,    28,    -1,    -1,    -1,    32,    33,
-      34,    35,    10,    11,    12,    13,    14,    15,    16,    17,
+      24,    25,    26,    27,    28,    29,    -1,    -1,    -1,    33,
+      34,    35,    36,    19,    20,    21,    22,    23,    24,    25,
+      26,    27,    28,    29,    -1,    -1,    -1,    33,    34,    35,
+      36,    -1,    -1,    57,    58,     3,    -1,    -1,    62,    -1,
+      -1,     9,    10,    11,    12,    13,    14,    15,    16,    17,
       18,    19,    20,    21,    22,    23,    24,    25,    26,    27,
-      28,    -1,    -1,    -1,    32,    33,    34,    35,    11,    12,
-      13,    14,    15,    16,    17,    18,    19,    20,    21,    22,
-      23,    24,    25,    26,    27,    28,    -1,    -1,    -1,    32,
-      33,    34,    35
+      28,    29,    -1,    -1,    -1,    33,    34,    35,    36,    21,
+      22,    23,    24,    -1,    -1,    -1,    -1,    29,    -1,    -1,
+      32,    33,    34,    35,    -1,    37,    38,    39,    -1,    41,
+      42,    43,    -1,    -1,    62,    -1,    -1,    -1,    -1,    -1,
+      -1,    -1,    54,    55,    -1,    -1,    -1,    59,    -1,    61,
+      19,    20,    21,    22,    23,    24,    -1,    -1,    -1,    -1,
+      29,    -1,    -1,    32,    33,    34,    35,    -1,    37,    38,
+      39,    -1,    41,    42,    43,    21,    22,    23,    24,    -1,
+      -1,    -1,    -1,    29,    -1,    54,    32,    33,    34,    35,
+      59,    37,    38,    39,    -1,    41,    42,    43,    -1,    -1,
+      -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    54,     3,
+       4,    -1,    -1,    59,    -1,     9,    10,    11,    12,    13,
+      14,    15,    16,    17,    18,    19,    20,    21,    22,    23,
+      24,    25,    26,    27,    28,    29,    -1,     3,    -1,    33,
+      34,    35,    36,     9,    10,    11,    12,    13,    14,    15,
+      16,    17,    18,    19,    20,    21,    22,    23,    24,    25,
+      26,    27,    28,    29,    -1,    -1,    -1,    33,    34,    35,
+      36,    32,    33,    34,    35,    -1,    37,    38,    39,    -1,
+      41,    42,    43,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
+      -1,    -1,    -1,    54,    -1,    -1,    -1,    -1,    59,    10,
+      11,    12,    13,    14,    15,    16,    17,    18,    19,    20,
+      21,    22,    23,    24,    25,    26,    27,    28,    29,    -1,
+      -1,    -1,    33,    34,    35,    36,    11,    12,    13,    14,
+      15,    16,    17,    18,    19,    20,    21,    22,    23,    24,
+      25,    26,    27,    28,    29,    -1,    -1,    -1,    33,    34,
+      35,    36,    21,    22,    23,    24,    25,    26,    27,    28,
+      29,    -1,    -1,    -1,    33,    34,    35,    36
   };
 
   const unsigned char
   CMPL_Parser::yystos_[] =
   {
-       0,     1,    39,    44,    45,    46,    47,    64,    65,    66,
-      67,    68,    69,    70,    71,    59,     0,    65,    21,    22,
-      23,    24,    28,    31,    32,    33,    34,    36,    37,    38,
-      40,    41,    42,    53,    54,    57,    59,    72,    73,    77,
-      78,    90,    91,    92,    93,    94,    95,    96,    97,    98,
-      99,   100,   103,   104,   105,   107,   108,   109,   110,   111,
-     112,   113,   114,   115,   118,   119,   120,    68,    93,    59,
-      70,    74,    75,    91,     1,    47,    79,    81,    82,    83,
-      84,    77,     3,     9,    10,    11,    12,    13,    14,    15,
-      16,    17,    18,    19,    20,    25,    26,    27,    35,    60,
-      77,    97,    99,   104,   109,   110,    53,    93,    95,     4,
-      48,    49,    50,    51,    52,    54,    76,    19,    20,    91,
-       1,    91,   101,   102,     1,   101,    91,    91,    91,    91,
-      91,    91,    99,    55,    55,    56,    80,    65,    68,    88,
-      85,    86,    87,    83,    93,    91,    91,    91,    91,    91,
-      91,    91,    91,    91,    91,    91,    91,    43,    53,   116,
-     117,    94,    93,    95,   106,    91,    91,    91,    61,    61,
-      60,    62,    62,    79,    91,    54,    60,    89,    91,   117,
-      53,   101,    85,     4,    91
+       0,     1,    40,    45,    46,    47,    48,    65,    66,    67,
+      68,    69,    70,    71,    72,    61,     0,    66,    21,    22,
+      23,    24,    29,    32,    33,    34,    35,    37,    38,    39,
+      41,    42,    43,    54,    55,    59,    61,    73,    74,    78,
+      79,    91,    92,    93,    94,    95,    96,    97,    98,    99,
+     100,   101,   104,   105,   106,   108,   109,   110,   111,   112,
+     113,   114,   115,   116,   119,   120,   121,   122,    69,    94,
+      61,    71,    75,    76,    92,     1,    48,    80,    82,    83,
+      84,    85,    78,     3,     9,    10,    11,    12,    13,    14,
+      15,    16,    17,    18,    19,    20,    25,    26,    27,    28,
+      36,    62,    78,    98,   100,   105,   110,   111,    54,    94,
+      96,     4,    49,    50,    51,    52,    53,    55,    77,    19,
+      20,    92,     1,    92,   102,   103,     1,   102,    92,    92,
+      92,    92,    92,    92,   100,    57,    57,    58,    81,    66,
+      69,    89,    86,    87,    88,    84,    94,    92,    92,    92,
+      92,    92,    92,    92,    92,    92,    92,    92,    92,    92,
+      44,    54,   117,   118,    95,    94,    96,   107,    92,    92,
+      92,    63,    63,    62,    56,    56,    80,    92,    55,    62,
+      90,    92,   118,    54,   102,    86,     4,    92
   };
 
   const unsigned char
   CMPL_Parser::yyr1_[] =
   {
-       0,    63,    64,    65,    65,    66,    66,    67,    68,    68,
-      69,    69,    69,    69,    70,    70,    71,    71,    71,    72,
-      72,    73,    74,    74,    74,    75,    76,    76,    76,    76,
-      76,    76,    76,    77,    77,    78,    79,    79,    80,    81,
-      82,    83,    83,    84,    85,    85,    86,    86,    87,    88,
-      88,    89,    89,    90,    91,    91,    91,    91,    91,    91,
-      91,    91,    91,    91,    91,    91,    91,    91,    91,    92,
-      92,    92,    93,    94,    94,    95,    95,    95,    96,    96,
-      97,    97,    98,    99,    99,   100,   101,   101,   102,   102,
-     103,   103,   103,   103,   104,   105,   106,   106,   107,   107,
-     107,   107,   107,   108,   108,   108,   108,   108,   108,   108,
-     108,   108,   108,   109,   109,   110,   110,   111,   112,   112,
-     113,   113,   114,   114,   114,   114,   114,   114,   114,   114,
-     115,   116,   116,   116,   117,   118,   118,   119,   120,   120
+       0,    64,    65,    66,    66,    67,    67,    68,    69,    69,
+      70,    70,    70,    70,    71,    71,    72,    72,    72,    73,
+      73,    74,    75,    75,    75,    76,    77,    77,    77,    77,
+      77,    77,    77,    78,    78,    79,    80,    80,    81,    82,
+      83,    84,    84,    85,    86,    86,    87,    87,    88,    89,
+      89,    90,    90,    91,    92,    92,    92,    92,    92,    92,
+      92,    92,    92,    92,    92,    92,    92,    92,    92,    92,
+      93,    93,    93,    94,    95,    95,    96,    96,    96,    97,
+      97,    98,    98,    99,   100,   100,   101,   102,   102,   103,
+     103,   104,   104,   104,   104,   105,   106,   107,   107,   108,
+     108,   108,   108,   108,   109,   109,   109,   109,   109,   109,
+     109,   109,   109,   109,   110,   110,   111,   111,   112,   113,
+     113,   114,   114,   115,   115,   115,   115,   115,   115,   115,
+     115,   116,   117,   117,   117,   118,   119,   119,   120,   121,
+     122,   122
   };
 
   const unsigned char
@@ -2956,14 +3027,15 @@ namespace cmpl {
        1,     1,     1,     3,     3,     1,     1,     3,     1,     2,
        3,     0,     2,     1,     1,     3,     0,     2,     0,     2,
        1,     1,     3,     1,     1,     1,     1,     1,     1,     1,
-       1,     1,     1,     1,     1,     1,     1,     2,     1,     1,
-       2,     2,     1,     1,     3,     1,     1,     1,     1,     1,
-       3,     3,     1,     3,     3,     1,     1,     3,     0,     1,
-       3,     2,     2,     1,     1,     3,     1,     1,     2,     1,
+       1,     1,     1,     1,     1,     1,     1,     1,     2,     1,
+       1,     2,     2,     1,     1,     3,     1,     1,     1,     1,
+       1,     3,     3,     1,     3,     3,     1,     1,     3,     0,
+       1,     3,     2,     2,     1,     1,     3,     1,     1,     2,
+       1,     2,     2,     2,     3,     3,     3,     3,     3,     3,
+       3,     2,     2,     2,     1,     1,     1,     1,     1,     2,
        2,     2,     2,     3,     3,     3,     3,     3,     3,     3,
-       2,     2,     2,     1,     1,     1,     1,     1,     2,     2,
-       2,     2,     3,     3,     3,     3,     3,     3,     3,     3,
-       3,     1,     2,     2,     1,     2,     2,     2,     2,     2
+       3,     3,     1,     2,     2,     1,     2,     2,     2,     3,
+       2,     2
   };
 
 
@@ -2980,50 +3052,52 @@ namespace cmpl {
   "\"operator `!=`\"", "\"operator `<`\"", "\"operator `>`\"",
   "\"operator `<=`\"", "\"operator `>=`\"", "\"operator `in`\"",
   "\"operator `of`\"", "'+'", "'-'", "'*'", "'/'", "\"operator `*>`\"",
-  "\"transpose operator `T`\"", "'^'", "\"operator `..`\"", "NUMBER_SIGN",
-  "INDEX_SIGN", "\"operator `!`\"", "'('", "'['", "\"`{`\"",
-  "\"subsymbol operator `.`\"", "\"int literal\"", "\"double literal\"",
-  "\"string literal\"", "\"linename prefix\"", "\"int literal factor\"",
-  "\"double literal factor\"", "\"symbol\"", "\"subsymbol\"",
-  "\"object type symbol\"", "\"data type symbol\"",
+  "\"transpose operator `T`\"", "\"array cast operation\"", "'^'",
+  "\"operator `..`\"", "NUMBER_SIGN", "INDEX_SIGN", "\"operator `!`\"",
+  "'('", "'['", "\"`{`\"", "\"subsymbol operator `.`\"", "\"int literal\"",
+  "\"double literal\"", "\"string literal\"", "\"linename prefix\"",
+  "\"int literal factor\"", "\"double literal factor\"", "\"symbol\"",
+  "\"subsymbol\"", "\"object type symbol\"", "\"data type symbol\"",
   "\"assign modificator\"", "\"order modificator\"",
   "\"assign operator `::=`\"", "\"assign operator `+=`\"",
   "\"assign operator `-=`\"", "\"assign operator `*=`\"",
   "\"assign operator `/=`\"", "\"increment/decrement operator\"",
-  "\"`:`\"", "\"`}`\"", "\"`|`\"", "\"`&`\"", "\"`@`\"", "\"`;`\"", "','",
-  "')'", "']'", "$accept", "cmpl", "cmplParts", "cmplPart", "directive",
-  "directiveParts", "directivePart", "objDataType", "statement",
-  "statementExpr", "assignLhsOp", "assignRhs", "objDataTypeRhs",
-  "assignOp", "codeblock", "blockStart", "blockParts", "blockAltStart",
-  "blockPart", "blockPartStart", "blockModifiers", "blockModifier",
-  "blockHeaders", "blockHeader", "blockHeaderStart", "blockBody",
-  "expressionWithCodeblockSymbolDef", "refcodeblock", "expression",
-  "symbolIncDec", "symbol", "expressionList", "literal", "literalMult",
-  "arrayExpr", "arrayStart", "tupleExpr", "tupleStart", "listParts",
-  "listPart", "intervalExpr", "intervalOp", "setExpr", "setExprEnd",
-  "unaryOp", "binaryOp", "numOpSignAdd", "numOpSignMult", "logOpSignNot",
-  "inOpPre", "ofOpPre", "compareOp", "subsymbolOp", "subsymbolIncDec",
-  "subsymbol", "functionCall", "indexation", "errorExpression", YY_NULLPTR
+  "\"`:`\"", "\"`]`\"", "\"`}`\"", "\"`|`\"", "\"`&`\"", "\"`@`\"",
+  "\"`;`\"", "','", "')'", "$accept", "cmpl", "cmplParts", "cmplPart",
+  "directive", "directiveParts", "directivePart", "objDataType",
+  "statement", "statementExpr", "assignLhsOp", "assignRhs",
+  "objDataTypeRhs", "assignOp", "codeblock", "blockStart", "blockParts",
+  "blockAltStart", "blockPart", "blockPartStart", "blockModifiers",
+  "blockModifier", "blockHeaders", "blockHeader", "blockHeaderStart",
+  "blockBody", "expressionWithCodeblockSymbolDef", "refcodeblock",
+  "expression", "symbolIncDec", "symbol", "expressionList", "literal",
+  "literalMult", "arrayExpr", "arrayStart", "tupleExpr", "tupleStart",
+  "listParts", "listPart", "intervalExpr", "intervalOp", "setExpr",
+  "setExprEnd", "unaryOp", "binaryOp", "numOpSignAdd", "numOpSignMult",
+  "logOpSignNot", "inOpPre", "ofOpPre", "compareOp", "subsymbolOp",
+  "subsymbolIncDec", "subsymbol", "functionCall", "indexation",
+  "arraycast", "errorExpression", YY_NULLPTR
   };
 
 #if YYDEBUG
   const unsigned short int
   CMPL_Parser::yyrline_[] =
   {
-       0,   237,   237,   240,   241,   244,   245,   248,   251,   252,
-     255,   256,   257,   259,   263,   264,   272,   276,   279,   283,
-     290,   305,   310,   311,   312,   316,   319,   320,   321,   322,
-     323,   324,   325,   332,   336,   343,   347,   348,   351,   354,
-     357,   360,   361,   364,   367,   371,   377,   378,   381,   384,
-     392,   395,   396,   402,   408,   409,   410,   411,   412,   413,
-     414,   415,   416,   417,   418,   419,   420,   421,   425,   429,
-     430,   434,   440,   445,   446,   449,   451,   453,   457,   460,
-     466,   469,   474,   477,   480,   485,   488,   492,   498,   499,
-     502,   505,   508,   511,   518,   521,   527,   528,   535,   537,
-     539,   541,   543,   547,   549,   551,   553,   555,   557,   559,
-     561,   563,   565,   569,   570,   573,   574,   577,   580,   581,
-     584,   585,   588,   590,   592,   594,   596,   598,   600,   602,
-     607,   611,   612,   615,   620,   625,   628,   641,   646,   647
+       0,   241,   241,   244,   245,   248,   249,   252,   255,   256,
+     259,   260,   261,   263,   267,   268,   276,   280,   283,   287,
+     294,   309,   314,   315,   316,   320,   323,   324,   325,   326,
+     327,   328,   329,   336,   340,   347,   351,   352,   355,   358,
+     361,   364,   365,   368,   371,   375,   381,   382,   385,   388,
+     396,   399,   400,   406,   412,   413,   414,   415,   416,   417,
+     418,   419,   420,   421,   422,   423,   424,   425,   426,   430,
+     434,   435,   439,   445,   450,   451,   454,   456,   458,   462,
+     465,   471,   474,   479,   482,   485,   490,   493,   497,   503,
+     504,   507,   510,   513,   516,   523,   526,   532,   533,   540,
+     542,   544,   551,   553,   557,   559,   561,   563,   565,   567,
+     569,   571,   573,   575,   579,   580,   583,   584,   587,   590,
+     591,   594,   595,   598,   600,   602,   604,   606,   608,   610,
+     612,   617,   621,   622,   625,   630,   635,   638,   651,   656,
+     680,   681
   };
 
   // Print the state stack on the debug stream.
@@ -3068,12 +3142,12 @@ namespace cmpl {
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-      32,    61,    23,    21,    60,    22,     2,    24,     2,     2,
+      33,    63,    23,    21,    62,    22,     2,    24,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,    33,     2,    62,    27,     2,     2,     2,     2,     2,
+       2,    34,     2,     2,    28,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
@@ -3091,12 +3165,12 @@ namespace cmpl {
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     1,     2,     3,     4,
        5,     6,     7,     8,     9,    10,    11,    12,    13,    14,
-      15,    16,    17,    18,    19,    20,    25,    26,    28,    29,
-      30,    31,    34,    35,    36,    37,    38,    39,    40,    41,
+      15,    16,    17,    18,    19,    20,    25,    26,    27,    29,
+      30,    31,    32,    35,    36,    37,    38,    39,    40,    41,
       42,    43,    44,    45,    46,    47,    48,    49,    50,    51,
-      52,    53,    54,    55,    56,    57,    58,    59
+      52,    53,    54,    55,    56,    57,    58,    59,    60,    61
     };
-    const unsigned int user_token_number_max_ = 307;
+    const unsigned int user_token_number_max_ = 309;
     const token_number_type undef_token_ = 2;
 
     if (static_cast<int>(t) <= yyeof_)
@@ -3109,8 +3183,8 @@ namespace cmpl {
 
 
 } // cmpl
-#line 3113 "_CMPL_Parser.cc" // lalr1.cc:1167
-#line 650 "CMPL_Parser.yy" // lalr1.cc:1168
+#line 3187 "_CMPL_Parser.cc" // lalr1.cc:1167
+#line 684 "CMPL_Parser.yy" // lalr1.cc:1168
 
 
 void cmpl::CMPL_Parser::error(const cmpl::CMPL_Parser::location_type& l, const std::string& m)

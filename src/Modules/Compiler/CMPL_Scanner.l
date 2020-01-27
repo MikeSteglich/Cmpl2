@@ -68,6 +68,8 @@ int prevSC;
 %x SC_CmplCBEndA
 		/* after end of a codeblock: insert semicolon but not if '}' follow */
 %x SC_CmplCBEndB
+		/* after closing ']': possible array cast */
+%x SC_ArrCast
 		/* cmpl subsymbol expected */
 %x SC_Subsym
 		/* position mark */
@@ -109,47 +111,47 @@ SYM_NAME		[a-zA-Z_$][a-zA-Z0-9_]*
 <*>#.*																;
 
 <SC_CmplCBEndA,SC_CmplCBEndB><<EOF>>								{ BEGIN(SC_CmplAM); yylloc->columns(-1); PARSE_CONTEXT.warnCBInsertEOS(yylloc); PARSE_CONTEXT.resetScanPrevTokenType(); yylval->s.init(); return(token::EOSTATEMENT); }
-<SC_Cmpl,SC_CmplAM,SC_Subsym,SC_Position><<EOF>>					{ yyterminate(); }
+<SC_Cmpl,SC_CmplAM,SC_ArrCast,SC_Subsym,SC_Position><<EOF>>			{ yyterminate(); }
 
 
 	/* cmpl keywords */
-<SC_Cmpl,SC_CmplAM>public/[[:space:]]*[([{]							|
-<SC_Cmpl,SC_CmplAM>public											{ yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorPublic;   yylval->s._name = "public";   PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ASSIGN); }
-<SC_Cmpl,SC_CmplAM>private/[[:space:]]*[([{]						|
-<SC_Cmpl,SC_CmplAM>private											{ yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorPrivate;  yylval->s._name = "private";  PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ASSIGN); }
-<SC_Cmpl,SC_CmplAM>local/[[:space:]]*[([{]							|
-<SC_Cmpl,SC_CmplAM>local											{ yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorLocal;    yylval->s._name = "local";    PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ASSIGN); }					
-<SC_Cmpl,SC_CmplAM>const/[[:space:]]*[([{]							|
-<SC_Cmpl,SC_CmplAM>const											{ yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorConst;    yylval->s._name = "const";    PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ASSIGN); }					
-<SC_Cmpl,SC_CmplAM>new/[[:space:]]*[([{]							|
-<SC_Cmpl,SC_CmplAM>new												{ yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorNew;      yylval->s._name = "new";      PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ASSIGN); }					
-<SC_Cmpl,SC_CmplAM>extern/[[:space:]]*[([{]							|
-<SC_Cmpl,SC_CmplAM>extern											{ yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorExtern;   yylval->s._name = "extern";   PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ASSIGN); }					
-<SC_Cmpl,SC_CmplAM>assert/[[:space:]]*[([{]							|
-<SC_Cmpl,SC_CmplAM>assert											{ yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorAssert;   yylval->s._name = "assert";   PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ASSIGN); }					
-<SC_Cmpl,SC_CmplAM>declare/[[:space:]]*[([{]						|
-<SC_Cmpl,SC_CmplAM>declare											{ yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorDeclare;  yylval->s._name = "declare";  PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ASSIGN); }					
-<SC_Cmpl,SC_CmplAM>initial/[[:space:]]*[([{]						|
-<SC_Cmpl,SC_CmplAM>initial											{ yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorInitial;  yylval->s._name = "initial";  PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ASSIGN); }
-<SC_Cmpl,SC_CmplAM>ref/[[:space:]]*[([{]							|
-<SC_Cmpl,SC_CmplAM>ref												{ yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorRef;      yylval->s._name = "ref";      PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ASSIGN); }
-<SC_Cmpl,SC_CmplAM>break/[[:space:]]*[([{]							|
-<SC_Cmpl,SC_CmplAM>break											{ yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorBreak;    yylval->s._name = "break";    PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ASSIGN); }					
-<SC_Cmpl,SC_CmplAM>continue/[[:space:]]*[([{]						|
-<SC_Cmpl,SC_CmplAM>continue											{ yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorContinue; yylval->s._name = "continue"; PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ASSIGN); }					
-<SC_Cmpl,SC_CmplAM>repeat/[[:space:]]*[([{]							|
-<SC_Cmpl,SC_CmplAM>repeat											{ yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorRepeat;   yylval->s._name = "repeat";   PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ASSIGN); }
-<SC_Cmpl,SC_CmplAM>return/[[:space:]]*[([{]							|
-<SC_Cmpl,SC_CmplAM>return											{ yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorReturn;   yylval->s._name = "return";   PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ASSIGN); }
-<SC_Cmpl,SC_CmplAM>ordered/[[:space:]]*[([{]						|
-<SC_Cmpl,SC_CmplAM>ordered											{ yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorOrdered;  yylval->s._name = "ordered";  PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ORDERED); }
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>public/[[:space:]]*[([{]				|
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>public								{ if (YY_START==SC_ArrCast) { BEGIN(SC_Cmpl); } yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorPublic;   yylval->s._name = "public";   PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ASSIGN); }
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>private/[[:space:]]*[([{]				|
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>private								{ if (YY_START==SC_ArrCast) { BEGIN(SC_Cmpl); } yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorPrivate;  yylval->s._name = "private";  PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ASSIGN); }
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>local/[[:space:]]*[([{]				|
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>local									{ if (YY_START==SC_ArrCast) { BEGIN(SC_Cmpl); } yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorLocal;    yylval->s._name = "local";    PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ASSIGN); }					
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>const/[[:space:]]*[([{]				|
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>const									{ if (YY_START==SC_ArrCast) { BEGIN(SC_Cmpl); } yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorConst;    yylval->s._name = "const";    PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ASSIGN); }					
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>new/[[:space:]]*[([{]					|
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>new									{ if (YY_START==SC_ArrCast) { BEGIN(SC_Cmpl); } yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorNew;      yylval->s._name = "new";      PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ASSIGN); }					
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>extern/[[:space:]]*[([{]				|
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>extern								{ if (YY_START==SC_ArrCast) { BEGIN(SC_Cmpl); } yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorExtern;   yylval->s._name = "extern";   PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ASSIGN); }					
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>assert/[[:space:]]*[([{]				|
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>assert								{ if (YY_START==SC_ArrCast) { BEGIN(SC_Cmpl); } yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorAssert;   yylval->s._name = "assert";   PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ASSIGN); }					
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>declare/[[:space:]]*[([{]				|
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>declare								{ if (YY_START==SC_ArrCast) { BEGIN(SC_Cmpl); } yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorDeclare;  yylval->s._name = "declare";  PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ASSIGN); }					
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>initial/[[:space:]]*[([{]				|
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>initial								{ if (YY_START==SC_ArrCast) { BEGIN(SC_Cmpl); } yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorInitial;  yylval->s._name = "initial";  PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ASSIGN); }
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>ref/[[:space:]]*[([{]					|
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>ref									{ if (YY_START==SC_ArrCast) { BEGIN(SC_Cmpl); } yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorRef;      yylval->s._name = "ref";      PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ASSIGN); }
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>break/[[:space:]]*[([{]				|
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>break									{ if (YY_START==SC_ArrCast) { BEGIN(SC_Cmpl); } yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorBreak;    yylval->s._name = "break";    PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ASSIGN); }					
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>continue/[[:space:]]*[([{]			|
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>continue								{ if (YY_START==SC_ArrCast) { BEGIN(SC_Cmpl); } yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorContinue; yylval->s._name = "continue"; PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ASSIGN); }					
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>repeat/[[:space:]]*[([{]				|
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>repeat								{ if (YY_START==SC_ArrCast) { BEGIN(SC_Cmpl); } yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorRepeat;   yylval->s._name = "repeat";   PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ASSIGN); }
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>return/[[:space:]]*[([{]				|
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>return								{ if (YY_START==SC_ArrCast) { BEGIN(SC_Cmpl); } yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorReturn;   yylval->s._name = "return";   PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ASSIGN); }
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>ordered/[[:space:]]*[([{]				|
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>ordered								{ if (YY_START==SC_ArrCast) { BEGIN(SC_Cmpl); } yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorOrdered;  yylval->s._name = "ordered";  PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ORDERED); }
 
-<SC_Cmpl,SC_CmplAM>in/[[:space:]]*[([{]								|
-<SC_Cmpl,SC_CmplAM>in												{ BEGIN(SC_Cmpl); yylval->s.init(); yylval->s._name = "in"; PARSE_CONTEXT.resetScanPrevTokenType(); return(token::OPERATOR_IN); }
-<SC_Cmpl,SC_CmplAM>of/[[:space:]]*[([{]								|
-<SC_Cmpl,SC_CmplAM>of												{ BEGIN(SC_Cmpl); yylval->s.init(); yylval->s._name = "of"; PARSE_CONTEXT.resetScanPrevTokenType(); return(token::OPERATOR_OF); }
-<SC_Cmpl,SC_CmplAM>T|"\^T"/[[:space:]]*[([{]						|
-<SC_Cmpl,SC_CmplAM>T|"\^T"											{ BEGIN(SC_Cmpl); yylval->s.init(); yylval->s._name = "^T"; PARSE_CONTEXT.resetScanPrevTokenType(); return(token::OPERATOR_TRANSPOSE); }
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>in/[[:space:]]*[([{]					|
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>in									{ BEGIN(SC_Cmpl); yylval->s.init(); yylval->s._name = "in"; PARSE_CONTEXT.resetScanPrevTokenType(); return(token::OPERATOR_IN); }
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>of/[[:space:]]*[([{]					|
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>of									{ BEGIN(SC_Cmpl); yylval->s.init(); yylval->s._name = "of"; PARSE_CONTEXT.resetScanPrevTokenType(); return(token::OPERATOR_OF); }
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>T|"\^T"/[[:space:]]*[([{]				|
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>T|"\^T"								{ BEGIN(SC_Cmpl); yylval->s.init(); yylval->s._name = "^T"; PARSE_CONTEXT.resetScanPrevTokenType(); return(token::OPERATOR_TRANSPOSE); }
 
 	/* symbols */
 <SC_Cmpl,SC_CmplAM>{SYM_NAME}/[[:space:]]*[([{]						{ BEGIN(SC_Cmpl); yylval->s.init();
@@ -167,6 +169,13 @@ SYM_NAME		[a-zA-Z_$][a-zA-Z0-9_]*
 																	  BEGIN(SC_Cmpl);
 																	  return(token::SYMBOL);
 																	}
+
+	/* array cast */
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>"]"									{ BEGIN(SC_ArrCast); yylval->s.init(); PARSE_CONTEXT.resetScanPrevTokenType(); return(token::TUPLE_END); }
+<SC_ArrCast>[a-zA-Z_$0-9([{\"]										{ /* possible array cast, return token::ARRCAST here, and unput the current char to be scanned again */
+																	  BEGIN(SC_Cmpl); unput(*yytext); yylloc->columns(-1); yylval->s.init(); return(token::ARRCAST); }
+<SC_ArrCast>.														{ /* no array cast, unput the current char to be scanned again */
+																	  BEGIN(SC_Cmpl); unput(*yytext); yylloc->columns(-1); /*no return*/ }
 
 	/* subsymbols */
 <SC_Cmpl,SC_CmplAM,SC_CmplCBEndA,SC_CmplCBEndB>"\."					{ BEGIN(SC_Subsym); yylval->s.init(); PARSE_CONTEXT.resetScanPrevTokenType(); return(token::SUBSYM_OP); }

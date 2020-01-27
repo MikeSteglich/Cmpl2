@@ -140,6 +140,7 @@ namespace cmpl
 #define COMP_ASSIGN(e,lhs,rhs)				{ if (!PARSE_CONTEXT.checkOnly()) PARSE_CONTEXT.compAssign(e, lhs, rhs); }
 #define COMP_OPERATION(e,op,c)				{ if (!PARSE_CONTEXT.checkOnly()) PARSE_CONTEXT.compOperation(e, false, op, c); }
 #define COMP_CONSTRUCT(e,op,c)				{ if (!PARSE_CONTEXT.checkOnly()) PARSE_CONTEXT.compOperation(e, true, op, c); }
+#define COMP_ARRCONSTRUCT_MODE(e,b)			{ if (!PARSE_CONTEXT.checkOnly()) PARSE_CONTEXT.compArrayConstructMode(e, b); }
 #define COMP_FUNC_START(e,ar)				{ if (!PARSE_CONTEXT.checkOnly()) ar = PARSE_CONTEXT.compFunction(e, true, true, 0, 0, false); }
 #define COMP_FUNC_END(e,a,cl,us)			{ if (!PARSE_CONTEXT.checkOnly()) PARSE_CONTEXT.compFunction(e, true, false, a, cl, us); }
 #define COMP_LNP_COMPAT(e,s)				{ if (!PARSE_CONTEXT.checkOnly()) PARSE_CONTEXT.compLineNamePrefCompat(e, s); }
@@ -163,6 +164,7 @@ namespace cmpl
 %left '+' '-'
 %left '*' '/' INTERSECT_RR
 %nonassoc OPERATOR_TRANSPOSE
+%right ARRCAST
 %right '^'
 %left POINTS
 %nonassoc NUMBER_SIGN INDEX_SIGN LOG_NOT
@@ -208,8 +210,10 @@ namespace cmpl
 %token <s> LOG_OR "operator `||`"
 %token <s> LOG_NOT "operator `!`"
 %token <s> POINTS "operator `..`"
+%token <s> ARRCAST "array cast operation"
 %token <s> INTERSECT_RR "operator `*>`"
 %token <s> OBJ_TO "operator `->`"
+%token <s> TUPLE_END "`]`"
 %token <s> CODEBLOCK_BEGIN "`{`"
 %token <s> CODEBLOCK_END "`}`"
 %token <s> CODEBLOCK_ALT "`|`"
@@ -221,7 +225,7 @@ namespace cmpl
 %type <s> statement statementExpr assignLhsOp assignRhs objDataTypeRhs assignOp
 %type <s> codeblock blockStart blockModifiers blockModifier blockParts blockPart blockAltStart blockHeaders blockHeader blockHeaderStart blockPartStart blockBody expressionWithCodeblockSymbolDef refcodeblock
 %type <s> expression expressionList symbolIncDec symbol literal literalMult arrayExpr arrayStart tupleExpr tupleStart listParts listPart intervalExpr intervalOp setExpr setExprEnd
-%type <s> unaryOp binaryOp numOpSignAdd numOpSignMult logOpSignNot inOpPre ofOpPre compareOp subsymbolOp subsymbolIncDec subsymbol functionCall indexation errorExpression
+%type <s> unaryOp binaryOp numOpSignAdd numOpSignMult logOpSignNot inOpPre ofOpPre compareOp subsymbolOp subsymbolIncDec subsymbol functionCall indexation arraycast errorExpression
 %type <s> error
 
 
@@ -417,6 +421,7 @@ expression		: symbolIncDec													{ $$ = $1; PARSE_CONTEXT.setCbExprModeRes
 				| subsymbolOp													{ $$ = $1; PARSE_CONTEXT.setCbExprModeReset(); }
 				| functionCall													{ $$ = $1; PARSE_CONTEXT.setCbExprModeReset(); }
 				| indexation													{ $$ = $1; PARSE_CONTEXT.setCbExprModeReset(); }
+				| arraycast														{ $$ = $1; PARSE_CONTEXT.setCbExprModeReset(); }
 				| codeblock														{ $$ = $1; PARSE_CONTEXT.setCbExprModeReset(); }
 				| refcodeblock codeblock										{ $$ = $2; $$._u.exp = $2._u.fnc.exp; $$._u.exp->resetVolaExp();
 																				  CMPLELEMENTRY_TXT($$, SyntaxElementFunction, @1, @2, ($1._u.cbr.b ? "pure" : "nonpure")); CMPLELEM_CHILD($$, $2);
@@ -474,10 +479,10 @@ arrayExpr		: arrayStart listParts ')'										{ $$.init(); CMPLELEMENTRY($$, Sy
 arrayStart		: '('															{ $$.init(); PARSE_CONTEXT.setCbExprModeReset(); }
 			 	;
 
-tupleExpr		: tupleStart listParts ']'										{ $$.init(); CMPLELEMENTRY($$, SyntaxElementTupel, @1, @3); CMPLELEM_CHILD($$, $2); NOT_USED($1);
-		   																		  COMP_CONSTRUCT($$._elem, ICS_CONSTRUCT_TUPEL, ($2._u.exp->listCnt() ?: 1));
+tupleExpr		: tupleStart listParts TUPLE_END								{ $$.init(); CMPLELEMENTRY($$, SyntaxElementTupel, @1, @3); CMPLELEM_CHILD($$, $2); NOT_USED($1); NOT_USED($3)
+                                                                                  COMP_CONSTRUCT($$._elem, ICS_CONSTRUCT_TUPLE, ($2._u.exp->listCnt() ?: 1));
 		   																		  $$.setExp($2._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_TUP, NULL, false)); }
-				| tupleStart error ']'											{ $$.init(); CMPLELEMENTRY_ERR($2, @2); CMPLELEMENTRY($$, SyntaxElementTupel, @1, @3); CMPLELEM_CHILD($$, $2); NOT_USED($1);
+				| tupleStart error TUPLE_END									{ $$.init(); CMPLELEMENTRY_ERR($2, @2); CMPLELEMENTRY($$, SyntaxElementTupel, @1, @3); CMPLELEM_CHILD($$, $2); NOT_USED($1); NOT_USED($3);
 																				  $$.setExp(new ExprParseInfo(&PARSE_CONTEXT, @1));
 																				  yyerrok; }
 				;
@@ -536,8 +541,13 @@ unaryOp			: numOpSignAdd expression			%prec NUMBER_SIGN			{ $$.init(); CMPLELEME
 		  																		  COMP_OPERATION($$._elem, ($1._u.b ? ICS_OPER_ADD : ICS_OPER_SUB), 1); }
 				| numOpSignMult						%prec INDEX_SIGN			{ $$.init(); CMPLELEMENTRY_EMPTY($1, @1); CMPLELEMENTRY_TXT($$, SyntaxElementUnaryOp, @1, @1, ($1._u.b ? "*" : "/")); CMPLELEM_CHILD($$, $1); $$.setExp(new ExprParseInfo(&PARSE_CONTEXT, @1));
 																				  COMP_OPERATION($$._elem, ($1._u.b ? ICS_OPER_MUL : ICS_OPER_DIV), 0); }
-				| numOpSignMult expression 			%prec INDEX_SIGN			{ $$.init(); CMPLELEMENTRY_TXT($$, SyntaxElementUnaryOp, @1, @2, ($1._u.b ? "*" : "/")); CMPLELEM_CHILD($$, $2); $$.setExp($2._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, NULL, false));
-																				  COMP_OPERATION($$._elem, ($1._u.b ? ICS_OPER_MUL : ICS_OPER_DIV), 1); }
+                | numOpSignMult expression 			%prec INDEX_SIGN			{ bool arr = $2._u.exp->expTypeArray(false);
+                                                                                  $$.init(); CMPLELEMENTRY_TXT($$, SyntaxElementUnaryOp, @1, @2, ($1._u.b ? "*" : "/")); CMPLELEM_CHILD($$, $2); $$.setExp($2._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, NULL, false));
+                                                                                  if (arr) {
+                                                                                    COMP_ARRCONSTRUCT_MODE($$._elem, $1._u.b);
+																				  } else {
+																					COMP_OPERATION($$._elem, ($1._u.b ? ICS_OPER_MUL : ICS_OPER_DIV), 1);
+																				} }
 				| expression OPERATOR_TRANSPOSE									{ $$.init(); CMPLELEMENTRY_TXT($$, SyntaxElementUnaryOp, @1, @2, $2._name); CMPLELEM_CHILD($$, $1); $$.setExp($1._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, NULL, false));
 																				  COMP_OPERATION($$._elem, ICS_OPER_TRP, 1); }
 				| logOpSignNot expression			%prec LOG_NOT				{ $$.init(); CMPLELEMENTRY_TXT($$, SyntaxElementUnaryOp, @1, @2, $1._name); CMPLELEM_CHILD($$, $2); $$.setExp($2._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_LOG, NULL, false));
@@ -641,6 +651,30 @@ functionCall	: expression arrayExpr											{ $$.init(); CMPLELEMENTRY($$, Syn
 indexation		: expression tupleExpr											{ $$.init(); CMPLELEMENTRY($$, SyntaxElementIndexation, @1, @2); CMPLELEM_CHILD2($$, $1, $2);
 																				  $$.setExp($1._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_IND, $2._u.exp, true));
 																				  COMP_OPERATION($$._elem, ICS_OPER_INDEX, 2); }
+				;
+
+arraycast		: expression ARRCAST expression									{ $$.init(); NOT_USED($2);
+		   																		  if ($1._u.exp->expTypeTuple()) {
+																					CMPLELEMENTRY($$, SyntaxElementArrayCast, @1, @3); CMPLELEM_CHILD2($$, $1, $3);
+																					$$.setExp($1._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_ARRC, $3._u.exp, true));
+																					COMP_OPERATION($$._elem, ICS_OPER_ARRCAST, 2);
+																				  } else {
+																				  	if ($3._u.exp->expTypeTuple()) {
+																						// indexation
+																						CMPLELEMENTRY($$, SyntaxElementIndexation, @1, @3); CMPLELEM_CHILD2($$, $1, $3);
+																						$$.setExp($1._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_IND, $3._u.exp, true));
+																						COMP_OPERATION($$._elem, ICS_OPER_INDEX, 2);
+																					} else if ($3._u.exp->expTypeArray()) {
+																						// function call
+																						CMPLELEMENTRY($$, SyntaxElementFuncCall, @1, @3); CMPLELEM_CHILD2($$, $1, $3);
+																						$$.setExp($1._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CALL, $3._u.exp, true));
+																						COMP_OPERATION($$._elem, ICS_OPER_FUNC, 2);
+																					} else {
+																						// error
+																						CMPLELEMENTRY_TXT($$, SyntaxElementError, @1, @3, "illegal expression"); CMPLELEM_CHILD2($$, $1, $3);
+																						$$.setExp($1._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, $3._u.exp, true));
+																					}
+																				} }
 				;
 
 errorExpression : symbol symbol													{ $$.init(); CMPLELEMENTRY_TXT($$, SyntaxElementError, @1, @2, "illegal expression"); CMPLELEM_CHILD2($$, $1, $2); $$.setExp($1._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, $2._u.exp, true)); }

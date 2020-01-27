@@ -64,6 +64,8 @@ namespace cmpl
 		_freeMps = NULL;
         _realFormat = CMPLREAL_STDFORMAT;
 
+        _addConForUnusedVar = 1;
+
         _formatDefault = FormatExtensionNone;
         _formatHeader = FormatExtensionDefault;
         _formatSOS = FormatExtensionDefault;
@@ -103,10 +105,12 @@ namespace cmpl
 
 #define OPTION_OUT_MODEL_MPS_OBJNAME            30
 
-#define OPTION_OUT_MODEL_MPS_FORMAT_DEFAULT     40
-#define OPTION_OUT_MODEL_MPS_FORMAT_HEADER      41
-#define OPTION_OUT_MODEL_MPS_FORMAT_SOS         42
-#define OPTION_OUT_MODEL_MPS_FORMAT_QP          43
+#define OPTION_OUT_MODEL_MPS_ADD_CON_UV         40
+
+#define OPTION_OUT_MODEL_MPS_FORMAT_DEFAULT     50
+#define OPTION_OUT_MODEL_MPS_FORMAT_HEADER      51
+#define OPTION_OUT_MODEL_MPS_FORMAT_SOS         52
+#define OPTION_OUT_MODEL_MPS_FORMAT_QP          53
 
 
 
@@ -123,7 +127,9 @@ namespace cmpl
         REG_CMDL_OPTION( OPTION_OUT_MODEL_MPS_FREE_FOR_SOLVER, "fms", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
 
         REG_CMDL_OPTION( OPTION_OUT_MODEL_MPS_REALFORMAT, "f%", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
-        REG_CMDL_OPTION( OPTION_OUT_MODEL_MPS_OBJNAME, "obj", 1, 1, CMDL_OPTION_NEG_NO_ARG, false );
+        REG_CMDL_OPTION( OPTION_OUT_MODEL_MPS_OBJNAME, "obj", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
+
+        REG_CMDL_OPTION( OPTION_OUT_MODEL_MPS_ADD_CON_UV, "add-con-uv", 0, 1, CMDL_OPTION_NEG_NO_ARG, true );
 
         REG_CMDL_OPTION( OPTION_OUT_MODEL_MPS_FORMAT_DEFAULT, "mps-format", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
         REG_CMDL_OPTION( OPTION_OUT_MODEL_MPS_FORMAT_HEADER, "mps-format-header", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
@@ -195,6 +201,22 @@ namespace cmpl
             }
             return true;
 
+        case OPTION_OUT_MODEL_MPS_ADD_CON_UV:
+            if (opt->neg()) {
+                _addConForUnusedVar = 0;
+            }
+            else if (opt->size() == 0) {
+                _addConForUnusedVar = 1;
+            }
+            else {
+                _addConForUnusedVar = opt->argAsInt(0, _ctrl);
+                if (_addConForUnusedVar > 2)
+                    _addConForUnusedVar = 2;
+                else if (_addConForUnusedVar < 0)
+                    _addConForUnusedVar = 0;
+            }
+            return true;
+
         case OPTION_OUT_MODEL_MPS_FORMAT_DEFAULT:
             _formatDefault = parseFormatExtName(opt);
             if (_formatDefault == FormatExtensionDefault || _formatDefault == FormatExtensionError) {
@@ -244,6 +266,8 @@ namespace cmpl
 		s << "  -fm [<file>]                  export model in Free MPS format in a file or stdout" << endl;
         s << "  -f% <format>                  format spezifier (printf format) for real number output" << endl;
         s << "  -obj <name>                   name of the objective function to be invoked" << endl;
+
+        s << "  -add-con-uv [<0-2>]           add pseudo constraint for otherwise unused variable (0: no / 1: yes if unused because of deletion of a constraint / 2: yes for all) (default is 1)" << endl;
 
         s << "  -mps-format <name>            default for subsequent format selection options" << endl;
         s << "  -mps-format-header <name>     format of header lines in MPS (one of: none, cplex, gurobi, scip)" << endl;
@@ -443,6 +467,11 @@ namespace cmpl
         const char *mode;
         bool fs;
 
+        const string addConUVName = "__acuv";
+        const LinearModel::Coefficient addConUVCoeff(0, (intType)1);
+        const char addConUVMode = 'E';
+        bool hasAddConUV = false;
+
         double minVal = std::numeric_limits<double>::min();
 
         // write mps
@@ -513,16 +542,38 @@ namespace cmpl
             }
         }
 
+        if (_addConForUnusedVar) {
+            for (unsigned long i = 0; i < colCnt; i++) {
+                OptVar *ov = dynamic_cast<OptVar *>(om->cols()[i]);
+                if (ov && ov->usedByCon() <= (_addConForUnusedVar == 2 ? 0 : -1)) {
+                    hasAddConUV = true;
+                    if (fm)
+                        ostr << ' ' << addConUVMode << ' ' << addConUVName << '[' << i << ']' << endl;
+                    else
+                        ostr << ' ' << addConUVMode << setw(2) << " " << left << setw(8) << addConUVName << '[' << i << ']' << endl;
+                }
+            }
+        }
+
         ostr << "COLUMNS" << endl;
         bool hasInt = false;
 
         for (unsigned long i = 0; i < colCnt; i++) {
             OptVar *ov = dynamic_cast<OptVar *>(om->cols()[i]);
             if (ov) {
-                if (ov->intVar())
-                    hasInt = true;
-                else
-                    writeColCoeffs(ostr, fm, colNames[i], rowNames, coeffs[i]);
+                if (ov->usedByCon() == 1) {
+                    if (ov->intVar())
+                        hasInt = true;
+                    else
+                        writeColCoeffs(ostr, fm, colNames[i], rowNames, coeffs[i]);
+                }
+                else if (hasAddConUV && ov->usedByCon() <= (_addConForUnusedVar == 2 ? 0 : -1))
+                {
+                    if (fm)
+                        ostr << ' ' << left << colNames[i] << ' ' << addConUVName << '[' << i << ']' << ' ' << addConUVCoeff.outString(_realFormat.c_str(), mLenVal) << endl;
+                    else
+                        ostr << setw(4) << " " << setw(8) << left << colNames[i] << "  " << setw(8) << left << addConUVName << '[' << i << ']' << "  " << right << setw(12) << addConUVCoeff.outString(_realFormat.c_str(), mLenVal) << endl;
+                }
             }
         }
 
@@ -534,7 +585,7 @@ namespace cmpl
 
             for (unsigned long i = 0; i < colCnt; i++) {
                 OptVar *ov = dynamic_cast<OptVar *>(om->cols()[i]);
-                if (ov && ov->intVar())
+                if (ov && ov->intVar() && ov->usedByCon() == 1)
                     writeColCoeffs(ostr, fm, colNames[i], rowNames, coeffs[i]);
             }
 
@@ -583,29 +634,57 @@ namespace cmpl
         if (!fs)
             ostr << endl;
 
+        if (hasAddConUV) {
+            fs = true;
+            for (unsigned long i = 0; i < colCnt; i++) {
+                OptVar *ov = dynamic_cast<OptVar *>(om->cols()[i]);
+                if (ov && ov->usedByCon() <= (_addConForUnusedVar == 2 ? 0 : -1)) {
+                    const LinearModel::Coefficient addConUVRhs(ov);
+                    if (fs) {
+                        fs = false;
+                        if (fm)
+                            ostr << ' ' << left << "RHS" << ' ' << addConUVName << '[' << i << ']' << ' ' << right << addConUVRhs.outString(_realFormat.c_str(), mLenVal);
+                        else
+                            ostr << "    " << setw(8) << left << "RHS" << "  " << setw(8) << addConUVName << '[' << i << ']' << "  " << setw(12) << right << addConUVRhs.outString(_realFormat.c_str(), mLenVal);
+                    }
+                    else {
+                        fs = true;
+                        if (fm)
+                            ostr << ' ' << left << addConUVName << '[' << i << ']' << ' ' << right << addConUVRhs.outString(_realFormat.c_str(), mLenVal) << endl;
+                        else
+                            ostr <<  "   " << setw(8) << left << addConUVName << '[' << i << ']' << "  " << setw(12) << right << addConUVRhs.outString(_realFormat.c_str(), mLenVal) << endl;
+                    }
+                }
+            }
+            if (!fs)
+                ostr << endl;
+        }
+
         //TODO: RANGES
 
         ostr << "BOUNDS" << endl;
         for (unsigned long i = 0; i < colCnt; i++) {
             OptVar *ov = dynamic_cast<OptVar *>(om->cols()[i]);
             if (ov) {
-                CmplVal& lb = ov->lowBound();
-                CmplVal& ub = ov->uppBound();
-                if (lb || ub) {
-                    if (lb) {
-                        if (!lb.isNumNull())
-                            writeColBound(ostr, fm, colNames[i], "LO", &lb);
-                    }
-                    else
-                        writeColBound(ostr, fm, colNames[i], "MI");
+                if (ov->usedByCon() == 1 || _addConForUnusedVar == 2 || (_addConForUnusedVar == 1 && ov->usedByCon() == -1)) {
+                    CmplVal& lb = ov->lowBound();
+                    CmplVal& ub = ov->uppBound();
+                    if (lb || ub) {
+                        if (lb) {
+                            if (!lb.isNumNull())
+                                writeColBound(ostr, fm, colNames[i], "LO", &lb);
+                        }
+                        else
+                            writeColBound(ostr, fm, colNames[i], "MI");
 
-                    if (ub)
-                        writeColBound(ostr, fm, colNames[i], "UP", &ub);
-                    else
-                        writeColBound(ostr, fm, colNames[i], "PL");
-                }
-                else {
-                    writeColBound(ostr, fm, colNames[i], "FR");
+                        if (ub)
+                            writeColBound(ostr, fm, colNames[i], "UP", &ub);
+                        else
+                            writeColBound(ostr, fm, colNames[i], "PL");
+                    }
+                    else {
+                        writeColBound(ostr, fm, colNames[i], "FR");
+                    }
                 }
             }
         }

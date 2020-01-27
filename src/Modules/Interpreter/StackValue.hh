@@ -134,6 +134,13 @@ namespace cmpl
          */
         bool indexation(ExecContext *ctx, StackValue *ind);
 
+        /**
+         * perform array cast operation, result is stored in execution context
+         * @param ctx			execution context
+         * @param ind			tuple or set to cast to
+         */
+        void arraycast(ExecContext *ctx, StackValue *ind);
+
     private:
         /**
          * perform indexation operation
@@ -250,19 +257,22 @@ namespace cmpl
 		 * @param ctx			execution context
 		 * @param res			store for resulting list header
          * @param cnt			count of components for list on stack
-         * @param lst			topmost component for list on stack / NULL: if cnt==0
+         * @param top			topmost component for list on stack, must be top element on stack / NULL: if cnt==0
+         * @param woi           no count of direct list element with an additional first index
+         * @param se            syntax element id
          * @return				stack element to pop to before pushing result list / NULL: no element to pop
 		 */
-		static StackValue *constructList(ExecContext *ctx, CmplVal &res, unsigned long cnt, StackValue *top);
+        static StackValue *constructList(ExecContext *ctx, CmplVal &res, unsigned long cnt, StackValue *top, bool woi, unsigned se);
 
-		/**
-		 * construct an array from a list on the stack
-		 * @param ctx			execution context
-		 * @param res			store for resulting array
-		 * @param top			topmost component for tuple on stack, must be the list header
-		 * @return				stack element to pop to before pushing result tuple
-		 */
-		static StackValue *arrayFromList(ExecContext *ctx, CmplVal &res, StackValue *lst);
+        /**
+         * construct an array from a list on the stack
+         * @param ctx			execution context
+         * @param res			store for resulting array
+         * @param lst			topmost component for tuple on stack, must be the list header
+         * @param woi           no count of direct list element with an additional first index
+         * @return				stack element to pop to before pushing result tuple
+         */
+        static StackValue *arrayFromList(ExecContext *ctx, CmplVal &res, StackValue *lst, bool woi);
 
         /**
          * check list properties, and that list type
@@ -284,9 +294,10 @@ namespace cmpl
 		 * @param defset		store for resulting definition set
 		 * @param lst			topmost component for tuple on stack, must be the list header of a list
 		 * @param rec			recursion counter
-		 * @return				start element on the stack of the list
+         * @param woi           no count of direct list element with an additional first index
+         * @return				start element on the stack of the list
 		 */
-		static StackValue *arrayFromListRec(ExecContext *ctx, CmplVal **dstp, CmplVal &defset, StackValue *lst, unsigned rec);
+        static StackValue *arrayFromListRec(ExecContext *ctx, CmplVal **dstp, CmplVal &defset, StackValue *lst, unsigned rec, bool woi);
 
     public:
         /**
@@ -357,6 +368,14 @@ namespace cmpl
             bool checkArrayCast(CmplVal& arrds, CmplVal& nds);
 
         private:
+            /**
+             * check if definition set of array can be casted to this set, when array contains only one element
+             * @param arrds     definition set of array, must consists of exactly one element
+             * @param nds       return of new definition set / TP_EMPTY: use arrds
+             * @return          true if cast is possible
+             */
+            bool checkArrayCastCnt1(CmplVal& arrds, CmplVal& nds);
+
             /**
              * check if definition set of array can be casted to this set, when this set is a simple set with rank 1
              * @param arrds     definition set of array

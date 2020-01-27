@@ -53,8 +53,10 @@ namespace cmpl
     /*********** command line options delivered to the extension by run() **********/
 
     #define OPTION_EXT_EXEC_PRECOMP_DATFILE     101
-    #define OPTION_EXT_EXEC_PRECOMP_DATA        102
-    #define OPTION_EXT_EXEC_PRECOMP_ASSARRSUB   103
+    #define OPTION_EXT_EXEC_PRECOMP_ASSARRSUB   102
+
+    #define OPTION_EXT_EXEC_PRECOMP_DATA        105
+    #define OPTION_EXT_EXEC_PRECOMP_DATA2       106
 
     #define OPTION_EXT_EXEC_INTERPRET_READALL   111
 
@@ -167,6 +169,7 @@ namespace cmpl
         DataImportBase::TxtWord *_filename;         ///< filename of data file / NULL: not specified
         DataImportBase::TxtWord *_namespace;        ///< namespace name / NULL: not specified
 
+        bool _optWithColon;                         ///< command line option has implied colon
         bool _allSymbols;                           ///< import all symbols defined in the data file
         vector<DataImportBase::TxtWord*> _symbols;  ///< vector of info for external data symbols, each symbol with three entries (the second and third can be NULL)
 
@@ -179,9 +182,10 @@ namespace cmpl
          * @param mod       module calling the extension
          * @param ext       extension
          * @param opt       command line option for external data
+         * @param owc       command line option has implied colon
          */
-        ExternDataFileHandleOpt(Precompiler *mod, ExtensionBase *ext, CmdLineOptList::SingleOption *opt):
-            DataImportExtensionPar::InternalDataBase(mod, ext, opt), _filename(NULL), _namespace(NULL), _allSymbols(false), _errorInfo(NULL)    { }
+        ExternDataFileHandleOpt(Precompiler *mod, ExtensionBase *ext, CmdLineOptList::SingleOption *opt, bool owc):
+            DataImportExtensionPar::InternalDataBase(mod, ext, opt), _filename(NULL), _namespace(NULL), _optWithColon(owc), _allSymbols(false), _errorInfo(NULL)    { }
 
         /**
          * destructor

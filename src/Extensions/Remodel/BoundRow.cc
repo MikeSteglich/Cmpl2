@@ -136,8 +136,10 @@ namespace cmpl
             }
 
             if (del) {
-                if (_delAllBoundRow || (_delUnnamedBoundRow && !oc->isInTree()))
+                if (_delAllBoundRow || (_delUnnamedBoundRow && !oc->isInTree())) {
                      oc->removeFromValueTree(&(om->rows()));
+                     CmplObjBase::dispose(oc);
+                }
             }
         }
 
@@ -162,6 +164,7 @@ namespace cmpl
             bool sdel = false;
             if (v.t == TP_FORMULA) {
                 ValFormulaCompare *fc = dynamic_cast<ValFormulaCompare *>(v.valFormula());
+                if (fc)
                     mod = checkRemodelBound(modp, fc, sdel);
             }
 
@@ -281,6 +284,9 @@ namespace cmpl
             if (!invalid && (!neg || sb == -1))
                 del = true;
         }
+
+        if (del)
+            ov->setUsedByCon(-1);
 
         return !invalid;
     }

@@ -821,6 +821,13 @@ namespace cmpl
                 }
                 break;
 
+            case ICS_OPER_ARRCAST:
+                // array cast operation
+                sv1 = stackCur();
+                sve = sv2 = stackPrev(sv1);
+                sv1->arraycast(this, sv2);
+                break;
+
             default:
                 // replace lists by arrays
                 ac = cd->v.c.par & ICPAR_OPER_CNT;
@@ -881,10 +888,12 @@ namespace cmpl
 
 		switch (cd->v.c.minor) {
 			case ICS_CONSTRUCT_ARRAY:
+            case ICS_CONSTRUCT_ARRAY_IND:
+            case ICS_CONSTRUCT_ARRAY_WOI:
                 if (cnt == 0) {
 					_opRes.set(TP_NULL);
                 }
-                if (cnt == 1) {
+                if (cnt == 1 && (cd->v.c.minor != ICS_CONSTRUCT_ARRAY_IND || stackCur()->val().t == TP_BLANK)) {
                     if (stackCur()->val().t != TP_BLANK) {
                         pushRes = false;
                     }
@@ -895,11 +904,11 @@ namespace cmpl
                 }
                 else
                 {
-                    sve = StackValue::constructList(this, _opRes, cnt, stackCur());
+                    sve = StackValue::constructList(this, _opRes, cnt, stackCur(), (cd->v.c.minor == ICS_CONSTRUCT_ARRAY_WOI), cd->se);
                 }
 				break;
 
-			case ICS_CONSTRUCT_TUPEL:
+            case ICS_CONSTRUCT_TUPLE:
                 {
                     // keep index tuple as list on stack if next command is indexation operation, for better performance
                     IntCode::IcElem *nc = cd + cd->v.c.cnt + 1;
@@ -1453,7 +1462,7 @@ namespace cmpl
                 lb = sv - (sv->val().v.i + 1);
             }
             else {
-                lb = StackValue::arrayFromList(this, a, sv);
+                lb = StackValue::arrayFromList(this, a, sv, false);
             }
 
             stackPopTo(lb);

@@ -155,7 +155,7 @@ namespace cmpl
          * @param tpl       base tuple for new constraints
          * @param repl      replace original constraint
          */
-        void formulaToCon(Interpreter *modp, OptModel *om, OptCon *oc, CmplVal& frml, string& name, CmplVal& tpl, bool repl);
+        bool formulaToCon(Interpreter *modp, OptModel *om, OptCon *oc, CmplVal& frml, string& name, CmplVal& tpl, bool repl);
 
         /**
          * recursive linearization of a logical connected expression

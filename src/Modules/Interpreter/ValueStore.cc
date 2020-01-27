@@ -196,9 +196,10 @@ namespace cmpl
         if (!disp && !_values) {
             disp = true;
         }
-        else if (!disp && _values && ((sv && sv->val().t == TP_ARRAY) || (va && va->t == TP_ARRAY))) {
-            //TODO: Pruefen ob neue Werte alle bisherigen ueberschreiben (also defset(_values) gleich oder Untermenge von defset(sv/va)): wenn ja, dann weiter wie mit disp
-            if (false)  //TODO
+        else if (!disp && _values) {
+            // if all existing values will be overwritten then disp can be used
+            if (_values->isEmpty() || (_values->isScalar() && ((sv && sv->isSimple()) || (va && !va->isSpecial()))) ||
+                    (((sv && sv->val().t == TP_ARRAY) || (va && va->t == TP_ARRAY)) && SetUtil::isSubSet(ctx, &(_values->defset()), (sv ? &(sv->val().array()->defset()) : &(va->array()->defset())))))
                 disp = true;
         }
 

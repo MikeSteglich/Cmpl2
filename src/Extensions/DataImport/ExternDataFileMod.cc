@@ -59,6 +59,7 @@ namespace cmpl
             REG_CMDL_OPTION_EXT(OPTION_EXT_EXEC_PRECOMP_ASSARRSUB, "assert-array-sub", 0, 0, CMDL_OPTION_NEG_DELIV, true, id, m, EXT_CMDLOPT_PRECOMP_SIMPLE, ext);
 
             REG_CMDL_OPTION_EXT(OPTION_EXT_EXEC_PRECOMP_DATA, "data", 0, -1, CMDL_OPTION_NEG_ERROR, false, id, m, EXT_CMDLOPT_PRECOMP_PROC_DATA, ext);
+            REG_CMDL_OPTION_EXT(OPTION_EXT_EXEC_PRECOMP_DATA2, "data:", 0, -1, CMDL_OPTION_NEG_ERROR, false, id, m, EXT_CMDLOPT_PRECOMP_PROC_DATA, ext);
         }
 
         if (_regInterpreter) {
@@ -77,6 +78,7 @@ namespace cmpl
 
         s << "  -cdat <file>                  set name for default data file" << endl;
         s << "  -data <string>                string with data declaration, mainly for use in cmpl header" << endl;
+        s << "  -data: <string>               synonym for '-data : <string>', mainly for use in cmpl header" << endl;
         s << "  -read-all                     read values for all symbols from a data file at once (default: false)" << endl;
         s << "  -assert-array-sub             check for a given array assertion of an extern data symbol only that the definition set is a subset (default: true)" << endl;
     }
