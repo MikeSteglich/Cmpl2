@@ -35,6 +35,7 @@
 #include <cstdlib>
 #include <ctime>
 
+
 namespace cmpl
 {
 	/***********************************************************************
@@ -225,7 +226,6 @@ namespace cmpl
 
         srand(time(0));
         int i=rand()%maxNr+1;
-
         tmpStr+=to_string(i);
 
         return tmpStr;

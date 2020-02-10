@@ -313,7 +313,7 @@ void SolutionXml::writeVarValues(Solution *sol, unsigned long i, unsigned long j
     if ( !_ignoreGeneratedElements || (_ignoreGeneratedElements && !StringStore::startsWith(sol->solution(i)->variable(j)->name(), "__") ) ) {
 
 
-        ostr << "           <variable idx=\""<< i << "\" name=\""<< sol->solution(i)->variable(j)->name() <<
+        ostr << "           <variable idx=\""<< j << "\" name=\""<< sol->solution(i)->variable(j)->name() <<
                 "\" type=\"" << sol->solution(i)->variable(j)->type() <<
                 "\" activity=\"" << ( sol->solution(i)->variable(j)->type()=="C" ? sol->solution(i)->variable(j)->activity() : round(sol->solution(i)->variable(j)->activity() )) << "\"";
 
@@ -324,7 +324,7 @@ void SolutionXml::writeVarValues(Solution *sol, unsigned long i, unsigned long j
         if (sol->hasMarginal())
             ostr <<  right << sol->solution(i)->variable(j)->marginal()  ;
         else
-            ostr  << "-" ;
+            ostr  << "NaN" ;
         ostr  << "\"/>" << endl;
 
     }
@@ -337,7 +337,7 @@ void SolutionXml::writeConValues(Solution *sol, unsigned long i, unsigned long j
     if ( !_ignoreGeneratedElements || (_ignoreGeneratedElements && !StringStore::startsWith(sol->solution(i)->constraint(j)->name(), "__") ) ) {
 
 
-        ostr << "           <constraint idx=\""<< i << "\" name=\""<< sol->solution(i)->constraint(j)->name() <<
+        ostr << "           <constraint idx=\""<< j << "\" name=\""<< sol->solution(i)->constraint(j)->name() <<
                 "\" type=\"" << sol->solution(i)->constraint(j)->type()  <<
                 "\" activity=\"" << sol->solution(i)->constraint(j)->activity() << "\"";
 
@@ -349,7 +349,7 @@ void SolutionXml::writeConValues(Solution *sol, unsigned long i, unsigned long j
         if (sol->hasMarginal())
             ostr << sol->solution(i)->constraint(j)->marginal() ;
         else
-            ostr  << "-" ;
+            ostr  << "NaN" ;
         ostr  << "\"/>" << endl;
 
     }

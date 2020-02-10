@@ -116,11 +116,14 @@ protected:
 
     void deleteTmpFiles();
 
-    void replaceFullBinName();
+    void replaceFullBinName() ;
 
+    bool _integerRelaxation;
 
 
 private:
+
+
 
 
 

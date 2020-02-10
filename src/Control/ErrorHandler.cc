@@ -180,11 +180,11 @@ namespace cmpl
                     *oOut << "\t\t<message>cmpl finished with errors</message>" << endl;
                 }
                 else if (_ctrl->data()->warnCnt() > 0){
-                    *oOut << "\t\t<generalStatus>warning</generalStatus>\n" << endl;
+                    *oOut << "\t\t<generalStatus>warning</generalStatus>" << endl;
                     *oOut << "\t\t<message>cmpl finished with warnings</message>" << endl;
                 }
                 else {
-                    *oOut << "\t\t<generalStatus>normal</generalStatus>\n" << endl;
+                    *oOut << "\t\t<generalStatus>normal</generalStatus>" << endl;
                     *oOut << "\t\t<message>cmpl finished normal</message>" << endl;
                 }
 

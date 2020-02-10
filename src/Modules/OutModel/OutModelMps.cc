@@ -77,6 +77,8 @@ namespace cmpl
         _exportOnly=false;
 
         _objName="";
+
+        _integerRelaxation=false;
 	}
 
 	/**
@@ -112,6 +114,8 @@ namespace cmpl
 #define OPTION_OUT_MODEL_MPS_FORMAT_SOS         52
 #define OPTION_OUT_MODEL_MPS_FORMAT_QP          53
 
+#define OPTION_OUT_MODEL_MPS_INTEGERRELAXATION          54
+
 
 
 	/**
@@ -135,6 +139,8 @@ namespace cmpl
         REG_CMDL_OPTION( OPTION_OUT_MODEL_MPS_FORMAT_HEADER, "mps-format-header", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
         REG_CMDL_OPTION( OPTION_OUT_MODEL_MPS_FORMAT_SOS, "mps-format-sos", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
         REG_CMDL_OPTION( OPTION_OUT_MODEL_MPS_FORMAT_QP, "mps-format-qp", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
+        REG_CMDL_OPTION( OPTION_OUT_MODEL_MPS_INTEGERRELAXATION, "int-relax", 0, 0, CMDL_OPTION_NEG_DELIV, false );
+
     }
 
 	/**
@@ -249,6 +255,10 @@ namespace cmpl
             }
             return true;
 
+        case OPTION_OUT_MODEL_MPS_INTEGERRELAXATION:
+            _integerRelaxation=true;
+            return true;
+
         }
 
 		return false;
@@ -273,6 +283,8 @@ namespace cmpl
         s << "  -mps-format-header <name>     format of header lines in MPS (one of: none, cplex, gurobi, scip)" << endl;
         s << "  -mps-format-sos <name>        format of MPS extension for SOS (one of: none, cplex)" << endl;
         s << "  -mps-format-qp <name>         format of MPS extension for quadratic problems (one of: none, cplex)" << endl;
+        s << "  -int-relax                    integer or binary variables are used as continues variables" << endl;
+
         //TODO: more format extensions
     }
 
@@ -427,6 +439,8 @@ namespace cmpl
 
             writeModel(om, *ostr, fm);
 			file->close();
+
+
 		}
         catch (NonLinearModelException& e) {
             OptCon *oc = dynamic_cast<OptCon *>(om->rows().getElem(e.idRow()));
@@ -578,10 +592,13 @@ namespace cmpl
         }
 
         if (hasInt) {
-            if (fm)
-                ostr << " GVANF 'MARKER' 'INTORG'" << endl;
-            else
-                ostr << setw(4) << " " << "GVANF" << setw(5) << " " << "'MARKER'" << setw(17) << " " <<"'INTORG'" << endl;
+            if (!_integerRelaxation) {
+                if (fm)
+                    ostr << " GVANF 'MARKER' 'INTORG'" << endl;
+                else
+                    ostr << setw(4) << " " << "GVANF" << setw(5) << " " << "'MARKER'" << setw(17) << " " <<"'INTORG'" << endl;
+            }
+
 
             for (unsigned long i = 0; i < colCnt; i++) {
                 OptVar *ov = dynamic_cast<OptVar *>(om->cols()[i]);
@@ -589,10 +606,12 @@ namespace cmpl
                     writeColCoeffs(ostr, fm, colNames[i], rowNames, coeffs[i]);
             }
 
-            if (fm)
-                ostr << " GVEND 'MARKER' 'INTEND'" << endl;
-            else
-                ostr << setw(4) << " " << "GVEND" << setw(5) << " " << "'MARKER'" << setw(17) << " " <<"'INTEND'" << endl;
+            if (!_integerRelaxation) {
+                if (fm)
+                    ostr << " GVEND 'MARKER' 'INTEND'" << endl;
+                else
+                    ostr << setw(4) << " " << "GVEND" << setw(5) << " " << "'MARKER'" << setw(17) << " " <<"'INTEND'" << endl;
+            }
         }
 
         ostr << "RHS" << endl;

@@ -97,7 +97,7 @@ void SolverGurobi::run()
         GET_NEW_DATA(Solution,sol);
 
         string probName = string( modp()->data()->cmplFileBase() )+".cmpl";
-        sol->prepareSolutionData(probName, _solverName,_data,this);
+        sol->prepareSolutionData(probName, _solverName, _integerRelaxation, _data,this);
 
         generateCmdLine(sol,om);
 

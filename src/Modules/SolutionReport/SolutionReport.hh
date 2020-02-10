@@ -67,6 +67,7 @@ protected:
     bool _ignoreVars;
     bool _ignoreCons;
     bool _ignoreGeneratedElements;
+    bool _solutionPool;
 
 
     vector <string> _displayVarList;

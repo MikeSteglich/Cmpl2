@@ -104,7 +104,7 @@ void Solution::getVarBounds(OptVar *ov,double &lowerBound, double &upperBound ) 
 
 
 
-void Solution::prepareSolutionData(string probName, string solver, MainData *md, ModuleBase *mb) {
+void Solution::prepareSolutionData(string probName, string solver,  bool intRelaxation, MainData *md, ModuleBase *mb) {
 
     #define GET_DATA_2(n,d)		n *d = (n *)(md->data(string(#n)))
     GET_DATA_2( OptModel , om);
@@ -113,6 +113,8 @@ void Solution::prepareSolutionData(string probName, string solver, MainData *md,
     _om = om;
     _solver=solver;
     _hasMarginal=true;
+
+    bool integerRelaxation = intRelaxation;
 
     unsigned long colCnt = om->cols().size();
     unsigned long rowCnt = om->rows().size();
@@ -195,7 +197,7 @@ void Solution::prepareSolutionData(string probName, string solver, MainData *md,
         OptVar *ov = dynamic_cast<OptVar *>(om->cols()[i]);
         if (ov) {
             ModelElement modElem;
-            if (ov->intVar()) {
+            if (ov->intVar() ) {
                 hasInt = true;
                 _hasMarginal=false;
                 _nrOfIntegerVariables++;
@@ -231,10 +233,14 @@ void Solution::prepareSolutionData(string probName, string solver, MainData *md,
                 ModelElement modElem;
                 modElem.setName(colNames[i]);
 
-                if (ov->binVar())
-                    modElem.setType("B");
-                else
-                    modElem.setType("I");
+                if (!integerRelaxation) {
+                    if (ov->binVar())
+                        modElem.setType("B");
+                    else
+                        modElem.setType("I");
+                } else {
+                    modElem.setType("C");
+                }
 
                 double lowerBound=0;
                 double upperBound=0;
@@ -252,6 +258,12 @@ void Solution::prepareSolutionData(string probName, string solver, MainData *md,
             }
         }
    }
+    if (integerRelaxation) {
+        hasInt = false;
+        _hasMarginal=true;
+        _nrOfIntegerVariables=0;
+    }
+
 }
 
 

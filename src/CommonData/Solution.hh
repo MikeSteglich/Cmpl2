@@ -233,7 +233,7 @@ public:
 
     inline ~Solution()	{ cleanUp(); }
 
-    void prepareSolutionData(string probName, string solver,MainData *md, ModuleBase *mb);
+    void prepareSolutionData(string probName, string solver, bool intRelaxation, MainData *md, ModuleBase *mb);
 
     inline string problemName() {return _probName;}
     inline void setProblemName(string name) {_probName=name;}

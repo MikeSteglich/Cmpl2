@@ -8,6 +8,7 @@
 
 #include <cstdlib>
 #include <iomanip>
+#include <cstdio>
 
 
 namespace cmpl
@@ -21,7 +22,12 @@ void Solver::init(MainControl *ctrl, MainData *data, const char *name)
     _solverName="CBC";
     _solverBinName = "";
 
-    _instanceBaseName = FileBase::getTmpPath()+FileBase::getTmpFileName("cmpl",10000);
+    char tmpFilename[L_tmpnam];
+    std::tmpnam(tmpFilename);
+
+    //_instanceBaseName = FileBase::getTmpPath()+FileBase::getTmpFileName("cmpl",10000);
+    _instanceBaseName = tmpFilename;
+
     _instanceFileName = _instanceBaseName+".mps";
     _instanceSolName = _instanceBaseName+".sol";
     _instanceCmdName = _instanceBaseName+".cmd";
@@ -35,6 +41,8 @@ void Solver::init(MainControl *ctrl, MainData *data, const char *name)
 
     _solutionPool=false;
 
+    _integerRelaxation=false;
+
     readOptFile();
 
 
@@ -45,6 +53,7 @@ void Solver::init(MainControl *ctrl, MainData *data, const char *name)
 #define OPTION_SOLVER_SOLVERNAME	10
 #define OPTION_SOLVER_OPTION        20
 #define OPTION_SOLVER_DISPLAY       30
+#define OPTION_SOLVER_INTEGERRELAXATION          40
 
 
 
@@ -63,6 +72,8 @@ void Solver::init(MainControl *ctrl, MainData *data, const char *name)
         REG_CMDL_OPTION( OPTION_SOLVER_OPTION, "opt", 2, 200, CMDL_OPTION_NEG_NO_ARG, false );
 
         REG_CMDL_OPTION( OPTION_SOLVER_DISPLAY, "display", 1, 200, CMDL_OPTION_NEG_NO_ARG, false );
+
+        REG_CMDL_OPTION( OPTION_SOLVER_INTEGERRELAXATION, "int-relax", 0, 0, CMDL_OPTION_NEG_DELIV, false );
 
 
 
@@ -125,6 +136,10 @@ void Solver::init(MainControl *ctrl, MainData *data, const char *name)
                 }
             }
 
+            return true;
+
+        case OPTION_SOLVER_INTEGERRELAXATION:
+            _integerRelaxation=true;
             return true;
 
 
@@ -219,13 +234,15 @@ void Solver::writeInstanceFile(string opts) {
     else
         opts += _ctrl->printBuffer(" -fms %s -silent", _instanceFileName.c_str());
 
+    if (_integerRelaxation)
+        opts += " -int-relax";
+
     clOpts.addOption(opts, pos);
     _ctrl->runModuleFunc("writeMps", &clOpts);
 
     if (!FileBase::exists(_instanceFileName)) {
         _ctrl->errHandler().internalError( _ctrl->printBuffer("MPS file %s does not exist", _instanceFileName.c_str())  );
     }
-
 
 }
 
@@ -253,6 +270,8 @@ void Solver::replaceFullBinName() {
     if (!StringStore::startsWith(_solverBinName,sep))
         _solverBinName= FileBase::replFileInPath(_ctrl->binFullName(), &_solverBinName, dirSepChar);
 }
+
+
 
 int Solver::solve() {
 

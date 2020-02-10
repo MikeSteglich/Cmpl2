@@ -98,7 +98,7 @@ void SolverCplex::run()
         GET_NEW_DATA(Solution,sol);
 
         string probName = string( modp()->data()->cmplFileBase() )+".cmpl";
-        sol->prepareSolutionData(probName, _solverName,_data,this);
+        sol->prepareSolutionData(probName, _solverName, _integerRelaxation, _data,this);
 
         generateCmdLine(sol,om);
 
@@ -134,7 +134,7 @@ void SolverCplex::writeCommandFile( OptModel* om){
             cmdFile <<  " " + _solverOpts[i].value << endl;
         }
 
-        cmdFile << ( om->isInteger() ? "mipopt" : "opt") << endl;
+        cmdFile << ( om->isInteger() && !_integerRelaxation ? "mipopt" : "opt") << endl;
 
         cmdFile << "write " << _instanceSolName   ;
         cmdFile << ( _solutionPool ? " all" :"");
