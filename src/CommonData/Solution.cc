@@ -133,7 +133,8 @@ void Solution::prepareSolutionData(string probName, string solver,  bool intRela
     rhs = lm->rhs();
 
 
-    _nrOfVariables=colCnt;
+    //_nrOfVariables=colCnt;
+    _nrOfVariables=0;
     _nrOfIntegerVariables=0;
 
     mode = lm->mode();
@@ -197,28 +198,32 @@ void Solution::prepareSolutionData(string probName, string solver,  bool intRela
         OptVar *ov = dynamic_cast<OptVar *>(om->cols()[i]);
         if (ov) {
             ModelElement modElem;
-            if (ov->intVar() ) {
-                hasInt = true;
-                _hasMarginal=false;
-                _nrOfIntegerVariables++;
-            }
-            else {
-                modElem.setName(colNames[i]);
-                modElem.setType("C");
 
-                double lowerBound=0;
-                double upperBound=0;
+            if (ov->usedByCon() == 1) {
+                _nrOfVariables++;
+                if (ov->intVar() ) {
+                    hasInt = true;
+                    _hasMarginal=false;
+                    _nrOfIntegerVariables++;
+                }
+                else {
+                    modElem.setName(colNames[i]);
+                    modElem.setType("C");
 
-                getVarBounds(ov,lowerBound,upperBound);
+                    double lowerBound=0;
+                    double upperBound=0;
 
-                modElem.setLowerBound( lowerBound);
-                modElem.setUpperBound( upperBound );
+                    getVarBounds(ov,lowerBound,upperBound);
 
-                _colNameMap[colNames[i] ] = mpsIdx;
-                _colIdxMap[i]=mpsIdx;
-               //_colSolIdxMap[mpsIdx]=i;
-                mpsIdx++;
-                _modVariables.push_back(modElem);
+                    modElem.setLowerBound( lowerBound);
+                    modElem.setUpperBound( upperBound );
+
+                    _colNameMap[colNames[i] ] = mpsIdx;
+                    _colIdxMap[i]=mpsIdx;
+                    //_colSolIdxMap[mpsIdx]=i;
+                    mpsIdx++;
+                    _modVariables.push_back(modElem);
+                }
             }
         }
     }
