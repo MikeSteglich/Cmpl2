@@ -344,6 +344,15 @@ namespace cmpl
          * @param uo            keep user order
          */
         static void tupleToSetInf(ExecContext *ctx, CmplVal& res, Tuple *tpl, bool tcr, bool uo = true);
+
+        /**
+         * get lower and upper bound of integer elements within a rank 1 set
+         * @param low           return of lower bound (can be only TP_INT or TP_INFINITE)
+         * @param upp           return of upper bound (can be only TP_INT or TP_INFINITE)
+         * @param src           source set
+         * @return              false if set is not a rank 1 set
+         */
+        static bool rank1IntBounds(CmplVal& low, CmplVal& upp, const CmplVal& src);
     };
 
 

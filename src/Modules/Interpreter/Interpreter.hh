@@ -64,6 +64,8 @@ namespace cmpl
         short _intOutOfRangeMode;                       ///< mode for handling literal integer values out of integer range (one of INT_OPER_OORANGE_*)
         ThreadHandler _threadHandler;                   ///< info for limiting the number of concurrently running threads
 
+        bool _echoDuration;                             ///< include duration since start in all outputs of echo function
+
         map<string, string> _fileAlias;					///< file name aliases for data files
         map<string, unsigned> _fileAliasPrio;			///< priority of file name aliases (same keys as in _fileAlias)
         //TODO
@@ -112,6 +114,11 @@ namespace cmpl
          * info for limiting the number of concurrently running threads
          */
         inline ThreadHandler& threadHandler()                       { return _threadHandler; }
+
+        /**
+         * get whether to include duration since start in all outputs of echo function
+         */
+        inline bool echoDuration()                                  { return _echoDuration; }
 
         /**
          * get file name aliases for data files

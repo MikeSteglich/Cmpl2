@@ -559,7 +559,7 @@ binaryOp		: expression numOpSignAdd expression		%prec '+'			{ $$.init(); CMPLELE
 		  		| expression numOpSignMult expression		%prec '*'			{ $$.init(); CMPLELEMENTRY_TXT($$, SyntaxElementBinaryOp, @1, @3, ($2._u.b ? "*" : "/")); CMPLELEM_CHILD2($$, $1, $3); $$.setExp($1._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, $3._u.exp, true));
 																				  COMP_OPERATION($$._elem, ($2._u.b ? ICS_OPER_MUL : ICS_OPER_DIV), 2); }
 		  		| expression '^' expression										{ $$.init(); CMPLELEMENTRY_TXT($$, SyntaxElementBinaryOp, @1, @3, "^"); CMPLELEM_CHILD2($$, $1, $3); $$.setExp($1._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, $3._u.exp, true));
-																				  COMP_OPERATION($$._elem, ICS_OPER_EXP, 2); }
+                                                                                  COMP_OPERATION($$._elem, ICS_OPER_POW, 2); }
 				| expression LOG_AND expression									{ $$.init(); CMPLELEMENTRY_TXT($$, SyntaxElementBinaryOp, @1, @3, $2._name); CMPLELEM_CHILD2($$, $1, $3); $$.setExp($1._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_LOG_AND, $3._u.exp, true));
 																				  COMP_OPERATION($$._elem, ICS_OPER_AND, 2); }
 				| expression LOG_OR expression									{ $$.init(); CMPLELEMENTRY_TXT($$, SyntaxElementBinaryOp, @1, @3, $2._name); CMPLELEM_CHILD2($$, $1, $3); $$.setExp($1._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_LOG, $3._u.exp, true));

@@ -317,7 +317,7 @@ namespace cmpl
 	#define ICS_OPER_SUB				2		// operator '-'
 	#define ICS_OPER_MUL				3		// operator '*'
 	#define ICS_OPER_DIV				4		// operator '/'
-	#define ICS_OPER_EXP				5		// operator '^'
+    #define ICS_OPER_POW				5		// operator '^'
 
 	#define ICS_OPER_AND				6		// operator '&&'
 	#define ICS_OPER_OR					7		// operator '||'
@@ -429,7 +429,7 @@ namespace cmpl
 
 	// parameters
 	#define ICPAR_BLOCK_CNTPARTS		0x00ff	// bit 0 - 7: bit mask for count of code block parts (ICS_CB_BLOCK_*) or number of code block part (ICS_CB_PART_*)
-	#define ICPAR_BLOCK_ORDERED			0x0100	// bit 8: at least one part (ICS_CB_BLOCK_*) or this block part (ICS_CB_PART_*) the ordered assign modificator is used
+    #define ICPAR_BLOCK_ORDERED			0x0100	// bit 8: at least in one part (ICS_CB_BLOCK_*) or in this block part (ICS_CB_PART_*) the ordered assign modificator is used
 	#define ICPAR_BLOCK_OP_IN			0x0200	// bit 9: at least in one header of the code block a new code block symbol is defined on the left side of the operator "in" or "of" (ICS_CB_BLOCK_*) or in this code block part (ICS_CB_PART_*)
 	#define ICPAR_BLOCK_STMNT			0x0400	// bit 10: at least one part (ICS_CB_BLOCK_*) or this block part (ICS_CB_PART_*) body contains statements (otherwise it is an expression)
     #define ICPAR_BLOCK_CTRL			0x0800	// bit 11: at least one code block control command within this code block references this code block or an outer code block (ICS_CB_BLOCK_*) or is within this code block part (ICS_CB_PART_*)
@@ -463,6 +463,8 @@ namespace cmpl
     // arguments: for ICS_CBHEADER_END
 	//	1a. address of ICS_CB_PART_START of next code block part or ICS_CB_BLOCK_END if no next code block part (v.n.n1)
 	//	1b. 0: v.n.n1 is address of ICS_CB_PART_START / 1: v.n.n1 is address of ICS_CB_BLOCK_END (v.n.n2)
+    //	2a. address of ICS_CB_BLOCK_START of the code block
+    //	2b. address of ICS_CB_PART_START of the current code block part
 
 
 // code block control commands

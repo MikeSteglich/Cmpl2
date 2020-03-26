@@ -85,9 +85,11 @@ namespace cmpl
          * @param ctx			execution context
          * @param res			store for result value
          * @param src			source value
+         * @param aggr          called for aggregating elements of an array or a list
          * @param se			syntax element id of source value
+         * @return              only used if aggr: true if result is final
          */
-        virtual void operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, unsigned se)      { }
+        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se)      { return true; }
 
     private:
         /**
@@ -131,13 +133,13 @@ namespace cmpl
 		 * @param modp			calling module
 		 * @param mode			mode for output: 0=direct; 1=part of other value
 		 */
-		virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const     { ostr << "<function object>"; }
+        virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const override    { ostr << "<function object>"; }
 
         /**
          * get whether function has special meaning for optimization direction
          * @return				0:no / 1:max / -1:min
          */
-        virtual int optDir() const													{ return 0; }
+        virtual int optDir() const                                                          { return 0; }
 	};
 
 
@@ -165,10 +167,10 @@ namespace cmpl
          * @param arg			pointer to argument value
          * @return				true if this has handled the operation
          */
-        virtual bool operCall(ExecContext *ctx, StackValue *arg);
+        virtual bool operCall(ExecContext *ctx, StackValue *arg) override;
 
     protected:
-		virtual bool userDef() const	{ return true; }	///< function is an user defined function (written as cmpl code)
+        virtual bool userDef() const override	{ return true; }	///< function is an user defined function (written as cmpl code)
 
 	public:
 		/**
@@ -176,7 +178,7 @@ namespace cmpl
 		 * @param modp			calling module
 		 * @param mode			mode for output: 0=direct; 1=part of other value
 		 */
-		virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const     { ostr << "<user defined function>"; }	//TODO: Hier auch Syntaxelement mit rein, das die Funktion darstellt
+        virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const override     { ostr << "<user defined function>"; }	//TODO: Hier auch Syntaxelement mit rein, das die Funktion darstellt
 	};
 
 
@@ -186,7 +188,7 @@ namespace cmpl
 	class ValFunctionInternal : public ValFunction
 	{
 	protected:
-		virtual bool userDef() const	{ return false; }	///< function is an user defined function (written as cmpl code)
+        virtual bool userDef() const override	{ return false; }	///< function is an user defined function (written as cmpl code)
 
 
     public:
@@ -195,7 +197,7 @@ namespace cmpl
 		 * @param modp			calling module
 		 * @param mode			mode for output: 0=direct; 1=part of other value
 		 */
-		virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const     { ostr << "<predefined function '" << funcName() << "'>"; }
+        virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const override     { ostr << "<predefined function '" << funcName() << "'>"; }
 	};
 
 
@@ -213,7 +215,7 @@ namespace cmpl
          * @param arg			pointer to argument value
          * @return				true
          */
-        virtual bool operCall(ExecContext *ctx, StackValue *arg)                { callForArrayAggr(ctx, ctx->opResult(), arg); return true; }
+        virtual bool operCall(ExecContext *ctx, StackValue *arg) override                { callForArrayAggr(ctx, ctx->opResult(), arg); return true; }
     };
 
     /**
@@ -222,7 +224,7 @@ namespace cmpl
 	class ValFunctionInternSum : public ValFunctionAggregat
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "sum"; }			///< name of the internal function
+        virtual const char *funcName() const override 		{ return "sum"; }			///< name of the internal function
 
 	public:
         /**
@@ -230,9 +232,11 @@ namespace cmpl
          * @param ctx			execution context
          * @param res			store for result value
          * @param src			source value
+         * @param aggr          called for aggregating elements of an array or a list
          * @param se			syntax element id of source value
+         * @return              only used if aggr: true if result is final
          */
-        virtual void operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, unsigned se);
+        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se) override;
 	};
 
     /**
@@ -241,22 +245,25 @@ namespace cmpl
 	class ValFunctionInternMax : public ValFunctionAggregat
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "max"; }			///< name of the internal function
+        virtual const char *funcName() const override 		{ return "max"; }			///< name of the internal function
 
 	public:
-		/**
-		 * calls the cmpl function call operation and store result in execution context, if this value has a special handling for it
-		 * @param ctx			execution context
-		 * @param arg			pointer to argument value
-		 * @return				true
-		 */
-		virtual bool operCall(ExecContext *ctx, StackValue *arg);
+        /**
+         * calls the function for a simple source value (no array or list)
+         * @param ctx			execution context
+         * @param res			store for result value
+         * @param src			source value
+         * @param aggr          called for aggregating elements of an array or a list
+         * @param se			syntax element id of source value
+         * @return              only used if aggr: true if result is final
+         */
+        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se) override;
 
         /**
          * get whether function has special meaning for optimization direction
          * @return				0:no / 1:max / -1:min
          */
-        virtual int optDir() const													{ return 1; }
+        virtual int optDir() const override											{ return 1; }
     };
 
     /**
@@ -265,22 +272,25 @@ namespace cmpl
 	class ValFunctionInternMin : public ValFunctionAggregat
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "min"; }			///< name of the internal function
+        virtual const char *funcName() const override 		{ return "min"; }			///< name of the internal function
 
 	public:
-		/**
-		 * calls the cmpl function call operation and store result in execution context, if this value has a special handling for it
-		 * @param ctx			execution context
-		 * @param arg			pointer to argument value
-		 * @return				true
-		 */
-		virtual bool operCall(ExecContext *ctx, StackValue *arg);
+        /**
+         * calls the function for a simple source value (no array or list)
+         * @param ctx			execution context
+         * @param res			store for result value
+         * @param src			source value
+         * @param aggr          called for aggregating elements of an array or a list
+         * @param se			syntax element id of source value
+         * @return              only used if aggr: true if result is final
+         */
+        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se) override;
 
         /**
          * get whether function has special meaning for optimization direction
          * @return				0:no / 1:max / -1:min
          */
-        virtual int optDir() const													{ return -1; }
+        virtual int optDir() const override											{ return -1; }
     };
 
     /**
@@ -289,7 +299,7 @@ namespace cmpl
     class ValFunctionInternAnd : public ValFunctionAggregat
     {
     protected:
-        virtual const char *funcName() const 		{ return "and"; }			///< name of the internal function
+        virtual const char *funcName() const override 		{ return "and"; }			///< name of the internal function
 
     public:
         /**
@@ -298,7 +308,7 @@ namespace cmpl
          * @param arg			pointer to argument value
          * @return				true
          */
-        virtual bool operCall(ExecContext *ctx, StackValue *arg);
+        virtual bool operCall(ExecContext *ctx, StackValue *arg) override;
     };
 
     /**
@@ -307,7 +317,7 @@ namespace cmpl
     class ValFunctionInternOr : public ValFunctionAggregat
     {
     protected:
-        virtual const char *funcName() const 		{ return "or"; }			///< name of the internal function
+        virtual const char *funcName() const override 		{ return "or"; }			///< name of the internal function
 
     public:
         /**
@@ -316,7 +326,7 @@ namespace cmpl
          * @param arg			pointer to argument value
          * @return				true
          */
-        virtual bool operCall(ExecContext *ctx, StackValue *arg);
+        virtual bool operCall(ExecContext *ctx, StackValue *arg) override;
     };
 
 
@@ -335,7 +345,7 @@ namespace cmpl
 	class ValFunctionInternCount : public ValFunctionArrayInfo
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "count"; }			///< name of the internal function
+        virtual const char *funcName() const override 		{ return "count"; }			///< name of the internal function
 
 	public:
 		/**
@@ -344,7 +354,7 @@ namespace cmpl
 		 * @param arg			pointer to argument value
 		 * @return				true
 		 */
-		virtual bool operCall(ExecContext *ctx, StackValue *arg);
+        virtual bool operCall(ExecContext *ctx, StackValue *arg) override;
 	};
 
     /**
@@ -353,7 +363,7 @@ namespace cmpl
 	class ValFunctionInternDef : public ValFunctionArrayInfo
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "def"; }			///< name of the internal function
+        virtual const char *funcName() const override 		{ return "def"; }			///< name of the internal function
 
 	public:
 		/**
@@ -362,7 +372,7 @@ namespace cmpl
 		 * @param arg			pointer to argument value
 		 * @return				true
 		 */
-		virtual bool operCall(ExecContext *ctx, StackValue *arg);
+        virtual bool operCall(ExecContext *ctx, StackValue *arg) override;
 	};
 
     /**
@@ -371,7 +381,7 @@ namespace cmpl
 	class ValFunctionInternValid : public ValFunctionArrayInfo
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "valid"; }			///< name of the internal function
+        virtual const char *funcName() const override 		{ return "valid"; }			///< name of the internal function
 
 	public:
 		/**
@@ -380,7 +390,7 @@ namespace cmpl
 		 * @param arg			pointer to argument value
 		 * @return				true
 		 */
-		virtual bool operCall(ExecContext *ctx, StackValue *arg);
+        virtual bool operCall(ExecContext *ctx, StackValue *arg) override;
 	};
 
     /**
@@ -389,7 +399,7 @@ namespace cmpl
 	class ValFunctionInternDim : public ValFunctionArrayInfo
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "dim"; }			///< name of the internal function
+        virtual const char *funcName() const override 		{ return "dim"; }			///< name of the internal function
 
 	public:
 		/**
@@ -398,7 +408,7 @@ namespace cmpl
 		 * @param arg			pointer to argument value
 		 * @return				true
 		 */
-		virtual bool operCall(ExecContext *ctx, StackValue *arg);
+        virtual bool operCall(ExecContext *ctx, StackValue *arg) override;
 	};
 
     /**
@@ -407,7 +417,7 @@ namespace cmpl
 	class ValFunctionInternDefset : public ValFunctionArrayInfo
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "defset"; }		///< name of the internal function
+        virtual const char *funcName() const override 		{ return "defset"; }		///< name of the internal function
 
 	public:
 		/**
@@ -416,7 +426,7 @@ namespace cmpl
 		 * @param arg			pointer to argument value
 		 * @return				true
 		 */
-		virtual bool operCall(ExecContext *ctx, StackValue *arg);
+        virtual bool operCall(ExecContext *ctx, StackValue *arg) override;
 	};
 
     /**
@@ -425,7 +435,7 @@ namespace cmpl
 	class ValFunctionInternValidset : public ValFunctionArrayInfo
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "validset"; }		///< name of the internal function
+        virtual const char *funcName() const override 		{ return "validset"; }		///< name of the internal function
 
 	public:
 		/**
@@ -434,43 +444,67 @@ namespace cmpl
 		 * @param arg			pointer to argument value
 		 * @return				true
 		 */
-		virtual bool operCall(ExecContext *ctx, StackValue *arg);
+        virtual bool operCall(ExecContext *ctx, StackValue *arg) override;
 	};
+
+
+    /****** set and tuple info functions ****/
+
+    /**
+     * base class for internal cmpl functions for output of values
+     */
+    class ValFunctionSetInfo : public ValFunctionInternal
+    {
+    public:
+        /**
+         * calls the cmpl function call operation and store result in execution context, if this value has a special handling for it
+         * @param ctx			execution context
+         * @param arg			pointer to argument value
+         * @return				true
+         */
+        virtual bool operCall(ExecContext *ctx, StackValue *arg) override                               { callForArrayElements(ctx, ctx->opResult(), arg); return true; }
+    };
 
     /**
 	 * internal function "len"
 	 */
-	class ValFunctionInternLen : public ValFunctionArrayInfo
+    class ValFunctionInternLen : public ValFunctionSetInfo
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "len"; }			///< name of the internal function
+        virtual const char *funcName() const override 		{ return "len"; }			///< name of the internal function
 
 	public:
-		/**
-		 * calls the cmpl function call operation and store result in execution context, if this value has a special handling for it
-		 * @param ctx			execution context
-		 * @param arg			pointer to argument value
-		 * @return				true
-		 */
-		virtual bool operCall(ExecContext *ctx, StackValue *arg);
+        /**
+         * calls the function for a simple source value (no array or list)
+         * @param ctx			execution context
+         * @param res			store for result value
+         * @param src			source value
+         * @param aggr          called for aggregating elements of an array or a list
+         * @param se			syntax element id of source value
+         * @return              only used if aggr: true if result is final
+         */
+        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se) override;
 	};
 
     /**
 	 * internal function "rank"
 	 */
-	class ValFunctionInternRank : public ValFunctionArrayInfo
+    class ValFunctionInternRank : public ValFunctionSetInfo
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "rank"; }			///< name of the internal function
+        virtual const char *funcName() const override 		{ return "rank"; }			///< name of the internal function
 
 	public:
-		/**
-		 * calls the cmpl function call operation and store result in execution context, if this value has a special handling for it
-		 * @param ctx			execution context
-		 * @param arg			pointer to argument value
-		 * @return				true
-		 */
-		virtual bool operCall(ExecContext *ctx, StackValue *arg);
+        /**
+         * calls the function for a simple source value (no array or list)
+         * @param ctx			execution context
+         * @param res			store for result value
+         * @param src			source value
+         * @param aggr          called for aggregating elements of an array or a list
+         * @param se			syntax element id of source value
+         * @return              only used if aggr: true if result is final
+         */
+        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se) override;
 	};
 
 
@@ -489,7 +523,7 @@ namespace cmpl
 	class ValFunctionInternEcho : public ValFunctionOutput
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "echo"; }			///< name of the internal function
+        virtual const char *funcName() const override 		{ return "echo"; }			///< name of the internal function
 
 	public:
 		/**
@@ -498,16 +532,18 @@ namespace cmpl
 		 * @param arg			pointer to argument value
 		 * @return				true
 		 */
-        virtual bool operCall(ExecContext *ctx, StackValue *arg)            { LockGlobalGuard(true, LockGlobalGuard::coutLock); callForArrayAggr(ctx, ctx->opResult(), arg); cout << endl; ctx->opResult().set(TP_NULL); return true; }
+        virtual bool operCall(ExecContext *ctx, StackValue *arg) override;
 
         /**
          * calls the function for a simple source value (no array or list)
          * @param ctx			execution context
          * @param res			store for result value
          * @param src			source value
+         * @param aggr          called for aggregating elements of an array or a list
          * @param se			syntax element id of source value
+         * @return              only used if aggr: true if result is final
          */
-        virtual void operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, unsigned se);
+        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se) override;
 
 //    private:
 //        /**
@@ -524,7 +560,7 @@ namespace cmpl
 	class ValFunctionInternError : public ValFunctionOutput
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "error"; }			///< name of the internal function
+        virtual const char *funcName() const override 		{ return "error"; }			///< name of the internal function
 
 	public:
 		/**
@@ -533,7 +569,7 @@ namespace cmpl
 		 * @param arg			pointer to argument value
 		 * @return				true
 		 */
-		virtual bool operCall(ExecContext *ctx, StackValue *arg);
+        virtual bool operCall(ExecContext *ctx, StackValue *arg) override;
 	};
 
     /**
@@ -542,7 +578,7 @@ namespace cmpl
 	class ValFunctionInternFormat : public ValFunctionOutput
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "format"; }		///< name of the internal function
+        virtual const char *funcName() const override 		{ return "format"; }		///< name of the internal function
 
 	public:
 		/**
@@ -551,7 +587,7 @@ namespace cmpl
 		 * @param arg			pointer to argument value
 		 * @return				true
 		 */
-		virtual bool operCall(ExecContext *ctx, StackValue *arg);
+        virtual bool operCall(ExecContext *ctx, StackValue *arg) override;
 	};
 
 
@@ -569,7 +605,7 @@ namespace cmpl
          * @param arg			pointer to argument value
          * @return				true
          */
-        virtual bool operCall(ExecContext *ctx, StackValue *arg);
+        virtual bool operCall(ExecContext *ctx, StackValue *arg) override;
 
         /**
          * executes the division operation for integer numbers
@@ -586,7 +622,7 @@ namespace cmpl
 	class ValFunctionInternDiv : public ValFunctionDivInteger
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "div"; }			///< name of the internal function
+        virtual const char *funcName() const override 		{ return "div"; }			///< name of the internal function
 
 	public:
         /**
@@ -595,7 +631,7 @@ namespace cmpl
          * @param a2            second argument value
          * @return              result value
          */
-        virtual intType execDiv(intType a1, intType a2)     { return a1 / a2; }
+        virtual intType execDiv(intType a1, intType a2) override     { return a1 / a2; }
 	};
 
     /**
@@ -604,7 +640,7 @@ namespace cmpl
 	class ValFunctionInternMod : public ValFunctionDivInteger
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "mod"; }			///< name of the internal function
+        virtual const char *funcName() const override 		{ return "mod"; }			///< name of the internal function
 
 	public:
         /**
@@ -613,7 +649,7 @@ namespace cmpl
          * @param a2            second argument value
          * @return              result value
          */
-        virtual intType execDiv(intType a1, intType a2)     { return a1 % a2; }
+        virtual intType execDiv(intType a1, intType a2) override     { return a1 % a2; }
 	};
 
 
@@ -632,7 +668,7 @@ namespace cmpl
 	class ValFunctionInternSrand : public ValFunctionGenerRand
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "srand"; }			///< name of the internal function
+        virtual const char *funcName() const override 		{ return "srand"; }			///< name of the internal function
 
 	public:
 		/**
@@ -641,7 +677,7 @@ namespace cmpl
 		 * @param arg			pointer to argument value
 		 * @return				true
 		 */
-		virtual bool operCall(ExecContext *ctx, StackValue *arg);
+        virtual bool operCall(ExecContext *ctx, StackValue *arg) override;
 	};
 
     /**
@@ -650,7 +686,7 @@ namespace cmpl
 	class ValFunctionInternRand : public ValFunctionGenerRand
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "rand"; }			///< name of the internal function
+        virtual const char *funcName() const override		{ return "rand"; }			///< name of the internal function
 
 	public:
 		/**
@@ -659,7 +695,7 @@ namespace cmpl
 		 * @param arg			pointer to argument value
 		 * @return				true
 		 */
-		virtual bool operCall(ExecContext *ctx, StackValue *arg);
+        virtual bool operCall(ExecContext *ctx, StackValue *arg) override;
 	};
 
 }

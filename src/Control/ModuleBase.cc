@@ -53,10 +53,19 @@ namespace cmpl
 #endif
 
         _isSilent=false;
+        _startTime = chrono::system_clock::now();
 
 		// register command line options
 		regModOptions(_modOptReg);
 	}
+
+    /**
+     * get time duration since start of the application
+     */
+    chrono::milliseconds ModuleBase::durStartApp()
+    {
+        return _ctrl->durStartMod();
+    }
 
     /**
      * parse command line options for the module
@@ -279,7 +288,7 @@ namespace cmpl
 #if PROTO
 		s << "  -p [<file>]                   output protocol messages for this module to <file> or stdout" << endl;
 #endif
-        s << "  -silent                       Suppresses all outputs" << endl;
+        s << "  -silent                       suppresses all outputs" << endl;
 	}
 
 

@@ -31,6 +31,7 @@
 
 #include "CodeBlockContext.hh"
 #include "ExecContext.hh"
+#include "OperationBase.hh"
 #include "Interpreter.hh"
 #include "SetUtil.hh"
 #include "TupleUtil.hh"
@@ -49,10 +50,6 @@ namespace cmpl
      */
     CodeBlockContext::~CodeBlockContext()
     {
-        CmplObjBase::dispose(_curVarCondition);
-        CmplObjBase::dispose(_prevNegCondition);
-        CmplObjBase::dispose(_effVarCondition);
-
         if (_startIter)
             delete _startIter;
 
@@ -72,13 +69,26 @@ namespace cmpl
      * @param cd        intermediary code command (here INTCODE_CODEBLOCK/ICS_CB_BLOCK_START)
      * @return          pointer to new code block context or NULL if no context is needed
      */
-    CodeBlockContext *CodeBlockContext::newContext(ExecContext *ctx, IntCode::IcElem *cd)
+    CodeBlockContext *CodeBlockContext::newContextStart(ExecContext *ctx, IntCode::IcElem *cd)
     {
         // no context is needed if the codeblock doesn't use iteration and no control command belongs to the codeblock
         if ((cd->v.c.par & (ICPAR_BLOCK_OP_IN | ICPAR_BLOCK_CTRL)) == 0)
             return NULL;
 
         return new CodeBlockContext(ctx, cd, ctx->curCBLevel());
+    }
+
+    /**
+     * create new code block context object when needed whitin the execution of the codeblock
+     * @param ctx       execution context
+     * @param hd        intermediary code command (here INTCODE_CB_HEADER/ICS_CBHEADER_END)
+     * @return          pointer to new code block context
+     */
+    CodeBlockContext *CodeBlockContext::newContextAdd(ExecContext *ctx, IntCode::IcElem *hd)
+    {
+        CodeBlockContext *cb = new CodeBlockContext(ctx, ctx->codeBase() + hd[2].v.n.n1, ctx->curCBLevel() - 1);
+        cb->startPart(ctx->codeBase() + hd[2].v.n.n2);
+        return cb;
     }
 
 
@@ -103,7 +113,7 @@ namespace cmpl
             if (!_startIter) {
                 _startIter = cbhIter;
             }
-            else if (_headers.empty() && _startIter->merge(cbhIter, _ordered)) {
+            else if (_headers.empty() && _startIter->merge(cbhIter, ordered())) {
                 delete cbhIter;
             }
             else {
@@ -119,6 +129,56 @@ namespace cmpl
     }
 
 
+    /**
+     * add a conditions over optimization variable for the current codeblock part
+     * @param v             value with the condition formula (must be TP_FORMULA or TP_BIN with value true)
+     * @param se            syntax element of v
+     */
+    void CodeBlockContext::addCurVarCondition(CmplVal *v, unsigned se)
+    {
+        if (!hasVarCondition() && (_icStart->v.c.par & (ICPAR_BLOCK_OP_IN | ICPAR_BLOCK_REPEAT))) {
+            if (_icStart->v.c.par & ICPAR_BLOCK_OP_IN)
+                _execContext->valueError("mix of iterations and conditions over optimization variables is not allowed in same codeblock", *v, se);
+            else
+                _execContext->valueError("use of 'repeat' and conditions over optimization variables is not allowed in same codeblock", *v, se);
+
+            return;
+        }
+
+        if ((v->t != TP_FORMULA && v->t != TP_BIN) || (v->t == TP_BIN && v->v.i == 0))
+            _execContext->internalError("wrong value type for condition over optimization variables");
+        if (v->t == TP_FORMULA && !(v->valFormula()->isBool()))
+            _execContext->internalError("condition over optimization variables must be a boolean expression");
+
+        if (_curVarCondition.t != TP_FORMULA) {
+            _curVarCondition.copyFrom(v);
+        }
+        else if (v->t == TP_FORMULA) {
+            CmplValAuto r;
+            OperationBase::execBinaryOper(_execContext, &r, se, ICS_OPER_AND, false, &_curVarCondition, v);
+            _curVarCondition.moveFrom(r, true);
+        }
+    }
+
+    /**
+     * get codeblock result value
+     */
+    CmplVal& CodeBlockContext::cbResult()
+    {
+        // function only called after all threads started in this codeblock are ended, so discarding volatile is safe
+        CmplVal& cbRes = const_cast<CmplVal&>(_cbResult);
+
+        if (_hasVarCond)
+            _execContext->varCondMapMerge(this, cbRes);
+
+        if (cbRes.t == TP_VALUESTORE) {
+            CmplArray *a = cbRes.valueStore()->values();
+            CmplVal v(TP_ARRAY, a);
+            cbRes.moveFrom(v, true);
+        }
+
+        return cbRes;
+    }
 
     /**
      * start execution of a part of the codeblock
@@ -127,34 +187,16 @@ namespace cmpl
     void CodeBlockContext::startPart(IntCode::IcElem *cd)
     {
         // init part
-        _curPart = cd->v.c.par & ICPAR_BLOCK_CNTPARTS;
-
-        _ordered = cd->v.c.par & ICPAR_BLOCK_ORDERED;
-        _cbControl = cd->v.c.par & ICPAR_BLOCK_CTRL;
-        _lastPart = (_curPart + 1 == (_icStart->v.c.par & ICPAR_BLOCK_CNTPARTS));
+        _curPartPar = cd->v.c.par;
+        _curPart = _curPartPar & ICPAR_BLOCK_CNTPARTS;
+        _lastPart = (_curPart + 1 == (int)partCnt());
 
         IntCode::IcElem *partEnd = _execContext->codeBase() + cd[1].v.n.n2;
         _localSymTo = partEnd[2].v.n.n1;
         _localSymFrom = partEnd[2].v.n.n2;
 
-
-        //TODO: falls vorheriger Teil mit Bedingung, dann jetzt zur negierten Bedingung dazu; aber nur wenn vorheriger Teil auch ausgeführt
-        if (_curVarCondition) {
-            if (_execPart == _curPart - 1) {
-                if (_prevNegCondition) {
-                    //TODO: CmplObjBase::dispSet(_prevNegCondition, (_prevNegCondition + !_curVarCondition));
-                }
-                else {
-                    //TODO: CmplObjBase::dispSet(_prevNegCondition, (!_curVarCondition));
-                }
-            }
-
-            CmplObjBase::dispose(_curVarCondition);
-        }
-
-        //TODO: _effVarCondition erstmal zurücksetzen
-        _effVarCondition = NULL;    //TODO
-        //TODO: CmplObjBase::dispSet(_effVarCondition, (_outerCB ? _outerCB->_effVarCondition : NULL) + _prevNegCondition);
+        if (_curVarCondition)
+            _curVarCondition.dispUnset();
 
         _curBodyCode = 0;
         if (_startIter) {
@@ -167,6 +209,9 @@ namespace cmpl
                 delete cbh;
             _headers.clear();
         }
+
+        if (_hasVarCond && (_curPartPar & (ICPAR_BLOCK_OP_IN | ICPAR_BLOCK_REPEAT)))
+            _execContext->internalError("use of iteration or 'repeat' together with conditions over optimization variables");
     }
 
 
@@ -181,9 +226,21 @@ namespace cmpl
 
         _curBodyCode = cd - _execContext->codeBase();
 
-        //TODO: Variablen-Bedingung
-        //if (_curVarCondition)
-            //VAL_DISP_SET(_effVarCondition, (_outerCB ? _outerCB->_effVarCondition : NULL) + _prevNegCondition + _curVarCondition);
+        if (hasVarCondition()) {
+            if (!_startIter) {
+                if (!_curVarCondition)
+                    _curVarCondition.set(TP_BIN, true);
+
+                _execContext->varCondMapStartPart(this, _curPart, _curVarCondition, _localSymFrom, !_hasVarCond);
+
+                if (!_hasVarCond)
+                    _hasVarCond = true;
+            }
+            else {
+                _execContext->internalError("mix of iterations and conditions over optimization variables");
+                _curVarCondition.dispUnset();
+            }
+        }
 
         if (_startIter) {
             CodeBlockIteration cbIter(_execContext, this, _startIter, -1);
@@ -196,7 +253,7 @@ namespace cmpl
                 //CmplVal v(TP_ARRAY_COMP, res);
                 //  (vorlaeufig wird schon hier umgewandelt, damit andere Stellen noch nicht an TP_ARRAY_COMP angepasst werden muessen)
                 CmplValAuto v(TP_ARRAY, StackValue::arrayFromArrayComp(_execContext, res));
-                assignResult(v, false);
+                assignResult(v, false, _execContext->codeBase()[_curBodyCode].se);
             }
         }
         else {
@@ -205,7 +262,10 @@ namespace cmpl
             _execPart = _curPart;
 
             if (res)
-                assignResult(res, true);
+                assignResult(res, true, _execContext->codeBase()[_curBodyCode].se);
+
+            if (hasVarCondition())
+                _execContext->varCondMapEndPart(this, _curPart);
         }
 
         _execContext->uninitCBSymbols(_localSymFrom, _localSymTo, true);
@@ -218,7 +278,7 @@ namespace cmpl
      */
     bool CodeBlockContext::endPart()
     {
-        return (_execPart == _curPart && !_curVarCondition);
+        return (_execPart == _curPart && _curVarCondition.t != TP_FORMULA);
     }
 
 
@@ -286,10 +346,10 @@ namespace cmpl
                 //TODO: Umwandlung in Set oder Tupel; wenn scheiternd dann Fehler
                 //TODO: Array-Cast: [tpl](val)
 
-                assignResult(val->val(), false);
+                assignResult(val->val(), false, val->syntaxElem());
             }
             else {
-                assignResult(val->val(), true);
+                assignResult(val->val(), true, val->syntaxElem());
             }
         }
     }
@@ -298,22 +358,34 @@ namespace cmpl
      * assign value to codeblock result
      * @param val		value to assign
      * @param ovr		override all existing results
+     * @param se		syntax element id of source value
      */
-    void CodeBlockContext::assignResult(const CmplVal& val, bool ovr)
+    void CodeBlockContext::assignResult(CmplVal& val, bool ovr, unsigned se)
     {
         if (!_cancel && val.t != TP_BLANK) {
-            // function is only called either without threading or within lock, so discarding volatile is safe
-            CmplVal& cbRes = const_cast<CmplVal&>(_cbResult);
-
-            if (cbRes.t == TP_BLANK || cbRes.t == TP_EMPTY) {
-                cbRes.copyFrom(val, true, false);
+            if (_hasVarCond && _curPart >= 0) {
+                _execContext->varCondMapSetCBResult(this, _curPart, val, ovr, se);
             }
             else {
-                //TODO: über generelle Funktionalität für Zuweisung
-                if (ovr)
-                    cbRes.copyFrom(val, true, true);	//TODO: muss fuer variablenhaltige Werte anders sein
-                else
-                    _execContext->internalError("assignment for codeblock result not implemented");    //TODO
+                // function is only called either without threading or within lock, so discarding volatile is safe
+                CmplVal& cbRes = const_cast<CmplVal&>(_cbResult);
+
+                if (cbRes.t == TP_BLANK || cbRes.t == TP_EMPTY) {
+                    cbRes.copyFrom(val, true, false);
+                }
+                else {
+                    if (ovr && cbRes.t != TP_VALUESTORE) {
+                        cbRes.copyFrom(val, true, true);
+                    }
+                    else {
+                        if (cbRes.t != TP_VALUESTORE) {
+                            CmplVal cbn(TP_VALUESTORE, new ValueStore(cbRes));
+                            cbRes.moveFrom(cbn, true);
+                        }
+
+                        cbRes.valueStore()->setValue(_execContext, NULL, ovr, NULL, &val, se);
+                    }
+                }
             }
         }
     }
@@ -330,10 +402,6 @@ namespace cmpl
             _execPart = _curPart = -1;
             _curBodyCode = 0;
 
-            CmplObjBase::dispose(_curVarCondition);
-            CmplObjBase::dispose(_prevNegCondition);
-            CmplObjBase::dispose(_effVarCondition);
-
             if (_startIter) {
                 delete _startIter;
                 _startIter = NULL;
@@ -348,6 +416,16 @@ namespace cmpl
             _startIterObj = NULL;
             _cancel = false;
             _ctrlCmd = 0;
+
+            if (hasVarCondition() || !_icStart) {
+                if (hasVarCondition())
+                    _execContext->internalError("execution of repeat within codeblock with conditions over optimization variables");
+                else
+                    _execContext->internalError("execution of repeat within codeblock without known start code address");
+
+                _curVarCondition.dispUnset();
+                return 0;
+            }
 
             return _icStart;
         }
@@ -862,25 +940,30 @@ namespace cmpl
     bool CBHeaderIterInfo::merge(CBHeaderIterInfo *cbhIter, bool ordered)
     {
         if (SetBase::oneRank(_set) && SetBase::oneRank(cbhIter->_set) && (!ordered || (!SetBase::hasDirectUserOrder(_set) && !SetBase::hasDirectUserOrder(cbhIter->_set)))) {
-            unsigned r1 = SetBase::rank(_set);
-            unsigned r2 = SetBase::rank(cbhIter->_set);
-            CBAssignInfoTuple *ai1 = _assignInfo->asAssignInfoTuple(r1);
-            CBAssignInfoTuple *ai2 = cbhIter->_assignInfo->asAssignInfoTuple(r2);
+            CmplVal& s1 = SET_VAL_WO_ORDER(_set);
+            CmplVal& s2 = SET_VAL_WO_ORDER(cbhIter->_set);
 
-            if (ai1 && ai2) {
-                SetRecMult *srm = new SetRecMult(_set, cbhIter->_set, !ordered);
-                _set.dispSet(TP_SET_REC_MULT, srm);
+            if (s1.t != TP_SET_FIN && s2.t != TP_SET_FIN) {
+                unsigned r1 = SetBase::rank(s1);
+                unsigned r2 = SetBase::rank(s2);
+                CBAssignInfoTuple *ai1 = _assignInfo->asAssignInfoTuple(r1);
+                CBAssignInfoTuple *ai2 = cbhIter->_assignInfo->asAssignInfoTuple(r2);
 
-                CBAssignInfoTuple *ain = new CBAssignInfoTuple(ai1, ai2);
-                if (ai1 != _assignInfo)
-                    delete ai1;
-                if (ai2 != cbhIter->_assignInfo)
-                    delete ai2;
+                if (ai1 && ai2) {
+                    SetRecMult *srm = new SetRecMult(s1, s2, !ordered);
+                    _set.dispSet(TP_SET_REC_MULT, srm);
 
-                delete _assignInfo;
-                _assignInfo = ain;
+                    CBAssignInfoTuple *ain = new CBAssignInfoTuple(ai1, ai2);
+                    if (ai1 != _assignInfo)
+                        delete ai1;
+                    if (ai2 != cbhIter->_assignInfo)
+                        delete ai2;
 
-                return true;
+                    delete _assignInfo;
+                    _assignInfo = ain;
+
+                    return true;
+                }
             }
         }
 
@@ -930,7 +1013,7 @@ namespace cmpl
             unsigned long cnt = SetBase::cnt(_set);
             if (cnt > 0) {
                 ThreadHandler& thdh = _execCtx->modp()->threadHandler();
-                bool async = (cnt > 1 && !_cbContext->_ordered && thdh.hasThreading());
+                bool async = (cnt > 1 && !_cbContext->ordered() && thdh.hasThreading());
 
                 if (async) {
                     LockGuard<mutex> lck(true, _thdInfoMtx);
@@ -942,7 +1025,7 @@ namespace cmpl
                 }
 
                 // iterate over the set
-                SetIterator iter(_set, SetIterator::iteratorTupleSimple, _cbContext->_ordered, false);
+                SetIterator iter(_set, SetIterator::iteratorTupleSimple, _cbContext->ordered(), false);
                 for (iter.begin(); iter; iter++) {
                     if (_cbContext->_cancel)
                         break;
@@ -1047,15 +1130,18 @@ namespace cmpl
             }
             else if (cbhRes.t == TP_FORMULA) {
                 if (_cbContext->_lastPart) {
-                    // bisherige effektive Bedingung aus dem Codeblockkontext merken
-                    // effektiver Bedingung die Bedingung aus dem Ergebnis hinzufügen
+                    //TODO? -> hier immer Fehler wegen Mix mit Iteration?
+                    //  oder Ausfuehrung auch hier, wenn spaet ausgewerteter Header auch ohne Iteration?
+                    //      dann: Bedingung cbhRes im Codeblockkontext hinzufuegen
 
                     // rekursiv aufrufen
                     execElem(thd, ctx, nextNextHead, curInd);
 
                     // effektive Bedingung im Codeblockkontext wieder auf vorherigen Wert zurück
+                    //  -> Ruecksetzen sollte nie notwendig sein, weil keine Iteration?
                 }
                 else {
+                    //TODO: Fehlerbehandlung anpassen, Mix mit Iteration generell verboten
                     ctx->valueError("formula with optimization variable not allowed in codeblock header together with an iteration header if another codeblock part follows", cbhRes, head->syntaxElem(ctx));
                 }
             }

@@ -123,7 +123,7 @@ namespace cmpl
          * @param modp			calling module
          * @param mode			mode for output: 0=direct; 1=part of other value
          */
-        virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const		{ ostr << "<container (" << _symMap.size() << " entries)>"; }
+        virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const override		{ ostr << "<container (" << _symMap.size() << " entries)>"; }
 
         /**
          * set container as finalized

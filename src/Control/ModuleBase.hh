@@ -36,6 +36,7 @@
 #include <vector>
 #include <map>
 #include <iostream>
+#include <chrono>
 
 #include "CmdLineOptList.hh"
 #include "ErrorHandler.hh"
@@ -74,6 +75,8 @@ namespace cmpl
 	private:
         vector<CmdLineOptList::RegOption> _modOptReg;	///< registered command line options for delivery to this module
         map<string, vector<int>> _extOptReg;            ///< registered extension option execution steps (key is option name, value is vector of extension execution steps)
+
+        chrono::system_clock::time_point _startTime;    ///< time of start
 
 #if PROTO
 	protected:
@@ -129,6 +132,21 @@ namespace cmpl
 		 * get this module
 		 */
 		inline ModuleBase *modp()					{ return this; }
+
+        /**
+         * get start time
+         */
+        chrono::system_clock::time_point startTime()    { return _startTime; }
+
+        /**
+         * get time duration since start of this module
+         */
+        chrono::milliseconds durStartMod()            { return chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now() - _startTime); }
+
+        /**
+         * get time duration since start of the application
+         */
+        chrono::milliseconds durStartApp();
 
 		/**
 		 * module will be only started if no error is occured with a level higher than this in previous modules.

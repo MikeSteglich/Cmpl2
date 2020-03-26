@@ -152,7 +152,7 @@ namespace cmpl
 	class InputFunctionReadStdin : public InputFunctionBase
 	{
 	protected:
-		virtual const char *funcName() const			{ return "readstdin"; }		///< name of the input function
+        virtual const char *funcName() const override			{ return "readstdin"; }		///< name of the input function
 			 
 	public:
 		/**
@@ -161,7 +161,7 @@ namespace cmpl
 		 * @param arg			pointer to argument value
 		 * @return				true
 		 */
-		virtual bool operCall(ExecContext *ctx, StackValue *arg);
+        virtual bool operCall(ExecContext *ctx, StackValue *arg) override;
 	};
 
 
@@ -171,7 +171,7 @@ namespace cmpl
 	class InputFunctionReadCSV : public InputFunctionBase
 	{
 	protected:
-		virtual const char *funcName() const			{ return "readcsv"; }		///< name of the input function
+        virtual const char *funcName() const override			{ return "readcsv"; }		///< name of the input function
 			 
 	public:
 		/**
@@ -180,7 +180,7 @@ namespace cmpl
 		 * @param arg			pointer to argument value
 		 * @return				true
 		 */
-		virtual bool operCall(ExecContext *ctx, StackValue *arg);
+        virtual bool operCall(ExecContext *ctx, StackValue *arg) override;
 	};
 
 }

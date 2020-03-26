@@ -32,6 +32,8 @@
 #ifndef EXECCONTEXT_HH
 #define EXECCONTEXT_HH
 
+#include <map>
+
 #include "../../CommonData/CmplVal.hh"
 #include "../../CommonData/IntCode.hh"
 #include "../../Control/ErrorHandler.hh"
@@ -49,6 +51,8 @@ namespace cmpl
 	class Interpreter;
 	class ModuleBase;
 	class ValContainer;
+    class VarCondMapping;
+    class VarCondMapVS;
 
 
     /**
@@ -57,6 +61,8 @@ namespace cmpl
 	 */
 	class ExecContext
 	{
+        friend class VarCondMapping;
+
 	private:
 		Interpreter *_modp;							///< interpreter module
 		ExecContext *_parent;						///< parent execution context / NULL: this is the root execution context
@@ -83,7 +89,8 @@ namespace cmpl
         unsigned _cbContextCap;                     ///< size of <code>_cbContext</code>
         unsigned _cbContextTop;                     ///< current code block context pointer
         unsigned _cbContextCreateTop;               ///< code block context pointer at creation time of this execution context object
-            //TODO: mit dem Codeblockstackpointer zur Erstellungszeit zu initialisieren
+
+        VarCondMapping *_curVarCondMap;             ///< topmost mapping info for execution within a codeblock part with conditions over optimization variables / NULL: not within such codeblock part
 
 		CmplVal _opRes;								///< store for operation result
 
@@ -184,6 +191,10 @@ namespace cmpl
          */
         inline ValContainer *setCallThis(ValContainer *c)       { ValContainer *pt = _callThis; _callThis = c; return pt; }
 
+        /**
+         * get topmost mapping info for execution within a codeblock part with conditions over optimization variables / NULL: not within such codeblock part
+         */
+        inline VarCondMapping *curVarCondMap()                  { return _curVarCondMap; }
 
 		/****** execution of intermediary code commands ****/
 
@@ -400,6 +411,13 @@ namespace cmpl
         inline CodeBlockContext *getCBContext(unsigned offset = 0)              { return (offset < _cbContextTop ? _cbContext[_cbContextTop - offset - 1] : NULL); }
 
         /**
+         * replace empty top element on code block context stack by a new code block context object
+         * @param cd        intermediary code command (must be INTCODE_CB_HEADER/ICS_CBHEADER_END)
+         * @return          code block context object
+         */
+        CodeBlockContext *setCBContext(IntCode::IcElem *cd);
+
+        /**
          * get next upper existing code block context object on the code block stack
          * @param lvl       start position in the code block stack
          * @return          code block context object or NULL if no such context object exists
@@ -440,6 +458,51 @@ namespace cmpl
          * @param dstLvl	nesting codeblock level of destination codeblock of the control command
          */
         void setCancel(int cmd, unsigned dstLvl);
+
+
+        /****** conditions over optimization variables ****/
+
+        /**
+         * start mapping for codeblock part with conditions over optimization variables
+         * @param cb        codeblock context
+         * @param cbp       number of current codeblock part
+         * @param varCond   condition formula ver optimization variables (must be TP_FORMULA or TP_BIN with value true)
+         * @param lsf       number of first symbol within array _localSymbols that doesn't need mapping
+         * @param init      init new mapping object (if false then there must be a current mapping object matching the codeblock)
+         */
+        void varCondMapStartPart(CodeBlockContext *cb, int cbp, CmplVal& varCond, unsigned lsf, bool init);
+
+        /**
+         * end mapping for codeblock part with conditions over optimization variables
+         * @param cb        codeblock context (must match the current mapping object)
+         * @param cbp       number of current codeblock part (must match the current mapping object)
+         */
+        void varCondMapEndPart(CodeBlockContext *cb, int cbp);
+
+        /**
+         * set codeblock result using mapping for codeblock part with conditions over optimization variables
+         * @param cb        codeblock context (must match the current mapping object)
+         * @param cbp       number of current codeblock part (must match the current mapping object)
+         * @param val       codeblock result value of current codeblock part
+         * @param ovr       override all existing results
+         * @param se		syntax element id of source value
+         */
+        void varCondMapSetCBResult(CodeBlockContext *cb, int cbp, CmplVal &val, bool ovr, unsigned se);
+
+        /**
+         * merge mapped values for conditions over optimization variables at the end of codeblock, and remove mapping object
+         * @param cb        codeblock context (must match the current mapping object)
+         * @param res       return of merged codeblock result
+         */
+        void varCondMapMerge(CodeBlockContext *cb, CmplVal& res);
+
+        /**
+         * check if mapping is needed and given, and get the mapped value store
+         * @param sym       mapping for the value store of this symbol
+         * @param nw        if mapping is needed but doesn't exist, then create a new mapped value store
+         * @return          mapping info for the value store / NULL: no mapping
+         */
+        VarCondMapVS *checkGetMappedVS(SymbolValue *sym, bool nw);
 
 
         /****** assignment ****/
@@ -508,6 +571,233 @@ namespace cmpl
          * @param level		one of ERROR_LVL_*
          */
         void assertionError(const char *tp, unsigned ase, unsigned vse, int level = ERROR_LVL_NORMAL);
+    };
+
+
+    class VarCondMapVS;
+
+    /**
+     * the <code>VarCondMapping</code> class holds the mapping info for accessing symbols
+     * within a codeblock part with conditions over optimization variables
+     */
+    class VarCondMapping
+    {
+        friend class ExecContext;
+        friend class VarCondMapVS;
+
+    private:
+        ExecContext *_execContext;                  ///< execution context in which this mapping object is created
+        VarCondMapping *_parent;                    ///< parent mapping info / NULL: this is the base mapping info
+
+        CodeBlockContext *_cbContext;               ///< codeblock context of the codeblock this mapping is created for
+        unsigned _unmappedLSFrom;                   ///< number of first symbol within the execution context that doesn't need mapping
+        unsigned _partCnt;                          ///< count of codeblock parts
+        int _curCBPart;                             ///< number of current codeblock part / -1: not in execution of a codeblock part
+
+        vector<CmplValAuto> _partVarCond;           ///< condition over optimization variables per codeblock part (length is _partCnt)
+                                                            // can have the following values:
+                                                            //  TP_FORMULA containing a boolean formula
+                                                            //  TP_BIN with value true (only possible for last non empty part)
+                                                            //  TP_EMPTY: codeblock part is not used
+        int _trueCondPart;                          ///< number of codeblock part with condition value "true" / -1: no one
+
+        vector<CmplValAuto> *_mapCBRes;             ///< mapping for codeblock result / NULL: not used or not initialized
+        map<ValueStore *, VarCondMapVS *> _mapVS;   ///< mapping per mapped value store object (key is non-owning reference, but value is owning reference)
+
+        /*
+            Mapping-Objekt:
+                Gibt an, dass bei Zugriff auf einen ValueStore nicht dieser, sondern eine Kopie davon zu verwenden ist
+                    zusätzlich allgemeines Array/ValueStore mit Flags, dass pro Index angibt, ob ein Element in der Kopie in irgendeinem Teil geändert wurde (zusätzlich auch Flag für Gesamtarray)
+                Mappings können hierarchisch angeordnet sein. Aber auf jeder Ebene ist als Mappingquelle der ursprüngliche ValueStore eingetragen.
+                    D.h. bei der Anwendung eines Mappings zum Zugriff muss nur die aktuell oberste Mappingebene berücksichtigt werden.
+                    Bei der Neuanlage eines Mappings muss dagegen eine Mappingregel für den ValueStore auch in alle darunterliegenden Ebenen eingetragen werden, soweit dort
+                    noch nicht existent. Und kopiert werden muss aus dem Mappingziel der jeweils darunter liegenden Ebene.
+
+            Mapping fuer Zugriff:
+                wenn im ExecContext ein Mapping-Objekt existiert, und das Symbol kein lokales Symbol mit Nummer >= _unmappedLSFrom ist (die 2.Bedingung koennte auch weggelassen werden):
+                    beim FETCH für ein Symbol statt des regulären ValueStore den gemappten verwenden und das Array daraus auf den Stack (SimpleConst-Werte brauchen nie Mapping)
+                        (aber doch bei skalarem Wert aus Array mit Nulltupleset als Definitionsset! -> Fetch ueber SymbolValue::simpleValue())
+                    nur das oberste Mapping-Objekt braucht einbezogen werden.
+                    ValueStore in _mapVS suchen, wenn dazu VarCondMapVS-Objekt eingetragen ist:
+                        destination ValueStore aus dem VarCondMapVS-Objekt holen, zum _curCBPart
+                        wenn eingetragen, dann Array aus dem destination ValueStore holen statt aus regulaerem ValueStore des Symbols
+
+             Mapping fuer Zuweisung:
+                ref-Zuweisung -> Nutzerfehler
+                Pruefung ob Zuweisung ueberhaupt Mapping verwendet:
+                    nein wenn lokales Symbol mit Nummer >= _unmappedLSFrom: dann keine weitere Pruefung notwendig; normale Ausfuehrung ohne Mapping
+                    sonst nein wenn Zuweisung mit nocond, Inkrement/Dekrement (ist Operation, nicht Zuweisung!), Zuweisung mit const:
+                        Mapping pruefen wie bei FETCH
+                            wenn Mapping vorhanden -> Nutzerfehler inkonsistenter Zugriff
+                        normale Ausfuehrung ohne Mapping
+                    sonst wenn zugewiesenes Symbol Single-Const, dann Fehler (ist sowieso Fehler)
+                Sonst:
+                    Zuweisungsziel-ValueStore (ValueStore des zugewiesenen Symbols) bestimmen, ist Quell-ValueStore des Mappings
+                        wenn Symbol noch uninitialisiert, dann erst neuen ValueStore anlegen, dann als Quell-ValueStore des Mappings verwenden
+                    rekursiv in _parent, bis zum Wurzel-Info
+                        aber bei lokalem Symbol Rekursion nicht in Mapping-Info mit >= _unmappedLSFrom (welcher ExecContext?); sondern auf Ebene darueber beenden
+                                    (wenn ExecContext der Rekursionsstufe fuer Funktions, dann bei lokalem Symbol keine tiefere Rekursion)
+                    ValueStore in _mapVS suchen, und darin im VarCondMapVS-Objekt zum _curCBPart
+                        wenn nicht in _mapVS: neues VarCondMapVS-Objekt anlegen und in _mapVS
+                        wenn zum _curCBPart nicht im VarCondMapVS-Objekt:
+                            neuen ValueStore als Kopie des Quell-ValueStore machen und eintragen (benutzt dann erstmal Array des Quell-ValueStore mit, bis zu erstem copy-on-write)
+                    eine Rekursionsstufe hinauf, wieder dasselbe (der Quell-ValueStore ist jedesmal derselbe)
+                        (es muss also dann auf jeder Rekursionsstufe ein Mapping geben, die alle vom selben Quell-ValueStore ausgehen)
+                    Ziel-ValueStore auf oberster Ebene (am Ende der Rekursion) ist gemappter ValueStore fuer die Zuweisung
+                    Zuweisung muss ausserdem VarCondMapVS-Objekt aus dem obersten Mapping-Info kennen:
+                        dorthinein Kennzeichen fuer ausgefuehrte Aenderungen schreiben
+                    Sperren? (noetig fuer tiefere Mapping-Infos zu anderen ExecContext, wenn durch Threading entstanden)
+
+                (Bei Zuweisung mit Operation: wie fuer andere Zuweisungen: wenn Mapping vorgesehen, dann wie sonst fuer Zuweisung ausfuehren, gemappter ValueStore ist dann Quelle und Ziel der Zuweisung)
+                (Bei Zuweisung zu Pseudosymbolen: generell kein Mapping (ist intern Funktionsaufruf und keine Zuweisung; spezielle Funktionen koennten vielleicht selbst das Mapping-Info irgendwie auswerten))
+
+                StackValue::doAssign() -> Mapping wie beschrieben
+                StackValue::importExtern() -> Mapping wie beschrieben (externe Werte dann in gemappten ValueStore schreiben; werden spaeter wie andere Werte gemerged)
+                StackValue::checkAssert() -> Mapping wie beim FETCH; Assertions in gemapptem ValueStore pruefen
+                (in allen diesen 3 Funktionen enthaelt der StackValue einen SymbolValue)
+
+            Merge:
+                Einzeln jeden Eintrag in _mapVS des obersten Mapping-Infos durchgehen, fuer jedes VarCondMapVS-Objekt:
+                    Ziel-ValueStore ist:
+                        wenn kein _parent-Mapping, oder im _parent-Mapping dieser ValueStore nicht gemappt: -> Quell-ValueStore des Mappings
+                        sonst: -> Ziel-ValueStore fuer diesen Quell-ValueStore im _parent-Mapping
+                        (geeignete Sperren fuer Ziel-ValueStore)
+                    Zieldefinitionsset ist Vereinigung aus allen Indextupeln, fuer die Werte in mindestens einem CBPart geaendert/hinzugefuegt/geloescht wurden
+                        (aber ohne Indextupel, die fuer jeden CBPart geloescht wurden)
+                        und Indextupeln, fuer die es gar keine Aenderung gab
+                        (das Zieldefinitionsset kann durchaus identisch zum urspruenglichen des Arrays sein, diese Moeglichkeit performant behandeln)
+                    fuer jedes Array-Element:
+                        unveraendert: gar nichts tun (Wert Array des Ziel-ValueStore darf nicht geschrieben werden, weil vielleicht Wert durch anderen Thread geaendert)
+                        sonst: Bedingungsformel zusammenstellen
+                            (wenn fuer ein Teil geloescht, dann Wert TP_NULL)
+                            (wenn keine true-Pseudobedingung als letztes, dann urspruenglichen Wert dafuer (wenn keiner, dann TP_NULL))
+
+            Neuer assign-Modificator "nocond":
+                Wenn angegeben, dann kein Mapping verwenden; Mischung mit gemappten Zuweisungen ist Fehler (nur soweit Mischung tatsaechlich auftritt)
+                    (solange nicht innerhalb von Variablenbedingung, macht Angabe keinen Unterschied)
+                - Beschreibung anpassen
+                - Compiler anpassen
+                - Zwischencode anpassen
+         */
+
+        /**
+         * constructor
+         * @param ctx       execution context
+         * @param cb        codeblock context of the codeblock this mapping is created for
+         * @param lsf       number of first symbol within the execution context that doesn't need mapping
+         */
+        VarCondMapping(ExecContext *ctx, CodeBlockContext *cb, unsigned lsf);
+
+        /**
+         * destructor
+         */
+        ~VarCondMapping();
+
+        /**
+         * check and get current mapping object within the execution context
+         * @param ctx       execution context
+         * @param cb        codeblock context of the codeblock this mapping is created for
+         * @param cbp       number of current codeblock part / -1: no one
+         * @return          pointer to current mapping object within the execution context
+         */
+        static VarCondMapping *check(ExecContext *ctx, CodeBlockContext *cb, int cbp);
+
+        /**
+         * start of execution for one codeblock part
+         * @param cbp       number of current codeblock part
+         * @param varCond   condition formula ver optimization variables (must be TP_FORMULA or TP_BIN with value true)
+         */
+        void startPart(int cbp, CmplVal& varCond);
+
+        /**
+         * end of execution for one codeblock part
+         */
+        void endPart();
+
+        /**
+         * get mapping info for an value store
+         * @param lvl       recursion level
+         * @param ctxOrg    original execution context
+         * @param locSymNo  symbol no of local symbol within ctxOrg / -1: no local symbol
+         * @param srcVS     source value store of mapping
+         * @param nw        if mapping doesn't exist, then insert new mapping
+         * @return          mapping info for the value store / NULL: no mapping
+         */
+        VarCondMapVS *getMappedVSRec(unsigned lvl, ExecContext *ctxOrg, int locSymNo, ValueStore *srcVS, bool nw);
+
+        /**
+         * set codeblock result
+         * @param val       codeblock result value of current codeblock part
+         * @param ovr       override all existing results
+         * @param se		syntax element id of source value
+         */
+        void setMappedCBResult(CmplVal &val, bool ovr, unsigned se);
+
+        /**
+         * merge symbol values and codeblock result
+         * @param res       return of merged codeblock result
+         */
+        void mergeAll(CmplVal& res);
+
+        /**
+         * merge all values of an array
+         * @param res       return of merged result (array of values or scalar value) or value store to set result values in
+         * @param dstVS     value store to set result values in (alternative to res) / NULL: no such alternative
+         * @param map       values or value store per codeblock part
+         * @param chg       original values and change info / NULL: no original values
+         * @return          true if result is returned in res
+         */
+        bool mergeArray(CmplVal& res, ValueStore *dstVS, vector<CmplValAuto>& map, VSChangeInfo *chg);
+
+        /**
+         * merge one value
+         * @param res       return of merged result
+         * @param pvals     source value per codeblock part
+         * @param pfrom     first used codeblock part
+         * @param pend      after last used codeblock part
+         * @param ptc       part in pvals with condition TP_TRUE
+         */
+        void mergeVal(CmplVal& res, vector<CmplValAuto>& pvals, unsigned pfrom, unsigned pend, unsigned ptc);
+    };
+
+    /**
+     * the <code>VarCondMapVS</code> class holds the mapping info for one value store object
+     * within a codeblock part with conditions over optimization variables
+     */
+    class VarCondMapVS
+    {
+        friend class VarCondMapping;
+
+    private:
+        VarCondMapping *_owner;                     ///< mapping to which this object belongs
+
+        CmplValAuto _srcVS;                         ///< source and destination value store (TP_VALUESTORE)
+        VarCondMapVS *_srcMap;                      ///< _srcVS belongs to this mapping info (_srcMap->getDstVS() == _srcVS.valueStore()) / NULL: _srcVS is not mapped
+
+        VSChangeInfo _chgInfo;                      ///< info for made changes in destination values
+        vector<CmplValAuto> _dstMapVS;              ///< destination value store of mapping per codeblock part (TP_VALUESTORE) / TP_EMPTY if there is no mapping for the source array in the codeblock part
+
+
+        /**
+         * constructor
+         */
+        VarCondMapVS(VarCondMapping *owner, ValueStore *src, VarCondMapVS *srcmap): _owner(owner), _srcVS(TP_VALUESTORE, src), _srcMap(srcmap), _chgInfo(src), _dstMapVS(owner->_partCnt)    { }
+
+        /**
+         * set copy of source value store as mapping destination for current codeblock part
+         */
+        void setCopyVS()                                { _dstMapVS[_owner->_curCBPart].dispSet(TP_VALUESTORE, new ValueStore(_chgInfo.baseVS())); }
+
+    public:
+        /**
+         * get destination value store of mapping for current codeblock part
+         */
+        ValueStore *getDstVS()                          { return (_owner->_curCBPart >= 0 && _dstMapVS[_owner->_curCBPart].t == TP_VALUESTORE ? _dstMapVS[_owner->_curCBPart].valueStore() : NULL); }
+
+        /**
+         * get info for made changes in destination values
+         */
+        VSChangeInfo *chgInfo()                         { return &_chgInfo; }
     };
 
 

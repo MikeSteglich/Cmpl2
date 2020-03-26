@@ -179,7 +179,39 @@ namespace cmpl
 
 	/****** ValueStore ****/
 
-	/**
+    /**
+      * constructor as copy of another value (can be TP_VALUESTORE, TP_ARRAY, or ordinary value (no array or list))
+      */
+    ValueStore::ValueStore(CmplVal& v): ValueStore()
+    {
+        if (v.t == TP_VALUESTORE) {
+            ValueStore *src = v.valueStore();
+            if (src->_values) {
+                src->_values->incRef();
+                _values = src->_values;
+            }
+
+            if (src->_nextAss)
+                _nextAss = new ValueAssertion(*(src->_nextAss));
+        }
+
+        else {
+            CmplArray *arr;
+            if (v.t == TP_ARRAY) {
+                arr = v.array();
+            }
+            else {
+                CmplVal ds(TP_SET_NULL);
+                arr = new CmplArray(ds, v);
+            }
+
+            arr->incRef();
+            _values = arr;
+        }
+    }
+
+
+    /**
 	 * set value from a stack value
 	 * @param ctx				execution context
 	 * @param sv				value to copy (can be also an array or an list, but no symbol value) (if a list it must be the top element on the value stack)
@@ -187,12 +219,14 @@ namespace cmpl
      * @param srn				set row/col name for result matrix to this name
      * @param va                value, alternative to <code>sv</code>
      * @param se                syntax element, only used if <code>va</code> is given
+     * @param chgInfo           track changes in this object / NULL: no change tracking
      */
-    void ValueStore::setValue(ExecContext *ctx, StackValue *sv, bool disp, const char *srn, CmplVal *va, unsigned se)
+    void ValueStore::setValue(ExecContext *ctx, StackValue *sv, bool disp, const char *srn, CmplVal *va, unsigned se, VSChangeInfo *chgInfo)
 	{
         if (!sv && !va)
             return;
 
+        bool dispOrg = disp;
         if (!disp && !_values) {
             disp = true;
         }
@@ -241,6 +275,13 @@ namespace cmpl
                         CmplVal symName(TP_STR, (intType)(ctx->modp()->data()->globStrings()->search(srn)));
                         setValInValueTree(ctx, &v, (sv ? sv->syntaxElem() : se), ctx->modp()->getResModel(), symName, tpl);
                     }
+
+                    if (chgInfo) {
+                        if (dispOrg)
+                            chgInfo->chgFull();
+                        else
+                            chgInfo->chgScalar(ctx);
+                    }
                 }
                 else if (!_values || _values->defset().t != TP_SET_EMPTY) {
                     // set to empty array
@@ -249,12 +290,15 @@ namespace cmpl
 
                     _values = new CmplArray();
                     _values->incRef();
+
+                    if (chgInfo)
+                        chgInfo->chgFull();
                 }
 			}
 
             else if (v.t != TP_NULL) {
                 CmplVal tpl(TP_ITUPLE_NULL);
-                setSingleValue(ctx, &tpl, 0, v, (sv ? sv->syntaxElem() : se), srn);
+                setSingleValue(ctx, &tpl, 0, v, (sv ? sv->syntaxElem() : se), srn, '\0', chgInfo);
             }
         }
 
@@ -304,13 +348,24 @@ namespace cmpl
                             setValInValueTree(ctx, v, (sv ? sv->syntaxElem() : se), resModel, symName, iter.curTuple());
                     }
                 }
+
+                if (chgInfo) {
+                    if (dispOrg) {
+                        chgInfo->chgFull();
+                    }
+                    else {
+                        CmplArrayIterator iter(*arr);
+                        for (iter.begin(); iter; iter++)
+                            chgInfo->chgTpl(ctx, &(iter.curTuple()));
+                    }
+                }
 			}
 
             else {
                 CmplArrayIterator iter(*arr);
                 for (iter.begin(); iter; iter++) {
                     CmplVal *v = *iter;
-                    setSingleValue(ctx, &(iter.curTuple()), 0, *v, (sv ? sv->syntaxElem() : se), srn);
+                    setSingleValue(ctx, &(iter.curTuple()), 0, *v, (sv ? sv->syntaxElem() : se), srn, '\0', chgInfo);
                 }
             }
         }
@@ -325,8 +380,9 @@ namespace cmpl
      * @param se                syntax element
      * @param srn				set row/col name for result matrix to this name
      * @param op                assign operation (+,-,*,/) or '\0'
+     * @param chgInfo           track changes in this object / NULL: no change tracking
      */
-    void ValueStore::setSingleValue(ExecContext *ctx, const CmplVal *tpl, unsigned long ind1, CmplVal& val, unsigned se, const char *srn, char op)
+    void ValueStore::setSingleValue(ExecContext *ctx, const CmplVal *tpl, unsigned long ind1, CmplVal& val, unsigned se, const char *srn, char op, VSChangeInfo *chgInfo)
     {
         // copy on write if neccessary
         if (!_values) {
@@ -383,6 +439,9 @@ namespace cmpl
                 _values->delValidInfo();
             if (_values->hasObjType() && (_values->at(ind)) && !(_values->at(ind)->hasObjectType(_values->objType())))
                 _values->delObjType(true);
+
+            if (chgInfo)
+                chgInfo->chgTpl(ctx, tpl, false, ind1, &ds);
         }
         else {
             if (!op) {
@@ -390,11 +449,15 @@ namespace cmpl
                 CmplValAuto nds;
                 unsigned long ii = SetUtil::addTupleToSet(ctx, nds, ds, *tpl, false, true);
                 _values->insertValues(nds, ii, &val);
+
+                if (chgInfo)
+                    chgInfo->chgTpl(ctx, tpl);
             }
             else {
                  ctx->valueError("left hand side element not found", val, se);
             }
         }
+
     }
 
 
@@ -525,6 +588,93 @@ namespace cmpl
                 ctx->valueError("optimization variable with this name and tuple already exists", *v, se);	//TODO: Ausgabe Tuple aus fi+sc
             else
                 ctx->valueError("optimization constraint with this name and tuple already exists", *v, se);	//TODO: Ausgabe Tuple aus fi+sc
+        }
+    }
+
+
+
+    /****** VSChangeInfo ****/
+
+    /**
+     * get whether there is at least one changed element
+     * @param allChg        return whether all elements are changed
+     * @return              true if at least one element is changed
+     */
+    bool VSChangeInfo::hasChgElem(bool& allChg)
+    {
+        if (_fullChg) {
+            allChg = true;
+            return true;
+        }
+
+        if (_chgFlags.empty() || _chgIndFrom >= _chgIndEnd) {
+            allChg = _baseVS.isNull();
+            return false;
+        }
+
+        if (_chgIndFrom > 0 || _chgIndEnd < _chgFlags.size()) {
+            allChg = false;
+        }
+        else {
+            allChg = true;
+            for (unsigned long i = 0; i < _chgFlags.size(); i++) {
+                if (!_chgFlags[i]) {
+                    allChg = false;
+                    break;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * mark change of one element
+     * @param ctx				execution context
+     * @param tpl               indexing tuple for the value within the array / NULL: not given
+     * @param del               element is deleted
+     * @param ind1              direct index+1 for the value within the array / 0: not given (at least tpl or ind1 must be given, if both given it must match)
+     * @param set               set to which ind1 belongs (must be given if ind1 is used)
+     */
+    void VSChangeInfo::chgTpl(ExecContext *ctx, const CmplVal *tpl, bool del, unsigned long ind1, CmplVal *set)
+    {
+        if (_fullChg)
+            return;
+
+        if (_baseVS.isNull()) {
+            _fullChg = true;
+            return;
+        }
+
+        CmplVal& ds = _baseVS.values()->defset();
+        unsigned long ind;
+        bool found;
+
+        if (ind1 && set && *set == ds) {
+            ind = ind1 - 1;
+            found = true;
+        }
+        else {
+            found = SetUtil::tupleInSet(ctx, ds, *tpl, ind);
+        }
+
+        if (found) {
+            if (_chgFlags.size() == 0)
+                _chgFlags.resize(_baseVS.values()->size(), false);
+
+            if (!_chgFlags[ind]) {
+                _chgFlags[ind] = true;
+                if (ind < _chgIndFrom || (!_chgIndFrom && !_chgIndEnd))
+                    _chgIndFrom = ind;
+                if (ind >= _chgIndEnd)
+                    _chgIndEnd = ind + 1;
+            }
+
+            if (del)
+                _defsetDel = true;
+        }
+        else if (!del) {
+            _defsetAdd = true;
         }
     }
 

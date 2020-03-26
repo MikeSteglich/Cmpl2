@@ -76,25 +76,18 @@ namespace cmpl
         IntCode::IcElem *_icStart;                  ///< starting command of the codeblock within the intermediary code
         unsigned _lvl;                              ///< position of this codeblock context object within the codeblock context stack of the execution context
 
-        int _execPart;                              ///< number of executed part of this codeblock / -1: up to now no part is executed
+        int _execPart;                              ///< number of executed part of this codeblock (first executed part if condition over optimization variables) / -1: up to now no part is executed
         int _curPart;                               ///< number of current part of this codeblock / -1: before first part
         unsigned _curBodyCode;                      ///< start address of the body of the current part of this codeblock / 0: not known yet
 
         unsigned _localSymFrom;                     ///< first local symbol number (fetch id) of symbols defined within the codeblock part
         unsigned _localSymTo;                       ///< last local symbol number (fetch id) + 1 of symbols defined within the codeblock part
 
-        bool _ordered;                              ///< ordered execution for current part of this codeblock
-        bool _cbControl;                            ///< code block control statement destinating this codeblock exists within current part of this codeblock
+        unsigned short _curPartPar;                 ///< parameter of current codeblock part
         bool _lastPart;                             ///< current part is the last part of this codeblock
 
-        ValFormula *_curVarCondition;               ///< condition over optimization variables for current part of the codeblock / NULL: no such condition
-        ValFormula *_prevNegCondition;              ///< negated conditions over optimization variables from previous executed parts of the codeblock
-
-        ValFormula *_effVarCondition;               ///< effective condition over optimization variables / NULL: no such condition
-                                                        // zur Anwendung bei Restriktionsgenerierung und für Zuweisung globaler Symbole
-                                                        // bei lokalen Symbolen dagegen entweder gar nicht (wenn fetchId >= _localSymFrom)
-                                                        // 	oder sonst aus _curVarCondition und _outerCB->_curVarCondition rekursiv zusammenzubauen,
-                                                        //	bis Kontext mit fetchId >= _outerCB->_localSymFrom erreicht
+        bool _hasVarCond;                           ///< code block has condition over optimization variables
+        CmplValAuto _curVarCondition;               ///< condition over optimization variables for current part of the codeblock (must be boolean TP_FORMULA) / TP_EMPTY: no such condition
 
         CBHeaderIterInfo *_startIter;               ///< initial iteration info for current part of this codeblock / NULL: no iteration
         CodeBlockIteration *_startIterObj;          ///< initial iteration object for current part of this codeblock (only set while executing a codeblock body with iteration)
@@ -106,6 +99,42 @@ namespace cmpl
         recursive_mutex _cancelMtx;                 ///< mutex for synchronizing access to _cbResult and _cancel
 
 
+        /* Fuer Codeblock mit variablenhaltiger Bedingung:
+            Auswertung Header:
+                Wenn erster variablenhaltiger Header gefunden wird:
+                    wenn noch kein Codeblockkontext: neues initialisieren und eintragen
+                    wenn aktueller Teil (entsprechend seinen Parametern) Iterationen hat oder repeat darauf zielt   -> Fehler
+                    Bedingung in _curVarCondition eintragen (weitere Bedingungen aus weiteren Headern im selben Teil werden dann dort hinzugefügt)
+            weitere Auswertung Header, wenn _curVarCondition gesetzt:
+                Iterationsheader -> Fehler
+                Variablenhaltiger Header: mit Operation ICS_OPER_AND an _curVarCondition anfügen
+                Sonst: normal auswerten (wenn false, dann zum nächsten Teil übergehen) (eventuell gesetztes _curVarCondition löschen, wie bei jedem Übergang zum nächsten Teil)
+            Auswertung Körper:
+                Flag setzen, dass Codeblock mit variablenhaltiger Bedingung (erst hier, da vorher Abbruch durch auf false auswertenden Header erfolgt sein kann)
+                Initialisierung Mapping-Objekt im Ausführungskontext (dorthin auch _curVarCondition)
+                Normale Ausführung (aber im Ausführungskontext dann Verwendung Mapping-Objekt)
+                Ende des Körpers:
+                    Wenn _cbResult gesetzt ist: als zusätzliches spezielles Symbol über das Mapping-Objekt eintragen
+                    Wenn _curVarCondition gesetzt ist: KEIN Sprung zum Ende des Codeblocks, sondern fortfahren mit nächstem Teil (wenn es einen gibt)
+            Beginn nächster Teil (wenn Flag gesetzt, dass Codeblock mit variablenhaltiger Bedingung):
+                _curVarCondition löschen (dagegen Flag bleibt gesetzt)
+                wenn aktueller Teil (entsprechend seinen Parametern) Iterationen hat oder repeat darauf zielt   -> Fehler
+                Headerauswertung normal bzw. wie oben
+            Auswertung Körper:
+                wenn Flag gesetzt ist, dass variablenhaltige Bedingung, dann wie oben ausführen (auch wenn _curVarCondition hier nicht gesetzt sein sollte; Mapping-Objekt bekommt dann Bedingung "true")
+                (wenn _curVarCondition nicht gesetzt ist, dann am Ende doch Sprung zum Codeblockende)
+            Codeblockende bzw. Heraussprung mit break/continue (wenn Flag gesetzt, dass Codeblock mit variablenhaltiger Bedingung):
+                (Sprung mit repeat auf diesen Codeblock -> Fehler)
+                Mapping-Objekte aller ausgeführten Teile zusammenführen (einschließlich zusätzlicher spezieller Symbole für Codeblockergebnis, und für Variablen und Restriktionen)
+                    (dabei Berücksichtigung, ob letzter Teil Bedingung "true" hatte)
+                Zusammengeführtes Codeblockergebnis übernehmen
+                (Ziel für Zusammenführung für Symbole kann durchaus Mapping-Objekt eines übergeordneten Codeblocks sein (in dem Fall können Variablen und Restriktionen noch nicht final zusammengeführt werden))
+                Mapping aus Ausführungskontext löschen
+
+            TODO:
+                Vorgehen bei Codeblock-Control Kommandos?
+                    (ist da noch zusaetzlich etwas anzupassen?)
+         */
     private:
         /**
          * constructor
@@ -115,7 +144,7 @@ namespace cmpl
          */
         CodeBlockContext(ExecContext *ctx, IntCode::IcElem *cd, unsigned lvl):
             _execContext(ctx), _icStart(cd), _lvl(lvl), _execPart(-1), _curPart(-1), _curBodyCode(0),
-            _curVarCondition(NULL), _prevNegCondition(NULL), _startIter(NULL), _startIterObj(NULL),
+            _hasVarCond(false), _curVarCondition(TP_EMPTY), _startIter(NULL), _startIterObj(NULL),
             _cbResult(TP_BLANK), _cancel(false), _ctrlCmd(0)                                            { }
 
     public:
@@ -130,7 +159,15 @@ namespace cmpl
          * @param cd        intermediary code command (here INTCODE_CODEBLOCK/ICS_CB_BLOCK_START)
          * @return          pointer to new code block context or NULL if no context is needed
          */
-        static CodeBlockContext *newContext(ExecContext *ctx, IntCode::IcElem *cd);
+        static CodeBlockContext *newContextStart(ExecContext *ctx, IntCode::IcElem *cd);
+
+        /**
+         * create new code block context object when needed whitin the execution of the codeblock
+         * @param ctx       execution context
+         * @param hd        intermediary code command (here INTCODE_CB_HEADER/ICS_CBHEADER_END)
+         * @return          pointer to new code block context
+         */
+        static CodeBlockContext *newContextAdd(ExecContext *ctx, IntCode::IcElem *hd);
 
         /**
          * stores a codeblock header for later execution
@@ -148,12 +185,34 @@ namespace cmpl
         /**
          * get whether ordered execution for current part of this codeblock
          */
-        inline bool ordered() const                         { return _ordered; }
+        inline bool ordered() const                         { return (_curPartPar & ICPAR_BLOCK_ORDERED); }
+
+        /**
+         * get count of codeblock parts
+         */
+        inline unsigned partCnt() const                     { return (_icStart->v.c.par & ICPAR_BLOCK_CNTPARTS); }
+
+        /**
+         * get id of syntax element of the codeblock
+         */
+        inline unsigned syntaxElem() const                  { return _icStart->se; }
+
+        /**
+         * get whether codeblock has conditions over optimization variables
+         */
+        inline bool hasVarCondition() const                 { return (_hasVarCond || _curVarCondition); }
+
+        /**
+         * add a conditions over optimization variable for the current codeblock part
+         * @param v             value with the condition formula (must be TP_FORMULA or TP_BIN with value true)
+         * @param se            syntax element of v
+         */
+        void addCurVarCondition(CmplVal *v, unsigned se);
 
         /**
          * get codeblock result value
          */
-        inline CmplVal& cbResult()                          { return const_cast<CmplVal&>(_cbResult); }     // function only called after all threads started in this codeblock are ended, so discarding volatile is safe
+        CmplVal& cbResult();
 
         /**
          * start execution of a part of the codeblock
@@ -203,8 +262,9 @@ namespace cmpl
          * assign value to codeblock result
          * @param val		value to assign
          * @param ovr		override all existing results
+         * @param se		syntax element id of source value
          */
-        void assignResult(const CmplVal& val, bool ovr = false);
+        void assignResult(CmplVal &val, bool ovr, unsigned se);
 
         /**
          * check whether codeblock is subject of a repeat command, if yes then init codeblock for restart

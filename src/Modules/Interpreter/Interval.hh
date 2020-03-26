@@ -83,7 +83,7 @@ namespace cmpl
 		 * @param modp			calling module
 		 * @param mode			mode for output: 0=direct; 1=part of other value
 		 */
-		virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const     { _lowBound.write(ostr, modp, 1); ostr << ".."; _uppBound.write(ostr, modp, 1); }
+        virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const override     { _lowBound.write(ostr, modp, 1); ostr << ".."; _uppBound.write(ostr, modp, 1); }
 
 
 		/****** static info function for interval values ****/
@@ -133,7 +133,17 @@ namespace cmpl
 		 * get upper bound of interval v as an int number (only if hasUppBound(v), or TP_INTERVAL_EMPTY) (for TP_INTERVAL_EMPTY return -1)
 		 */
         static intType uppBoundInt(const CmplVal &v);
-	
+
+        /**
+         * get lower bound of interval v and set r to it (can be TP_INT, TP_REAL or TP_INFINITE)
+         */
+        static void lowBoundVal(CmplVal &r, const CmplVal &v);
+
+        /**
+         * get upper bound of interval v and set r to it (can be TP_INT, TP_REAL or TP_INFINITE)
+         */
+        static void uppBoundVal(CmplVal &r, const CmplVal &v);
+
         /**
          * get whether a numerical value n is within an interval v
          */

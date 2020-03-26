@@ -845,9 +845,11 @@ namespace cmpl
      * @param ctx			execution context
      * @param res			store for result value
      * @param src			source value
+     * @param aggr          called for aggregating elements of an array or a list
      * @param se			syntax element id of source value
+     * @return              only used if aggr: true if result is final
      */
-    void ValTypeSet::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, unsigned se)
+    bool ValTypeSet::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se)
     {
         if (!res || res.t == TP_NULL) {
             convertSimpleTo(ctx, res, src, se);
@@ -861,6 +863,8 @@ namespace cmpl
                 SetUtil::addSet(ctx, &res, se, &a1, &a2, true, false);
             }
         }
+
+        return false;
     }
 
     /**

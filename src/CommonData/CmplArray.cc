@@ -63,6 +63,7 @@ namespace cmpl
 
         CmplVal *a = _array;
         if (def) {
+            ct = def->t;
             for (unsigned long i = 0; i < _size; i++, a++)
                 a->copyFrom(def, true, false);
         }
@@ -72,9 +73,9 @@ namespace cmpl
         }
 
         _objType = -1;
-        _allValid = (_size == 0);
+        _allValid = (_size == 0 || ct != TP_EMPTY);
         _hasInvalid = !_allValid;
-        _validSet.set((def ? def->t : ct) == TP_EMPTY ? TP_SET_NULL : TP_EMPTY);
+        _validSet.set(ct == TP_EMPTY ? TP_SET_EMPTY : TP_EMPTY);
     }
 
 	/**
@@ -123,22 +124,11 @@ namespace cmpl
      */
     CmplArray::CmplArray(CmplArray *src)
     {
-        _defset.copyFrom(src->_defset, true, false);
+        _defset.set(TP_SET_EMPTY);
+        _cap = _size = 0;
+        _array = NULL;
 
-        _cap = _size = SetBase::cnt(_defset);
-        _cnt = src->_cnt;
-
-        _array = new CmplVal[_cap];
-
-        CmplVal *d = _array;
-        CmplVal *s = src->_array;
-        for (unsigned long i = 0; i < _size; i++, d++, s++)
-            d->copyFrom(s, true, false);
-
-        _objType = src->_objType;
-        _allValid = src->_allValid;
-        _hasInvalid = src->_hasInvalid;
-        _validSet.copyFrom(src->_validSet, true, false);
+        copyFrom(src);
     }
 
     /**
@@ -178,6 +168,78 @@ namespace cmpl
 
 		delete _array;
 	}
+
+
+    /**
+     * fill this from another array
+     * @param src           source array
+     */
+    void CmplArray::copyFrom(CmplArray *src)
+    {
+        if (_array && _size) {
+            CmplVal *p = _array;
+            for (unsigned long i = 0; i < _size; i++, p++)
+                p->dispUnset();
+        }
+
+        _defset.copyFrom(src->_defset);
+        _size = src->_size;
+        _cnt = src->_cnt;
+
+        if (!_array || _cap < _size) {
+            if (_array)
+                delete _array;
+
+            _cap = _size;
+            _array = new CmplVal[_cap];
+        }
+
+        CmplVal *d = _array;
+        CmplVal *s = src->_array;
+        for (unsigned long i = 0; i < _size; i++, d++, s++)
+            d->copyFrom(s, true, false);
+
+        _objType = src->_objType;
+        _allValid = src->_allValid;
+        _hasInvalid = src->_hasInvalid;
+        _validSet.copyFrom(src->_validSet);
+    }
+
+    /**
+     * clear this array
+     * @param defset        new definition set / NULL: use TP_SET_EMPTY
+     */
+    void CmplArray::clear(CmplVal *defset)
+    {
+        if (_array && _size) {
+            CmplVal *p = _array;
+            for (unsigned long i = 0; i < _size; i++, p++)
+                p->dispUnset();
+        }
+
+        if (defset) {
+            _defset.copyFrom(defset);
+            _size = SetBase::cnt(_defset);
+        }
+        else {
+            _defset.set(TP_SET_EMPTY);
+            _size = 0;
+        }
+
+        if (!_array || _cap < _size) {
+            if (_array)
+                delete _array;
+
+            _cap = _size;
+            _array = new CmplVal[_cap];
+        }
+
+        _cnt = 0;
+        _objType = -1;
+        _allValid = (_size == 0);
+        _hasInvalid = !_allValid;
+        _validSet.set(TP_SET_EMPTY);
+    }
 
 
     /**

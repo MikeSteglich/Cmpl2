@@ -113,7 +113,7 @@ namespace cmpl
 
         if ((ac >= 1 && a1s && a1s->t == TP_NULL) || (ac == 2 && a2s && a2s->t == TP_NULL)) {
             // if one operand in a numerical operation is null, then the other operand determines the result
-            if (op <= ICS_OPER_SUB || (ac == 2 && op <= ICS_OPER_EXP)) {
+            if (op <= ICS_OPER_SUB || (ac == 2 && op <= ICS_OPER_POW)) {
                 if (a1s && a1s->t == TP_NULL && (ac == 1 || (a2s && a2s->t == TP_NULL))) {
                     res.set(TP_NULL);
                     return true;
@@ -273,7 +273,7 @@ namespace cmpl
                 return false;
             }
 
-            if ((op == ICS_OPER_DIV || op == ICS_OPER_EXP || op == ICS_OPER_OBJTO) && ba2) {
+            if ((op == ICS_OPER_DIV || op == ICS_OPER_POW || op == ICS_OPER_OBJTO) && ba2) {
                 ctx->valueError("second argument for operation must be a scalar value", a2->val(), se);
                 return false;
             }
@@ -523,7 +523,7 @@ namespace cmpl
             ctx->valueError("formula or optimization variable is not allowed as first argument of the operation", *a1, se);
             res->set(TP_INT, 0);
         }
-        else if (((a2->t == TP_FORMULA || a2->t == TP_OPT_VAR) && (op == ICS_OPER_EXP || op == ICS_OPER_IN || op == ICS_OPER_OF || op == ICS_OPER_IRR || op == ICS_OPER_OBJTO))) {
+        else if (((a2->t == TP_FORMULA || a2->t == TP_OPT_VAR) && (op == ICS_OPER_POW || op == ICS_OPER_IN || op == ICS_OPER_OF || op == ICS_OPER_IRR || op == ICS_OPER_OBJTO))) {
             ctx->valueError("formula or optimization variable is not allowed as second argument of the operation", *a2, se);
             res->set(TP_INT, 0);
         }
@@ -543,6 +543,10 @@ namespace cmpl
 
                 case ICS_OPER_DIV:
                     div(ctx, res, se, a1, a2);
+                    break;
+
+                case ICS_OPER_POW:
+                    pow(ctx, res, se, a1, a2);
                     break;
 
                 case ICS_OPER_AND:
@@ -843,6 +847,15 @@ namespace cmpl
                 res->copyFrom((a1->isNumNull(true) ? a2 : a1), true, false);
             }
             else {
+                // check for use of shortcut for linear combination, for better performance
+                if (a1->t == TP_FORMULA && a1->v.vp->refCnt() == 1) {
+                    ValFormulaLinearCombOp *lc = dynamic_cast<ValFormulaLinearCombOp *>(a1->valFormula());
+                    if (lc && lc->addTerm(ctx, se, a2, false)) {
+                        res->copyFrom(a1, true, false);
+                        return;
+                    }
+                }
+
                 unsigned p1 = (a1->t == TP_FORMULA ? (dynamic_cast<OperationBase *>(a1->valFormula()))->formulaOperPrio(ICS_OPER_ADD, true, a2) : 1);
                 unsigned p2 = (a2->t == TP_FORMULA ? (dynamic_cast<OperationBase *>(a2->valFormula()))->formulaOperPrio(ICS_OPER_ADD, false, a1) : 1);
 
@@ -981,6 +994,15 @@ namespace cmpl
                 neg(ctx, res, se, a2);
             }
             else {
+                // check for use of shortcut for linear combination, for better performance
+                if (a1->t == TP_FORMULA && a1->v.vp->refCnt() == 1) {
+                    ValFormulaLinearCombOp *lc = dynamic_cast<ValFormulaLinearCombOp *>(a1->valFormula());
+                    if (lc && lc->addTerm(ctx, se, a2, true)) {
+                        res->copyFrom(a1, true, false);
+                        return;
+                    }
+                }
+
                 unsigned p1 = (a1->t == TP_FORMULA ? (dynamic_cast<OperationBase *>(a1->valFormula()))->formulaOperPrio(ICS_OPER_SUB, true, a2) : 1);
                 unsigned p2 = (a2->t == TP_FORMULA ? (dynamic_cast<OperationBase *>(a2->valFormula()))->formulaOperPrio(ICS_OPER_SUB, false, a1) : 1);
 
@@ -1332,6 +1354,47 @@ namespace cmpl
             realType r1 = (a1->t == TP_REAL ? a1->v.r : (realType)(a1->v.i));
             realType r2 = (a2->t == TP_REAL ? a2->v.r : (realType)(a2->v.i));
             res->set(TP_REAL, r1 / r2);
+        }
+    }
+
+
+    /**
+     * call of pow() for two arbitrary values
+     * @param ctx			execution context
+     * @param res			store for result definition set
+     * @param se			syntax element id of operation
+     * @param a1			argument one (must not be an array)
+     * @param a2			argument two (must not be an array)
+     */
+    void OperationBase::pow(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a1, CmplVal *a2)
+    {
+        if (a1->isScalarNumber() && a2->isScalarNumber()) {
+            if (a2->isNumNull() || a1->isNumOne()) {
+                res->set(TP_INT, 1);
+            }
+            else if (a2->isNumOne()) {
+                res->copyFrom(a1);
+            }
+            else if (a1->t == TP_INFINITE || a2->t == TP_INFINITE) {
+                if (a2->t == TP_INFINITE && a2->v.i < 0)
+                    res->set(TP_INT, 0);
+                else
+                    res->copyFrom(a1);
+            }
+            else {
+                realType r1 = (a1->t == TP_REAL ? a1->v.r : (realType)(a1->v.i));
+                realType r2 = (a2->t == TP_REAL ? a2->v.r : (realType)(a2->v.i));
+                res->set(TP_REAL, ::pow(r1, r2));
+            }
+        }
+        else if ((a1->t == TP_OPT_VAR || a1->t == TP_FORMULA) && a2->isScalarNumber()) {
+            ctx->internalError("call of exp() with optimization variable not implemented");
+        }
+        else {
+            if (!a1->isScalarNumber())
+                ctx->valueError("argument one is not a number", *a1, se);
+            else
+                ctx->valueError("argument two is not a number", *a2, se);
         }
     }
 
@@ -2265,13 +2328,31 @@ namespace cmpl
             f = dynamic_cast<ValFormulaLinearCombOp *>(res->v.vp);
         }
 
+        if (!f->addTerm(ctx, se, a2, minus)) {
+            if (a2->t == TP_FORMULA)
+                ctx->valueError("formula value not suitable for operation", *a2, se);
+            else
+                ctx->valueError("argument is not a number", *a2, se);
+        }
+    }
+
+    /**
+     * try to add argument two as a term into this
+     * @param ctx			execution context
+     * @param se			syntax element id of operation
+     * @param a2			argument two
+     * @param minus			add or substract
+     * @return              true if success, false if argument two is not suitable
+     */
+    bool ValFormulaLinearCombOp::addTerm(ExecContext *ctx, unsigned se, CmplVal *a2, bool minus)
+    {
         if (a2->t == TP_OPT_VAR) {
             if (minus)
-                f->_terms.push_back(CmplVal(TP_INT, (intType)-1));
+                _terms.push_back(CmplVal(TP_INT, (intType)-1));
             else
-                f->_terms.push_back(CmplVal());
+                _terms.push_back(CmplVal());
 
-            f->_terms.push_back(CmplVal(a2));
+            _terms.push_back(CmplVal(a2));
         }
 
         else if (a2->t == TP_FORMULA) {
@@ -2279,14 +2360,14 @@ namespace cmpl
             if (lc) {
                 CmplVal *ct = lc->constTerm();
                 if (ct && *ct) {
-                    CmplVal n1(f->_constTerm);
+                    CmplVal n1(_constTerm);
                     if (!n1)
                         n1.set(TP_INT, 0);
 
                     if (minus)
-                        OperationBase::minusN(ctx, &(f->_constTerm), se, &n1, ct);
+                        OperationBase::minusN(ctx, &(_constTerm), se, &n1, ct);
                     else
-                        OperationBase::plusN(ctx, &(f->_constTerm), se, &n1, ct);
+                        OperationBase::plusN(ctx, &(_constTerm), se, &n1, ct);
                 }
 
                 for (unsigned i = 0; i < lc->termCnt(); i++) {
@@ -2294,24 +2375,24 @@ namespace cmpl
                     CmplVal *tv = lc->termVar(i);
 
                     if (minus)
-                        f->_terms.push_back(tf ? (tf->useInt() ? CmplVal(TP_INT, -tf->v.i) : CmplVal(TP_REAL, -tf->v.r)) : CmplVal(TP_INT, (intType)-1));
+                        _terms.push_back(tf ? (tf->useInt() ? CmplVal(TP_INT, -tf->v.i) : CmplVal(TP_REAL, -tf->v.r)) : CmplVal(TP_INT, (intType)-1));
                     else
-                        f->_terms.push_back(tf ? CmplVal(tf) : CmplVal());
+                        _terms.push_back(tf ? CmplVal(tf) : CmplVal());
 
-                    f->_terms.push_back(CmplVal(tv));
+                    _terms.push_back(CmplVal(tv));
                 }
 
                 if (_linear && !(lc->linearConstraint()))
-                    f->_linear = false;
+                    _linear = false;
             }
             else {
                 ValFormulaVarProdOp *vp = dynamic_cast<ValFormulaVarProdOp *>(a2->v.vp);
                 if (vp) {
-                    vp->pushToLinearCombTerms(f->_terms, minus);
-                    f->_linear = false;
+                    vp->pushToLinearCombTerms(_terms, minus);
+                    _linear = false;
                 }
                 else {
-                    ctx->valueError("formula value not suitable for operation", *a2, se);
+                    return false;
                 }
             }
         }
@@ -2319,7 +2400,7 @@ namespace cmpl
         else {
             CmplVal n2;
             if (!(a2->toNumber(n2, typeConversionExact, ctx->modp()))) {
-                ctx->valueError("argument is not a number", *a2, se);
+                return false;
             }
             else {
                 CmplVal n1(_constTerm);
@@ -2332,6 +2413,8 @@ namespace cmpl
                     OperationBase::plusN(ctx, &_constTerm, se, &n1, &n2);
             }
         }
+
+        return true;
     }
 
     /**

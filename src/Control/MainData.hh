@@ -90,22 +90,24 @@ namespace cmpl
 			set<string> *ioDataNoModules;			///< names of modules whose data classes not to serialize
 
 			unsigned *mapStrings;					///< array with string numbers in resulting global string store (only for reading of serialized data)
-			LocationInfo **mapLocs;					///< array with location pointers in resulting global location vector
+
+            map<const LocationInfo *, unsigned> mapLocsTo;	///< mapping of location pointers to location number for the serialized data
+            vector<LocationInfo *> mapLocsFrom;     ///< mapping of location numbers to location pointer from the serialized data
 
 			/**
 			 * constructor for serialization of data
 			 */
-			SerializeInfo(ModuleBase *m, ostream *o, int v, unsigned i, bool ln)			{ modp = m; ostr = o; istr = NULL; pos = NULL; version = v; instance = i; lineNums = ln; toFromServer = 0; ioCmdLineOpts = ioModules = ioExtensions = false; ioDataDefault = 0; ioDataClasses = ioDataNoClasses = ioDataModules = ioDataNoModules = NULL; mapStrings = NULL; mapLocs = NULL; }
+            SerializeInfo(ModuleBase *m, ostream *o, int v, unsigned i, bool ln)			{ modp = m; ostr = o; istr = NULL; pos = NULL; version = v; instance = i; lineNums = ln; toFromServer = 0; ioCmdLineOpts = ioModules = ioExtensions = false; ioDataDefault = 0; ioDataClasses = ioDataNoClasses = ioDataModules = ioDataNoModules = NULL; mapStrings = NULL; }
 
 			/**
 			 * constructor for reading of serialized data
 			 */
-			SerializeInfo(ModuleBase *m, istream *i, PositionInfo *p)						{ modp = m; ostr = NULL; istr = i; pos = p; version = -1; toFromServer = 0; ioCmdLineOpts = ioModules = ioExtensions = false; ioDataDefault = 0; ioDataClasses = ioDataNoClasses = ioDataModules = ioDataNoModules = NULL; mapStrings = NULL; mapLocs = NULL; }
+            SerializeInfo(ModuleBase *m, istream *i, PositionInfo *p)						{ modp = m; ostr = NULL; istr = i; pos = p; version = -1; toFromServer = 0; ioCmdLineOpts = ioModules = ioExtensions = false; ioDataDefault = 0; ioDataClasses = ioDataNoClasses = ioDataModules = ioDataNoModules = NULL; mapStrings = NULL; }
 
 			/**
 			 * destructor
 			 */
-			~SerializeInfo()																{ if (mapStrings) { delete mapStrings; } if (mapLocs) { delete mapLocs; } }
+            ~SerializeInfo()																{ if (mapStrings) { delete mapStrings; } }
 
 			/**
 			 * set serialization info for transfer data between client and server
@@ -202,7 +204,10 @@ namespace cmpl
 	protected:
 		StringStore *_globStrings;					///< global string store for all strings used here in MainData
 
-		vector<LocationInfo *> *_globLocs;			///< vector of all locations used here in MainData
+        //vector<LocationInfo *> *_globLocs;			///< vector of all locations used here in MainData (this vector owns the objects pointing to)
+                                                        //TODO: ist der vector wirklich owner der LocationInfo-Objekte? Wenn ja, fehlt Freigabe bei cleanUp()
+                                                        //          wer sollte sonst owner sein? (vielleicht SyntaxElement-Objekte, aber wer ist dann owner der uebergeordneten Locations?)
+        map<unsigned long, vector<LocationInfo *>> *_globLocs;  ///< all locations used here in MainData, organized by LocationInfo::key()
 
 		const char *_cmplFileBase;					///< base name for deriving default file names, it is the filename without extension of the first cmpl input file
 
@@ -251,9 +256,9 @@ namespace cmpl
 		inline StringStore *globStrings() const				{ return _globStrings; }
 
 		/**
-		 * get vector of all locations used here in MainData
+         * get all locations used here in MainData
 		 */
-		inline vector<LocationInfo *> *globLocs() const		{ return _globLocs; }
+        inline map<unsigned long, vector<LocationInfo *>> *globLocs() const		{ return _globLocs; }
 
 		/**
 		 * makes an aequivalent persistent location, i.e. a location that refers nothing outside of this
@@ -277,9 +282,10 @@ namespace cmpl
 
 		/**
 		 * search aequivalent location in _globLocs and return number of it or -1 if not found
-		 * @param loc		given location
+         * @param si		serialization info (si.mapLocsTo must be filled)
+         * @param loc		given location
 		 */
-        int searchLoc(const LocationInfo *loc) const;
+        int searchLoc(SerializeInfo &si, const LocationInfo *loc) const;
 
 
 		/************** executed modules **********/

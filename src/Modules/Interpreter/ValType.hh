@@ -56,8 +56,8 @@ namespace cmpl
 		CmplVal _defVal;					///< default value for the type
 		tp_e _baseType;						///< base type
 
-		virtual const char *typeName() const = 0;				///< name of the internal data type
-        virtual const char *funcName() const                { return typeName(); }
+        virtual const char *typeName() const = 0;		///< name of the internal data type
+        virtual const char *funcName() const override           { return typeName(); }
 
 	public:
         /**
@@ -97,7 +97,7 @@ namespace cmpl
 		 * @param modp			calling module
 		 * @param mode			mode for output: 0=direct; 1=part of other value
 		 */
-		virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const     { ostr << "<data type object>"; }
+        virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const override     { ostr << "<data type object>"; }
 
 		/**
 		 * calls the cmpl index operation and store result in execution context, if this value has a special handling for it
@@ -105,7 +105,7 @@ namespace cmpl
 		 * @param arg			pointer to argument value
 		 * @return				true if this has handled the operation
 		 */
-		virtual bool operIndex(ExecContext *ctx, StackValue *arg);
+        virtual bool operIndex(ExecContext *ctx, StackValue *arg) override;
 
 		/**
 		 * get a new data type object with applied parameters
@@ -174,16 +174,18 @@ namespace cmpl
          * @param arg			pointer to argument value
          * @return				true
          */
-        virtual bool operCall(ExecContext *ctx, StackValue *arg)                                    { convertTo(ctx, ctx->opResult(), arg); return true; }
+        virtual bool operCall(ExecContext *ctx, StackValue *arg) override                                   { convertTo(ctx, ctx->opResult(), arg); return true; }
 
         /**
          * calls the function for a simple source value (no array or list)
          * @param ctx			execution context
          * @param res			store for result value
          * @param src			source value
+         * @param aggr          called for aggregating elements of an array or a list
          * @param se			syntax element id of source value
+         * @return              only used if aggr: true if result is final
          */
-        virtual void operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, unsigned se)      { convertSimpleTo(ctx, res, src, se); }
+        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se) override     { convertSimpleTo(ctx, res, src, se); return false; }
 
 		//TODO
 	};
@@ -202,7 +204,7 @@ namespace cmpl
         bool _alsoEmpty;                    ///< accept also empty (invalid) values for this data type
         bool _alsoNull;                     ///< accept also null values for this data type; and if used together with array assertion accept definition set which is a subset of the given set
 
-        virtual const char *typeName() const				{ return "<user defined union type>"; }
+        virtual const char *typeName() const override		{ return "<user defined union type>"; }
 
 	public:
 		/**
@@ -220,7 +222,7 @@ namespace cmpl
 		 * @param modp			calling module
 		 * @param mode			mode for output: 0=direct; 1=part of other value
 		 */
-        virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const;
+        virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const override;
 
 		/**
 		 * get a new data type object with applied parameters
@@ -229,7 +231,7 @@ namespace cmpl
 		 * @param vtp			data type parameter as tuple value
 		 * @return				new data type object / NULL, if this has already the given parameters
 		 */
-		virtual ValType *newParam(ExecContext *ctx, StackValue *arg, CmplVal *vtp);
+        virtual ValType *newParam(ExecContext *ctx, StackValue *arg, CmplVal *vtp) override;
 
         /**
          * convert simple value (no array) to this data type
@@ -238,7 +240,7 @@ namespace cmpl
          * @param src			source value
          * @param se			syntax element id of source value
          */
-        virtual void convertSimpleTo(ExecContext *ctx, CmplVal& res, CmplVal& src, unsigned se);
+        virtual void convertSimpleTo(ExecContext *ctx, CmplVal& res, CmplVal& src, unsigned se) override;
 
         /**
          * try to convert simple value (no array) to this data type
@@ -248,14 +250,14 @@ namespace cmpl
          * @param tcl			conversion level
          * @return              true if conversion is successful
          */
-        virtual bool tryConvertSimpleTo(ExecContext *ctx, CmplVal& res, CmplVal& src, TypeConversionLevel tcl) const;
+        virtual bool tryConvertSimpleTo(ExecContext *ctx, CmplVal& res, CmplVal& src, TypeConversionLevel tcl) const override;
 
         /**
          * check whether value has this data type
          * @param v             value to check
          * @return              true if value has this data type
          */
-        virtual bool checkValue(CmplVal& v) const;
+        virtual bool checkValue(CmplVal& v) const override;
 
         /**
          * construct data type by or-concatenation of two arguments
@@ -283,7 +285,7 @@ namespace cmpl
 		 * @param modp			calling module
 		 * @param mode			mode for output: 0=direct; 1=part of other value
 		 */
-        virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const		{ if (mode == 0) { ostr << "<data type '" << typeName(); writeParam(ostr); ostr << "'>"; } else { ostr << typeName(); writeParam(ostr); } }
+        virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const override		{ if (mode == 0) { ostr << "<data type '" << typeName(); writeParam(ostr); ostr << "'>"; } else { ostr << typeName(); writeParam(ostr); } }
 
         /**
          * convert simple value (no array) to this data type
@@ -292,7 +294,7 @@ namespace cmpl
          * @param src			source value
          * @param se			syntax element id of source value
          */
-        virtual void convertSimpleTo(ExecContext *ctx, CmplVal& res, CmplVal& src, unsigned se);
+        virtual void convertSimpleTo(ExecContext *ctx, CmplVal& res, CmplVal& src, unsigned se) override;
     };
 
 
@@ -309,14 +311,14 @@ namespace cmpl
 		realType _uppBound;					///< upper bound (only if _hasUppBound == true)
 		
 	protected:
-		virtual const char *typeName() const				{ return "real"; }
-		virtual void writeParam(ostream& ostr) const		{ ostr << '['; if (_hasLowBound) { ostr << _lowBound; } ostr << ".."; if (_hasUppBound) { ostr << _uppBound; } ostr << ']'; }
+        virtual const char *typeName() const override           { return "real"; }
+        virtual void writeParam(ostream& ostr) const override	{ ostr << '['; if (_hasLowBound) { ostr << _lowBound; } ostr << ".."; if (_hasUppBound) { ostr << _uppBound; } ostr << ']'; }
 
 	public:
 		/**
 		 * constructor
 		 */
-		ValTypeReal()										{ _hasLowBound = true; _hasUppBound = false; _lowBound = _uppBound = 0.0; _defVal.set(TP_REAL, 0.0); _baseType = TP_REAL; }
+        ValTypeReal()                                           { _hasLowBound = true; _hasUppBound = false; _lowBound = _uppBound = 0.0; _defVal.set(TP_REAL, 0.0); _baseType = TP_REAL; }
 
 		/**
 		 * get a new data type object with applied parameters
@@ -325,14 +327,14 @@ namespace cmpl
 		 * @param vtp			data type parameter as tuple value
 		 * @return				new data type object / NULL, if this has already the given parameters
 		 */
-		virtual ValType *newParam(ExecContext *ctx, StackValue *arg, CmplVal *vtp);
+        virtual ValType *newParam(ExecContext *ctx, StackValue *arg, CmplVal *vtp) override;
 
         /**
          * set info about base type and bounds for this data type within an optimization variable
          * @param v				optimization variable
          * @return				false if this data type is not suitable for optimization variables
          */
-        virtual bool setForOptVar(OptVar *v);
+        virtual bool setForOptVar(OptVar *v) override;
 
         /**
          * try to convert simple value (no array) to this data type
@@ -342,14 +344,14 @@ namespace cmpl
          * @param tcl			conversion level
          * @return              true if conversion is successful
          */
-        virtual bool tryConvertSimpleTo(ExecContext *ctx, CmplVal& res, CmplVal& src, TypeConversionLevel tcl) const;
+        virtual bool tryConvertSimpleTo(ExecContext *ctx, CmplVal& res, CmplVal& src, TypeConversionLevel tcl) const override;
 
         /**
          * check whether value has this data type
          * @param v             value to check
          * @return              true if value has this data type
          */
-        virtual bool checkValue(CmplVal& v) const;
+        virtual bool checkValue(CmplVal& v) const override;
     };
 
 
@@ -366,14 +368,14 @@ namespace cmpl
 		intType _uppBound;					///< upper bound (only if _hasUppBound == true)
 		
 	protected:
-		virtual const char *typeName() const				{ return "int"; }
-		virtual void writeParam(ostream& ostr) const		{ ostr << '['; if (_hasLowBound) { ostr << _lowBound; } ostr << ".."; if (_hasUppBound) { ostr << _uppBound; } ostr << ']'; }
+        virtual const char *typeName() const override           { return "int"; }
+        virtual void writeParam(ostream& ostr) const override	{ ostr << '['; if (_hasLowBound) { ostr << _lowBound; } ostr << ".."; if (_hasUppBound) { ostr << _uppBound; } ostr << ']'; }
 
 	public:
 		/**
 		 * constructor
 		 */
-		ValTypeInt()										{ _hasLowBound = true; _hasUppBound = false; _lowBound = _uppBound = 0; _defVal.set(TP_INT, (intType)0); _baseType = TP_INT; }
+        ValTypeInt()                                            { _hasLowBound = true; _hasUppBound = false; _lowBound = _uppBound = 0; _defVal.set(TP_INT, (intType)0); _baseType = TP_INT; }
 
 		/**
 		 * get a new data type object with applied parameters
@@ -382,14 +384,14 @@ namespace cmpl
 		 * @param vtp			data type parameter as tuple value
 		 * @return				new data type object / NULL, if this has already the given parameters
 		 */
-		virtual ValType *newParam(ExecContext *ctx, StackValue *arg, CmplVal *vtp);
+        virtual ValType *newParam(ExecContext *ctx, StackValue *arg, CmplVal *vtp) override;
 
         /**
          * set info about base type and bounds for this data type within an optimization variable
          * @param v				optimization variable
          * @return				false if this data type is not suitable for optimization variables
          */
-        virtual bool setForOptVar(OptVar *v);
+        virtual bool setForOptVar(OptVar *v) override;
 
         /**
          * try to convert simple value (no array) to this data type
@@ -399,14 +401,14 @@ namespace cmpl
          * @param tcl			conversion level
          * @return              true if conversion is successful
          */
-        virtual bool tryConvertSimpleTo(ExecContext *ctx, CmplVal& res, CmplVal& src, TypeConversionLevel tcl) const;
+        virtual bool tryConvertSimpleTo(ExecContext *ctx, CmplVal& res, CmplVal& src, TypeConversionLevel tcl) const override;
 
         /**
          * check whether value has this data type
          * @param v             value to check
          * @return              true if value has this data type
          */
-        virtual bool checkValue(CmplVal& v) const;
+        virtual bool checkValue(CmplVal& v) const override;
     };
 	
 
@@ -416,14 +418,14 @@ namespace cmpl
 	class ValTypeBin : public ValTypeInt
 	{
 	protected:
-		virtual const char *typeName() const				{ return "bin"; }
-		virtual void writeParam(ostream& ostr) const		{ }
+        virtual const char *typeName() const override           { return "bin"; }
+        virtual void writeParam(ostream& ostr) const override	{ }
 
 	public:
 		/**
 		 * constructor
 		 */
-		ValTypeBin()										{ _hasLowBound = true; _hasUppBound = true; _lowBound = 0; _uppBound = 1; _defVal.set(TP_BIN, (intType)0); _baseType = TP_BIN; }
+        ValTypeBin()                                            { _hasLowBound = true; _hasUppBound = true; _lowBound = 0; _uppBound = 1; _defVal.set(TP_BIN, (intType)0); _baseType = TP_BIN; }
 
 		/**
 		 * get a new data type object with applied parameters
@@ -432,7 +434,7 @@ namespace cmpl
 		 * @param vtp			data type parameter as tuple value
 		 * @return				new data type object / NULL, if this has already the given parameters
 		 */
-		virtual ValType *newParam(ExecContext *ctx, StackValue *arg, CmplVal *vtp);
+        virtual ValType *newParam(ExecContext *ctx, StackValue *arg, CmplVal *vtp) override;
 
         /**
          * try to convert simple value (no array) to this data type
@@ -442,7 +444,7 @@ namespace cmpl
          * @param tcl			conversion level
          * @return              true if conversion is successful
          */
-        virtual bool tryConvertSimpleTo(ExecContext *ctx, CmplVal& res, CmplVal& src, TypeConversionLevel tcl) const;
+        virtual bool tryConvertSimpleTo(ExecContext *ctx, CmplVal& res, CmplVal& src, TypeConversionLevel tcl) const override;
     };
 
 
@@ -453,7 +455,7 @@ namespace cmpl
 	class ValTypeNumeric : public ValTypeReal
 	{
 	protected:
-		virtual const char *typeName() const				{ return "numeric"; }
+        virtual const char *typeName() const override		{ return "numeric"; }
 
 	public:
 		/**
@@ -468,7 +470,7 @@ namespace cmpl
          * @param src			source value
          * @param se			syntax element id of source value
          */
-        virtual void convertSimpleTo(ExecContext *ctx, CmplVal& res, CmplVal& src, unsigned se);
+        virtual void convertSimpleTo(ExecContext *ctx, CmplVal& res, CmplVal& src, unsigned se) override;
 
         /**
          * try to convert simple value (no array) to this data type
@@ -478,21 +480,21 @@ namespace cmpl
          * @param tcl			conversion level
          * @return              true if conversion is successful
          */
-        virtual bool tryConvertSimpleTo(ExecContext *ctx, CmplVal& res, CmplVal& src, TypeConversionLevel tcl) const;
+        virtual bool tryConvertSimpleTo(ExecContext *ctx, CmplVal& res, CmplVal& src, TypeConversionLevel tcl) const override;
 
         /**
          * set info about base type and bounds for this data type within an optimization variable
          * @param v				optimization variable
          * @return				false if this data type is not suitable for optimization variables
          */
-        virtual bool setForOptVar(OptVar *v)				{ return false; }
+        virtual bool setForOptVar(OptVar *v) override       { return false; }
 
         /**
          * check whether value has this data type
          * @param v             value to check
          * @return              true if value has this data type
          */
-        virtual bool checkValue(CmplVal& v) const;
+        virtual bool checkValue(CmplVal& v) const override;
     };
 
 
@@ -502,7 +504,7 @@ namespace cmpl
 	class ValTypeFormula : public ValTypeInternal
 	{
 	protected:
-		virtual const char *typeName() const				{ return "formula"; }
+        virtual const char *typeName() const override		{ return "formula"; }
 
 	public:
 		/**
@@ -515,7 +517,7 @@ namespace cmpl
          * @param v             value to check
          * @return              true if value has this data type
          */
-        virtual bool checkValue(CmplVal& v) const           { return (v.t == TP_FORMULA); }
+        virtual bool checkValue(CmplVal& v) const override  { return (v.t == TP_FORMULA); }
     };
 
 
@@ -525,7 +527,7 @@ namespace cmpl
 	class ValTypeString : public ValTypeInternal
 	{
 	protected:
-		virtual const char *typeName() const				{ return "string"; }
+        virtual const char *typeName() const override		{ return "string"; }
 
 	public:
 		/**
@@ -541,14 +543,14 @@ namespace cmpl
          * @param tcl			conversion level
          * @return              true if conversion is successful
          */
-        virtual bool tryConvertSimpleTo(ExecContext *ctx, CmplVal& res, CmplVal& src, TypeConversionLevel tcl) const;
+        virtual bool tryConvertSimpleTo(ExecContext *ctx, CmplVal& res, CmplVal& src, TypeConversionLevel tcl) const override;
 
         /**
          * check whether value has this data type
          * @param v             value to check
          * @return              true if value has this data type
          */
-        virtual bool checkValue(CmplVal& v) const           { return (v.isScalarString()); }
+        virtual bool checkValue(CmplVal& v) const override  { return (v.isScalarString()); }
     };
 
 
@@ -559,7 +561,7 @@ namespace cmpl
 	class ValTypeIndexpart : public ValTypeInternal
 	{
 	protected:
-		virtual const char *typeName() const				{ return "indexpart"; }
+        virtual const char *typeName() const override		{ return "indexpart"; }
 
 	public:
 		/**
@@ -574,7 +576,7 @@ namespace cmpl
          * @param src			source value
          * @param se			syntax element id of source value
          */
-        virtual void convertSimpleTo(ExecContext *ctx, CmplVal& res, CmplVal& src, unsigned se);
+        virtual void convertSimpleTo(ExecContext *ctx, CmplVal& res, CmplVal& src, unsigned se) override;
 
         /**
          * try to convert simple value (no array) to this data type
@@ -584,14 +586,14 @@ namespace cmpl
          * @param tcl			conversion level
          * @return              true if conversion is successful
          */
-        virtual bool tryConvertSimpleTo(ExecContext *ctx, CmplVal& res, CmplVal& src, TypeConversionLevel tcl) const;
+        virtual bool tryConvertSimpleTo(ExecContext *ctx, CmplVal& res, CmplVal& src, TypeConversionLevel tcl) const override;
 
         /**
          * check whether value has this data type
          * @param v             value to check
          * @return              true if value has this data type
          */
-        virtual bool checkValue(CmplVal& v) const           { return (v.isScalarIndex()); }
+        virtual bool checkValue(CmplVal& v) const override           { return (v.isScalarIndex()); }
     };
 
 
@@ -605,19 +607,19 @@ namespace cmpl
 		unsigned _fixRank;					///< fixed tuple rank (only if _hasFixRank == true)
 
 	protected:
-		virtual const char *typeName() const				{ return "tuple"; }
-		virtual void writeParam(ostream& ostr) const		{ if (_hasFixRank) { ostr << '[' << _fixRank << ']'; } }
+        virtual const char *typeName() const override			{ return "tuple"; }
+        virtual void writeParam(ostream& ostr) const override	{ if (_hasFixRank) { ostr << '[' << _fixRank << ']'; } }
 
 		/**
 		 * get a new object of this class
 		 */
-		virtual ValTypeTuple *newValTypeObject() const		{ return new ValTypeTuple(); }
+        virtual ValTypeTuple *newValTypeObject() const          { return new ValTypeTuple(); }
 
 	public:
 		/**
 		 * constructor
 		 */
-		ValTypeTuple()										{ _hasFixRank = false; _fixRank = 0; _defVal.set(TP_ITUPLE_NULL); _baseType = TP_TUPLE; }
+        ValTypeTuple()                                          { _hasFixRank = false; _fixRank = 0; _defVal.set(TP_ITUPLE_NULL); _baseType = TP_TUPLE; }
 
 		/**
 		 * get a new data type object with applied parameters
@@ -626,14 +628,14 @@ namespace cmpl
 		 * @param vtp			data type parameter as tuple value
 		 * @return				new data type object / NULL, if this has already the given parameters
 		 */
-		virtual ValType *newParam(ExecContext *ctx, StackValue *arg, CmplVal *vtp);
+        virtual ValType *newParam(ExecContext *ctx, StackValue *arg, CmplVal *vtp) override;
 
         /**
          * check whether value has this data type
          * @param v             value to check
          * @return              true if value has this data type
          */
-        virtual bool checkValue(CmplVal& v) const           { return (v.isTuple()); }
+        virtual bool checkValue(CmplVal& v) const override  { return (v.isTuple()); }
     };
 
 
@@ -643,7 +645,7 @@ namespace cmpl
 	class ValTypeSet : public ValTypeTuple
 	{
 	protected:
-		virtual const char *typeName() const				{ return "set"; }
+        virtual const char *typeName() const override		{ return "set"; }
 
 		/**
 		 * get a new object of this class
@@ -662,7 +664,7 @@ namespace cmpl
          * @param res			store for result value
          * @param src			source value
          */
-        virtual void convertTo(ExecContext *ctx, CmplVal& res, StackValue *src);
+        virtual void convertTo(ExecContext *ctx, CmplVal& res, StackValue *src) override;
 
         /**
          * calls the function for a simple source value (no array or list)
@@ -671,7 +673,7 @@ namespace cmpl
          * @param src			source value
          * @param se			syntax element id of source value
          */
-        virtual void operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, unsigned se);
+        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se) override;
 
         /**
          * try to convert simple value (no array) to this data type
@@ -681,14 +683,14 @@ namespace cmpl
          * @param tcl			conversion level
          * @return              true if conversion is successful
          */
-        virtual bool tryConvertSimpleTo(ExecContext *ctx, CmplVal& res, CmplVal& src, TypeConversionLevel tcl) const;
+        virtual bool tryConvertSimpleTo(ExecContext *ctx, CmplVal& res, CmplVal& src, TypeConversionLevel tcl) const override;
 
         /**
          * check whether value has this data type
          * @param v             value to check
          * @return              true if value has this data type
          */
-        virtual bool checkValue(CmplVal& v) const;
+        virtual bool checkValue(CmplVal& v) const override;
     };
 
 
@@ -698,7 +700,7 @@ namespace cmpl
 	class ValTypeInterval : public ValTypeInternal
 	{
 	protected:
-		virtual const char *typeName() const				{ return "interval"; }
+        virtual const char *typeName() const override		{ return "interval"; }
 
 	public:
 		/**
@@ -711,7 +713,7 @@ namespace cmpl
          * @param v             value to check
          * @return              true if value has this data type
          */
-        virtual bool checkValue(CmplVal& v) const           { return (v.isInterval()); }
+        virtual bool checkValue(CmplVal& v) const override  { return (v.isInterval()); }
     };
 
 
@@ -721,7 +723,7 @@ namespace cmpl
 	class ValTypeFunction : public ValTypeInternal
 	{
 	protected:
-		virtual const char *typeName() const				{ return "function"; }
+        virtual const char *typeName() const override		{ return "function"; }
 
 	public:
 		/**
@@ -734,7 +736,7 @@ namespace cmpl
          * @param v             value to check
          * @return              true if value has this data type
          */
-        virtual bool checkValue(CmplVal& v) const           { return (v.t == TP_FUNCTION); }
+        virtual bool checkValue(CmplVal& v) const override  { return (v.t == TP_FUNCTION); }
     };
 
 
@@ -744,7 +746,7 @@ namespace cmpl
 	class ValTypeContainer : public ValTypeInternal
 	{
 	protected:
-		virtual const char *typeName() const				{ return "container"; }
+        virtual const char *typeName() const override		{ return "container"; }
 
 	public:
 		/**
@@ -756,14 +758,14 @@ namespace cmpl
          * get default value for the type as copy if needed
          * @param res           return of result value
          */
-        virtual void defValCopy(CmplVal& res) const;
+        virtual void defValCopy(CmplVal& res) const override;
 
         /**
          * check whether value has this data type
          * @param v             value to check
          * @return              true if value has this data type
          */
-        virtual bool checkValue(CmplVal& v) const           { return (v.t == TP_CONTAINER); }
+        virtual bool checkValue(CmplVal& v) const override  { return (v.t == TP_CONTAINER); }
 
         /**
          * try to convert simple value (no array) to this data type
@@ -773,7 +775,7 @@ namespace cmpl
          * @param tcl			conversion level
          * @return              true if conversion is successful
          */
-        virtual bool tryConvertSimpleTo(ExecContext *ctx, CmplVal& res, CmplVal& src, TypeConversionLevel tcl) const;
+        virtual bool tryConvertSimpleTo(ExecContext *ctx, CmplVal& res, CmplVal& src, TypeConversionLevel tcl) const override;
     };
 
 
@@ -783,7 +785,7 @@ namespace cmpl
 	class ValTypeType : public ValTypeInternal
 	{
 	protected:
-		virtual const char *typeName() const				{ return "type"; }
+        virtual const char *typeName() const override		{ return "type"; }
 
 	public:
 		/**
@@ -799,14 +801,14 @@ namespace cmpl
          * @param tcl			conversion level
          * @return              true if conversion is successful
          */
-        virtual bool tryConvertSimpleTo(ExecContext *ctx, CmplVal& res, CmplVal& src, TypeConversionLevel tcl) const;
+        virtual bool tryConvertSimpleTo(ExecContext *ctx, CmplVal& res, CmplVal& src, TypeConversionLevel tcl) const override;
 
         /**
          * check whether value has this data type
          * @param v             value to check
          * @return              true if value has this data type
          */
-        virtual bool checkValue(CmplVal& v) const           { return (v.t == TP_DATA_TYPE || v.t == TP_DATA_BASETYPE); }
+        virtual bool checkValue(CmplVal& v) const override  { return (v.t == TP_DATA_TYPE || v.t == TP_DATA_BASETYPE); }
     };
 
 
@@ -816,7 +818,7 @@ namespace cmpl
 	class ValTypeObjecttype : public ValTypeInternal
 	{
 	protected:
-		virtual const char *typeName() const				{ return "objecttype"; }
+        virtual const char *typeName() const override		{ return "objecttype"; }
 
 	public:
 		/**
@@ -829,7 +831,7 @@ namespace cmpl
          * @param v             value to check
          * @return              true if value has this data type
          */
-        virtual bool checkValue(CmplVal& v) const           { return (v.t == TP_OBJECT_TYPE); }
+        virtual bool checkValue(CmplVal& v) const override  { return (v.t == TP_OBJECT_TYPE); }
     };
 	
 

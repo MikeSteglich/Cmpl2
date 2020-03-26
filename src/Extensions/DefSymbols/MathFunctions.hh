@@ -158,7 +158,7 @@ namespace cmpl
 		 * @param arg			pointer to argument value
 		 * @return				true
 		 */
-		virtual bool operCall(ExecContext *ctx, StackValue *arg);
+        virtual bool operCall(ExecContext *ctx, StackValue *arg) override;
 	};
 
     /**
@@ -167,8 +167,8 @@ namespace cmpl
 	class MathFunctionSqrt : public MathFunctionRealToReal
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "sqrt"; }				///< name of the math function
-		virtual realType exec(realType arg) const	{ return sqrt(arg); }			///< execute the math function to single argument
+        virtual const char *funcName() const override 		{ return "sqrt"; }				///< name of the math function
+        virtual realType exec(realType arg) const override	{ return sqrt(arg); }			///< execute the math function to single argument
 	};
 
     /**
@@ -177,8 +177,8 @@ namespace cmpl
 	class MathFunctionExp : public MathFunctionRealToReal
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "exp"; }				///< name of the math function
-		virtual realType exec(realType arg) const	{ return exp(arg); }			///< execute the math function to single argument
+        virtual const char *funcName() const override 		{ return "exp"; }				///< name of the math function
+        virtual realType exec(realType arg) const override	{ return exp(arg); }			///< execute the math function to single argument
 	};
 
     /**
@@ -187,8 +187,8 @@ namespace cmpl
 	class MathFunctionLn : public MathFunctionRealToReal
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "ln"; }				///< name of the math function
-		virtual realType exec(realType arg) const	{ return log(arg); }			///< execute the math function to single argument
+        virtual const char *funcName() const override 		{ return "ln"; }				///< name of the math function
+        virtual realType exec(realType arg) const override	{ return log(arg); }			///< execute the math function to single argument
 	};
 
     /**
@@ -197,8 +197,8 @@ namespace cmpl
 	class MathFunctionLg : public MathFunctionRealToReal
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "lg"; }				///< name of the math function
-		virtual realType exec(realType arg) const	{ return log10(arg); }			///< execute the math function to single argument
+        virtual const char *funcName() const override 		{ return "lg"; }				///< name of the math function
+        virtual realType exec(realType arg) const override	{ return log10(arg); }			///< execute the math function to single argument
 	};
 
     /**
@@ -207,8 +207,8 @@ namespace cmpl
 	class MathFunctionLd : public MathFunctionRealToReal
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "ld"; }				///< name of the math function
-		virtual realType exec(realType arg) const	{ return log(arg)/log(2);; }	///< execute the math function to single argument
+        virtual const char *funcName() const override 		{ return "ld"; }				///< name of the math function
+        virtual realType exec(realType arg) const override	{ return log(arg)/log(2);; }	///< execute the math function to single argument
 	};
 
     /**
@@ -217,8 +217,8 @@ namespace cmpl
 	class MathFunctionSin : public MathFunctionRealToReal
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "sin"; }				///< name of the math function
-		virtual realType exec(realType arg) const	{ return sin(arg); }			///< execute the math function to single argument
+        virtual const char *funcName() const override 		{ return "sin"; }				///< name of the math function
+        virtual realType exec(realType arg) const override	{ return sin(arg); }			///< execute the math function to single argument
 	};
 
     /**
@@ -227,8 +227,8 @@ namespace cmpl
 	class MathFunctionCos : public MathFunctionRealToReal
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "cos"; }				///< name of the math function
-		virtual realType exec(realType arg) const	{ return cos(arg); }			///< execute the math function to single argument
+        virtual const char *funcName() const override 		{ return "cos"; }				///< name of the math function
+        virtual realType exec(realType arg) const override	{ return cos(arg); }			///< execute the math function to single argument
 	};
 
     /**
@@ -237,8 +237,8 @@ namespace cmpl
 	class MathFunctionTan : public MathFunctionRealToReal
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "tan"; }				///< name of the math function
-		virtual realType exec(realType arg) const	{ return tan(arg); }			///< execute the math function to single argument
+        virtual const char *funcName() const override 		{ return "tan"; }				///< name of the math function
+        virtual realType exec(realType arg) const override	{ return tan(arg); }			///< execute the math function to single argument
 	};
 
     /**
@@ -247,8 +247,8 @@ namespace cmpl
 	class MathFunctionAsin : public MathFunctionRealToReal
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "asin"; }				///< name of the math function
-		virtual realType exec(realType arg) const	{ return asin(arg); }			///< execute the math function to single argument
+        virtual const char *funcName() const override 		{ return "asin"; }				///< name of the math function
+        virtual realType exec(realType arg) const override	{ return asin(arg); }			///< execute the math function to single argument
 	};
 
     /**
@@ -257,8 +257,8 @@ namespace cmpl
 	class MathFunctionAcos : public MathFunctionRealToReal
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "acos"; }				///< name of the math function
-		virtual realType exec(realType arg) const	{ return acos(arg); }			///< execute the math function to single argument
+        virtual const char *funcName() const override 		{ return "acos"; }				///< name of the math function
+        virtual realType exec(realType arg) const override	{ return acos(arg); }			///< execute the math function to single argument
 	};
 
     /**
@@ -267,8 +267,8 @@ namespace cmpl
 	class MathFunctionAtan : public MathFunctionRealToReal
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "atan"; }				///< name of the math function
-		virtual realType exec(realType arg) const	{ return atan(arg); }			///< execute the math function to single argument
+        virtual const char *funcName() const override 		{ return "atan"; }				///< name of the math function
+        virtual realType exec(realType arg) const override	{ return atan(arg); }			///< execute the math function to single argument
 	};
 
     /**
@@ -277,8 +277,8 @@ namespace cmpl
 	class MathFunctionSinh : public MathFunctionRealToReal
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "sinh"; }				///< name of the math function
-		virtual realType exec(realType arg) const	{ return sinh(arg); }			///< execute the math function to single argument
+        virtual const char *funcName() const override 		{ return "sinh"; }				///< name of the math function
+        virtual realType exec(realType arg) const override	{ return sinh(arg); }			///< execute the math function to single argument
 	};
 
     /**
@@ -287,8 +287,8 @@ namespace cmpl
 	class MathFunctionCosh : public MathFunctionRealToReal
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "cosh"; }				///< name of the math function
-		virtual realType exec(realType arg) const	{ return cosh(arg); }			///< execute the math function to single argument
+        virtual const char *funcName() const override 		{ return "cosh"; }				///< name of the math function
+        virtual realType exec(realType arg) const override	{ return cosh(arg); }			///< execute the math function to single argument
 	};
 
     /**
@@ -297,8 +297,8 @@ namespace cmpl
 	class MathFunctionTanh : public MathFunctionRealToReal
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "tanh"; }				///< name of the math function
-		virtual realType exec(realType arg) const	{ return tanh(arg); }			///< execute the math function to single argument
+        virtual const char *funcName() const override 		{ return "tanh"; }				///< name of the math function
+        virtual realType exec(realType arg) const override	{ return tanh(arg); }			///< execute the math function to single argument
 	};
 
     /**
@@ -307,11 +307,11 @@ namespace cmpl
 	class MathFunctionAbs : public MathFunctionRealToReal
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "abs"; }				///< name of the math function
-		virtual realType exec(realType arg) const	{ return fabs(arg); }			///< execute the math function to single argument
+        virtual const char *funcName() const override 		{ return "abs"; }				///< name of the math function
+        virtual realType exec(realType arg) const override	{ return fabs(arg); }			///< execute the math function to single argument
 
-		virtual bool hasExecInt() const				{ return true; }				///< function has separate execution for int argument
-        virtual intType execInt(intType arg) const	{ return abs(arg); }			///< execution for int argument (only used if hasExecInd() == true)
+        virtual bool hasExecInt() const override			{ return true; }				///< function has separate execution for int argument
+        virtual intType execInt(intType arg) const override	{ return abs(arg); }			///< execution for int argument (only used if hasExecInd() == true)
 	};
 
     /**
@@ -320,11 +320,11 @@ namespace cmpl
 	class MathFunctionCeil : public MathFunctionRealToReal
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "ceil"; }				///< name of the math function
-		virtual realType exec(realType arg) const	{ return ceil(arg); }			///< execute the math function to single argument
+        virtual const char *funcName() const override 		{ return "ceil"; }				///< name of the math function
+        virtual realType exec(realType arg) const override	{ return ceil(arg); }			///< execute the math function to single argument
 
-		virtual bool hasExecInt() const				{ return true; }				///< function has separate execution for int argument
-        virtual intType execInt(intType arg) const	{ return arg; }					///< execution for int argument (only used if hasExecInd() == true)
+        virtual bool hasExecInt() const override			{ return true; }				///< function has separate execution for int argument
+        virtual intType execInt(intType arg) const override	{ return arg; }					///< execution for int argument (only used if hasExecInd() == true)
 	};
 
     /**
@@ -333,11 +333,11 @@ namespace cmpl
 	class MathFunctionFloor : public MathFunctionRealToReal
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "floor"; }				///< name of the math function
-		virtual realType exec(realType arg) const	{ return floor(arg); }			///< execute the math function to single argument
+        virtual const char *funcName() const override 		{ return "floor"; }				///< name of the math function
+        virtual realType exec(realType arg) const override	{ return floor(arg); }			///< execute the math function to single argument
 
-		virtual bool hasExecInt() const				{ return true; }				///< function has separate execution for int argument
-        virtual intType execInt(intType arg) const	{ return arg; }					///< execution for int argument (only used if hasExecInd() == true)
+        virtual bool hasExecInt() const override			{ return true; }				///< function has separate execution for int argument
+        virtual intType execInt(intType arg) const override	{ return arg; }					///< execution for int argument (only used if hasExecInd() == true)
 	};
 
     /**
@@ -346,11 +346,11 @@ namespace cmpl
 	class MathFunctionRound : public MathFunctionRealToReal
 	{
 	protected:
-		virtual const char *funcName() const 		{ return "round"; }				///< name of the math function
-		virtual realType exec(realType arg) const	{ return round(arg); }			///< execute the math function to single argument
+        virtual const char *funcName() const override 		{ return "round"; }				///< name of the math function
+        virtual realType exec(realType arg) const override	{ return round(arg); }			///< execute the math function to single argument
 
-		virtual bool hasExecInt() const				{ return true; }				///< function has separate execution for int argument
-        virtual intType execInt(intType arg) const	{ return arg; }					///< execution for int argument (only used if hasExecInd() == true)
+        virtual bool hasExecInt() const override			{ return true; }				///< function has separate execution for int argument
+        virtual intType execInt(intType arg) const override	{ return arg; }					///< execution for int argument (only used if hasExecInd() == true)
 	};
 
 		

@@ -19,7 +19,6 @@ default			run cmpl with default modules
 	linearConstantRow
 	linearLogCon
 	precompile
-	transferToServer
 	compile -no-warn-insert-eos -compat-linenamepref -compat-cbsymbols -compat-cbh-assign
     interpret
     writeMps
@@ -47,7 +46,6 @@ cplex			run cmpl with cplex
 	linearConstantRow
 	linearLogCon
 	precompile
-	transferToServer
 	compile -no-warn-insert-eos -compat-linenamepref -compat-cbsymbols -compat-cbh-assign
     interpret
     writeMps	-mps-format-sos-native
@@ -69,7 +67,6 @@ gurobi			run cmpl with gurobi
 	linearConstantRow
 	linearLogCon
 	precompile
-	transferToServer
 	compile -no-warn-insert-eos -compat-linenamepref -compat-cbsymbols -compat-cbh-assign
     interpret
     writeMps -mps-format-sos-native
@@ -91,7 +88,6 @@ scip			run cmpl with scip
 	linearConstantRow
 	linearLogCon
 	precompile
-	transferToServer
 	compile -no-warn-insert-eos -compat-linenamepref -compat-cbsymbols -compat-cbh-assign
     interpret
     writeMps -mps-format-sos-native
@@ -114,7 +110,6 @@ script			run cmpl in script mode without writing and solving the instance
 	linearConstantRow
 	linearLogCon
 	precompile
-	transferToServer
 	compile -no-warn-insert-eos -compat-linenamepref -compat-cbsymbols -compat-cbh-assign
     	interpret
     
@@ -122,16 +117,16 @@ script			run cmpl in script mode without writing and solving the instance
 
 
 # start as client-only cmpl
-client			use only modules of a client cmpl and force transfer of execution to the server
-	compatSymbols
-	externDataFile
-	precompile
-	transferToServer -client-only
+#client			use only modules of a client cmpl and force transfer of execution to the server
+#	compatSymbols
+#	externDataFile
+#	precompile
+#	transferToServer -client-only
 
 # run server cmpl
-server			run server cmpl, only for use by the server control
-	transferFromClient
-	transferToClient
+#server			run server cmpl, only for use by the server control
+#	transferFromClient
+#	transferToClient
 
 
 # checks the syntax of cmpl input, but don't execute it

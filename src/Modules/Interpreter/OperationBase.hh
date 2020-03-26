@@ -201,6 +201,10 @@ namespace cmpl
     protected:
         virtual void divF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2, bool rev) { }           ///< division for formula
 
+        // pow
+    protected:
+        static void pow(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a1, CmplVal *a2);             ///< call function pow() for two arbitrary values
+
         // compare
         static void comp(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a1, CmplVal *a2, bool ge, bool le, bool neg, bool cont);	///< compare of two arbitrary values
         static void compN(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a1, CmplVal *a2, bool ge, bool le, bool neg);	///< compare of two values (a1 and a2 must not be or contain optimization variables)
@@ -419,6 +423,16 @@ namespace cmpl
         void plusMinusF(ExecContext *ctx, CmplVal *res, bool newres, unsigned se, CmplVal *a2, bool minus);
 
         /**
+         * try to add argument two as a term into this
+         * @param ctx			execution context
+         * @param se			syntax element id of operation
+         * @param a2			argument two
+         * @param minus			add or substract
+         * @return              true if success, false if argument two is not suitable
+         */
+        bool addTerm(ExecContext *ctx, unsigned se, CmplVal *a2, bool minus);
+
+        /**
          * multiplication with a number
          * @param ctx			execution context
          * @param res			store for result definition set
@@ -522,7 +536,7 @@ namespace cmpl
          * @param modp			calling module
          * @param mode			mode for output: 0=direct; 1=part of other value
          */
-        virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const     { ostr << "<f-cmp: (continue)>"; }
+        virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const override     { ostr << "<f-cmp: (continue)>"; }
 
 
         /************** operations **********/

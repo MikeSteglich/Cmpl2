@@ -362,7 +362,7 @@ namespace cmpl
 		 * @param modp			calling module
 		 * @param mode			mode for output: 0=direct; 1=part of other value
 		 */
-		virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const;
+        virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const override;
 
         /**
 		 * get whether incomplete set after the first pseudo function call
@@ -441,7 +441,7 @@ namespace cmpl
 		 * @param modp			calling module
 		 * @param mode			mode for output: 0=direct; 1=part of other value
 		 */
-		virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const;
+        virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const override;
 
 		/**
 		 * check whether the set is equal to another set
@@ -559,7 +559,7 @@ namespace cmpl
 		 * @param modp			calling module
 		 * @param mode			mode for output: 0=direct; 1=part of other value
 		 */
-		virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const;
+        virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const override;
 
         /**
          * get whether some subset of this has an user order
@@ -752,7 +752,7 @@ namespace cmpl
 		 * @param modp			calling module
 		 * @param mode			mode for output: 0=direct; 1=part of other value
 		 */
-		virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const;
+        virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const override;
 
         /**
          * get whether some subset of this has an user order
@@ -986,7 +986,7 @@ namespace cmpl
          * @param modp			calling module
          * @param mode			mode for output: 0=direct; 1=part of other value
          */
-        virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const;
+        virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const override;
 
         /**
          * check whether the specified order is equal to another set order

@@ -60,12 +60,12 @@ namespace cmpl
             bool onlyRem = false;               ///< data is only for comment and don't affect the optimization result (especially if it is already otherwise part of the model, e.g. by linearization)
             int errLvl = 0;                     ///< error level if output format cannot handle the data / 0: ignore
             string errMsg;                      ///< error message if output format cannot handle the data (only used if errLvl > 0)
-            int errLoc;                         ///< number of location info for error message (only used if errLvl > 0)
+            const LocationInfo *errLoc;         ///< location info for error message (only used if errLvl > 0)
 
             /**
              * constructor
              */
-            Info(int k, OutModelExtDataBase *p, unsigned r, bool on, int el, string em, int ec): typeKey(k), dp(p), rows(r), onlyRem(on), errLvl(el), errMsg(em), errLoc(ec)      { }
+            Info(int k, OutModelExtDataBase *p, unsigned r, bool on, int el, string em, const LocationInfo *ec): typeKey(k), dp(p), rows(r), onlyRem(on), errLvl(el), errMsg(em), errLoc(ec)      { }
         };
 
         /**

@@ -2,7 +2,7 @@
 // register modules for cmpl
 
 // test modules
-MODULE_CLASS_REG( MODULE_CONF_ORDER_PREP,          test,                 "example module without any functionality" )
+//MODULE_CLASS_REG( MODULE_CONF_ORDER_PREP,          test,                 "example module without any functionality" )
 
 // extension modules
 MODULE_CLASS_REG( MODULE_CONF_ORDER_PREP,          compatSymbols,        "defines compatibility symbols for cmpl" )
@@ -24,10 +24,10 @@ MODULE_CLASS_REG( MODULE_CONF_ORDER_PREP,		   linearSos,            "SOS and SOS
 MODULE_CLASS_REG( MODULE_CONF_ORDER_PREP,          serialize,            "writing or reading of cmpl data state" )
 
 // transfer between client and server
-MODULE_CLASS_REG( MODULE_CONF_ORDER_TO_SERVER,     transferToServer,     "transfer execution to cmpl server if demanded" )
-MODULE_CLASS_REG( MODULE_CONF_ORDER_TO_SERVER,     transferFromClient,   "take over execution from client (used only on cmpl server)" )
-MODULE_CLASS_REG( MODULE_CONF_ORDER_FROM_SERVER,   transferToClient,     "transfer execution back to client (used only on cmpl server)" )
-MODULE_CLASS_REG( MODULE_CONF_ORDER_FROM_SERVER,   transferFromServer,   "take over execution from cmpl server" )
+//MODULE_CLASS_REG( MODULE_CONF_ORDER_TO_SERVER,     transferToServer,     "transfer execution to cmpl server if demanded" )
+//MODULE_CLASS_REG( MODULE_CONF_ORDER_TO_SERVER,     transferFromClient,   "take over execution from client (used only on cmpl server)" )
+//MODULE_CLASS_REG( MODULE_CONF_ORDER_FROM_SERVER,   transferToClient,     "transfer execution back to client (used only on cmpl server)" )
+//MODULE_CLASS_REG( MODULE_CONF_ORDER_FROM_SERVER,   transferFromServer,   "take over execution from cmpl server" )
 
 // compiler
 MODULE_CLASS_REG( MODULE_CONF_ORDER_PREP,          precompile,           "precompile cmpl input files to handle cmpl header commands" )

@@ -144,7 +144,7 @@ namespace cmpl
     class ClassFunctionRunAt : public ValFunctionInternal
     {
     protected:
-        virtual const char *funcName() const 		{ return "class.runat"; }                   ///< name of the function
+        virtual const char *funcName() const override       { return "class.runat"; }                   ///< name of the function
 
     public:
         /**
@@ -153,7 +153,7 @@ namespace cmpl
          * @param arg			pointer to argument value
          * @return				true
          */
-        virtual bool operCall(ExecContext *ctx, StackValue *arg);
+        virtual bool operCall(ExecContext *ctx, StackValue *arg) override;
 
     protected:
         /**
@@ -172,7 +172,7 @@ namespace cmpl
     class ClassFunctionConstruct : public ClassFunctionRunAt
     {
     protected:
-        virtual const char *funcName() const 		{ return "class.construct"; }				///< name of the function
+        virtual const char *funcName() const override 		{ return "class.construct"; }				///< name of the function
 
     public:
         /**
@@ -181,7 +181,7 @@ namespace cmpl
          * @param arg			pointer to argument value
          * @return				true
          */
-        virtual bool operCall(ExecContext *ctx, StackValue *arg);
+        virtual bool operCall(ExecContext *ctx, StackValue *arg) override;
     };
 
 
@@ -191,16 +191,18 @@ namespace cmpl
     class ClassFunctionCopy : public ValFunctionInternal
     {
     protected:
-        virtual const char *funcName() const 		{ return "class.copy"; }                    ///< name of the function
+        virtual const char *funcName() const override 		{ return "class.copy"; }                    ///< name of the function
 
         /**
          * calls the function for a simple source value (no array or list)
          * @param ctx			execution context
          * @param res			store for result value
          * @param src			source value
+         * @param aggr          called for aggregating elements of an array or a list
          * @param se			syntax element id of source value
+         * @return              only used if aggr: true if result is final
          */
-        virtual void operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, unsigned se);
+        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se) override;
 
     public:
         /**
@@ -209,7 +211,7 @@ namespace cmpl
          * @param arg			pointer to argument value
          * @return				true
          */
-        virtual bool operCall(ExecContext *ctx, StackValue *arg)                                { callForArrayElements(ctx, ctx->opResult(), arg); return true; }
+        virtual bool operCall(ExecContext *ctx, StackValue *arg) override                              { callForArrayElements(ctx, ctx->opResult(), arg); return true; }
     };
 
 
@@ -219,16 +221,18 @@ namespace cmpl
     class ClassFunctionRefCopy : public ClassFunctionCopy
     {
     protected:
-        virtual const char *funcName() const 		{ return "class.refcopy"; }                    ///< name of the function
+        virtual const char *funcName() const override 		{ return "class.refcopy"; }                    ///< name of the function
 
         /**
          * calls the function for a simple source value (no array or list)
          * @param ctx			execution context
          * @param res			store for result value
          * @param src			source value
+         * @param aggr          called for aggregating elements of an array or a list
          * @param se			syntax element id of source value
+         * @return              only used if aggr: true if result is final
          */
-        virtual void operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, unsigned se);
+        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr,  unsigned se) override;
     };
 
 
@@ -238,16 +242,18 @@ namespace cmpl
     class ClassFunctionFinalize : public ValFunctionInternal
     {
     protected:
-        virtual const char *funcName() const 		{ return "class.finalize"; }                    ///< name of the function
+        virtual const char *funcName() const override 		{ return "class.finalize"; }                    ///< name of the function
 
         /**
          * calls the function for a simple source value (no array or list)
          * @param ctx			execution context
          * @param res			store for result value
          * @param src			source value
+         * @param aggr          called for aggregating elements of an array or a list
          * @param se			syntax element id of source value
+         * @return              only used if aggr: true if result is final
          */
-        virtual void operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, unsigned se);
+        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se) override;
 
     public:
         /**
@@ -256,7 +262,7 @@ namespace cmpl
          * @param arg			pointer to argument value
          * @return				true
          */
-        virtual bool operCall(ExecContext *ctx, StackValue *arg)                                { callForArrayElements(ctx, ctx->opResult(), arg); return true; }
+        virtual bool operCall(ExecContext *ctx, StackValue *arg) override                               { callForArrayElements(ctx, ctx->opResult(), arg); return true; }
     };
 
 }

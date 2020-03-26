@@ -271,8 +271,8 @@ namespace cmpl
 		/**
 		 * destructor
 		 */
-		inline ~SyntaxElement()																		{ if (_child) delete _child; if (_next) delete _next; }
-
+        //inline ~SyntaxElement()																	{ if (_child) delete _child; if (_next) delete _next; }
+        inline ~SyntaxElement()																		{ if (_child) delete _child; while (_next) { SyntaxElement *s = _next; _next = s->_next; s->_next = NULL; delete s; } }
 
 		/**
 		 * creates a new element
@@ -365,7 +365,7 @@ namespace cmpl
 		/**
 		 * count syntax elements including this
 		 */
-		int count() const																			{ return 1 + (_child ? _child->count() : 0) + (_next ? _next->count() : 0); }
+        int count() const																			{ int cnt = 0; const SyntaxElement *s = this; while (s) { cnt += 1 + (s->_child ? s->_child->count() : 0); s = s->_next; } return cnt; }
 
 		/**
 		 * location of the element

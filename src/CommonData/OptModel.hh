@@ -111,7 +111,7 @@ namespace cmpl
          * @param modp			calling module
          * @param mode			mode for output: 0=direct; 1=part of other value
          */
-        virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const     { ostr << "<var#" << _id; if (mode == 0) { ostr << ": " << (_hasDataType ? "" : "(def.type) "); _dataType.write(ostr, modp, 1); } ostr << '>'; }
+        virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const override     { ostr << "<var#" << _id; if (mode == 0) { ostr << ": " << (_hasDataType ? "" : "(def.type) "); _dataType.write(ostr, modp, 1); } ostr << '>'; }
 
         /**
          * set data type as fixed
@@ -201,7 +201,7 @@ namespace cmpl
          * @param modp			calling module
          * @param mode			mode for output: 0=direct; 1=part of other value
          */
-        virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const     { ostr << (_objective ? "<obj#" : "<con#") << _id << ": "; _formula.write(ostr, modp, 1); ostr << '>'; }
+        virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const override     { ostr << (_objective ? "<obj#" : "<con#") << _id << ": "; _formula.write(ostr, modp, 1); ostr << '>'; }
 
 
         /**

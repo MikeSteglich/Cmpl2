@@ -57,7 +57,7 @@ namespace cmpl
 
         CmplVal *s = arg->simpleValue();
         if (s) {
-            operCallSimple(ctx, res, *s, arg->syntaxElem());
+            operCallSimple(ctx, res, *s, false, arg->syntaxElem());
         }
         else if (arg->val().t == TP_ARRAY) {
             CmplArray *arr = new CmplArray(arg->val().array()->defset());
@@ -67,7 +67,7 @@ namespace cmpl
             s = arg->val().array()->at(0);
 
             for (unsigned long i = 0; i < arr->size(); i++, r++, s++)
-                operCallSimple(ctx, *r, *s, arg->syntaxElem());
+                operCallSimple(ctx, *r, *s, false, arg->syntaxElem());
 
             res.set(TP_ARRAY, arr);
         }
@@ -90,7 +90,7 @@ namespace cmpl
             if (arg->val().t == TP_LIST_TUPLE) {
                 CmplValAuto tp;
                 TupleUtil::constructFromList(ctx, tp, arg);
-                operCallSimple(ctx, res, tp, arg->syntaxElem());
+                operCallSimple(ctx, res, tp, false, arg->syntaxElem());
             }
             else {
                 while (arg->val().t == TP_REF_LIST)
@@ -100,7 +100,7 @@ namespace cmpl
                 for (unsigned long i = cnt; i > 0; i--) {
                     CmplVal *s = arg[-i].simpleValue();
                     if (s && !s->isList()) {
-                        operCallSimple(ctx, res, *s, arg->syntaxElem());
+                        operCallSimple(ctx, res, *s, false, arg->syntaxElem());
                     }
                     else if (arg[-i].val().t == TP_ARRAY || arg[-i].val().t == TP_REF_LIST) {
                         callForArrayAggrRek(ctx, res, arg - i);
@@ -111,19 +111,23 @@ namespace cmpl
         else {
             CmplVal *s = arg->simpleValue();
             if (s) {
-                operCallSimple(ctx, res, *s, arg->syntaxElem());
+                operCallSimple(ctx, res, *s, false, arg->syntaxElem());
             }
             else if (arg->val().t == TP_ARRAY) {
                 CmplArray *arr = arg->val().array();
                 if (arr->hasUserOrder()) {
                     CmplArrayIterator iter(*arr, false, true, false);
-                    for (iter.begin(); iter; iter++)
-                        operCallSimple(ctx, res, **iter, arg->syntaxElem());
+                    for (iter.begin(); iter; iter++) {
+                        if (operCallSimple(ctx, res, **iter, true, arg->syntaxElem()))
+                            break;
+                    }
                 }
                 else {
                     s = arr->at(0);
-                    for (unsigned long i = 0; i < arr->size(); i++, s++)
-                        operCallSimple(ctx, res, *s, arg->syntaxElem());
+                    for (unsigned long i = 0; i < arr->size(); i++, s++) {
+                        if (operCallSimple(ctx, res, *s, true, arg->syntaxElem()))
+                            break;
+                    }
                 }
             }
             else {
@@ -173,56 +177,141 @@ namespace cmpl
      * @param ctx			execution context
      * @param res			store for result value
      * @param src			source value
+     * @param aggr          called for aggregating elements of an array or a list
      * @param se			syntax element id of source value
+     * @return              only used if aggr: true if result is final
      */
-    void ValFunctionInternSum::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, unsigned se)
+    bool ValFunctionInternSum::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se)
     {
         if (!res || res.t == TP_NULL) {
             res.copyFrom(src, true, false);
         }
         else {
-            CmplVal a1;
+            CmplValAuto a1;
             a1.moveFrom(res, false);
             OperationBase::plus(ctx, &res, se, &a1, &src);
-            a1.dispose();
         }
+
+        return false;
     }
 
 
 	/****** ValFunctionInternMax ****/
 
-	/**
-	 * calls the cmpl function call operation and store result in execution context, if this value has a special handling for it
-	 * @param ctx			execution context
-	 * @param arg			pointer to argument value
-	 * @return				true
-	 */
-	bool ValFunctionInternMax::operCall(ExecContext *ctx, StackValue *arg)
-	{
-		ctx->valueError(ctx->modp()->ctrl()->printBuffer("function '%s' not implemented", funcName()), arg);
-		//TODO: real/int je nach Argumentwerten (auch aus Intervall) / null: wenn array leer
+    /**
+     * calls the function for a simple source value (no array or list)
+     * @param ctx			execution context
+     * @param res			store for result value
+     * @param src			source value
+     * @param aggr          called for aggregating elements of an array or a list
+     * @param se			syntax element id of source value
+     * @return              only used if aggr: true if result is final
+     */
+    bool ValFunctionInternMax::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se)
+    {
+        if (src && src.t != TP_NULL) {
+            CmplVal srcv;
+            if (src.isScalarNumber()) {
+                srcv.copyFrom(src);
+            }
+            else if (src.isInterval()) {
+                Interval::uppBoundVal(srcv, src);
+            }
+            else if (src.isSet() && SET_VAL_WO_ORDER(src).rank1()) {
+                CmplVal d;
+                SetUtil::rank1IntBounds(d, srcv, src);
+            }
 
-		ctx->opResult().set(TP_NULL);
-		return true;
-	}
+            if ((!res || res.t == TP_NULL) && srcv.isScalarNumber()) {
+                res.copyFrom(srcv, true, false);
+            }
+            else if (srcv.isScalarNumber() && res.isScalarNumber()) {
+                if (res.t == TP_INFINITE || srcv.t == TP_INFINITE) {
+                    if ((res.t == TP_INFINITE && res.v.i > 0) || (srcv.t == TP_INFINITE && srcv.v.i < 0)) {
+                        return (res.t == TP_INFINITE && res.v.i > 0);
+                    }
+                    else if ((srcv.t == TP_INFINITE && srcv.v.i > 0) || (res.t == TP_INFINITE && res.v.i < 0)) {
+                        res.copyFrom(srcv);
+                        return (srcv.t == TP_INFINITE && srcv.v.i > 0);
+                    }
+                }
+                else if (srcv.isScalarInt() && res.isScalarInt()) {
+                    if (srcv.v.i > res.v.i)
+                        res.copyFrom(srcv);
+                }
+                else {
+                    if (srcv.numAsReal() > res.numAsReal())
+                        res.copyFrom(srcv);
+                }
+
+            }
+            else {
+                ctx->valueError(ctx->modp()->ctrl()->printBuffer("invalid argument for function '%s'", funcName()), src, se);
+                return true;
+            }
+        }
+
+        return false;
+    }
 
 
 	/****** ValFunctionInternMin ****/
 
-	/**
-	 * calls the cmpl function call operation and store result in execution context, if this value has a special handling for it
-	 * @param ctx			execution context
-	 * @param arg			pointer to argument value
-	 * @return				true
-	 */
-	bool ValFunctionInternMin::operCall(ExecContext *ctx, StackValue *arg)
-	{
-		ctx->valueError(ctx->modp()->ctrl()->printBuffer("function '%s' not implemented", funcName()), arg);
-		//TODO: real/int je nach Argumentwerten (auch aus Intervall) / null: wenn array leer
-		
-		ctx->opResult().set(TP_NULL);
-		return true;
-	}
+    /**
+     * calls the function for a simple source value (no array or list)
+     * @param ctx			execution context
+     * @param res			store for result value
+     * @param src			source value
+     * @param aggr          called for aggregating elements of an array or a list
+     * @param se			syntax element id of source value
+     * @return              only used if aggr: true if result is final
+     */
+    bool ValFunctionInternMin::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se)
+    {
+        if (src && src.t != TP_NULL) {
+            CmplVal srcv;
+            if (src.isScalarNumber()) {
+                srcv.copyFrom(src);
+            }
+            else if (src.isInterval()) {
+                Interval::lowBoundVal(srcv, src);
+            }
+            else if (src.isSet() && SET_VAL_WO_ORDER(src).rank1()) {
+                CmplVal d;
+                SetUtil::rank1IntBounds(srcv, d, src);
+            }
+
+            if ((!res || res.t == TP_NULL) && srcv.isScalarNumber()) {
+                res.copyFrom(srcv, true, false);
+            }
+            else if (srcv.isScalarNumber() && res.isScalarNumber()) {
+                if (res.t == TP_INFINITE || srcv.t == TP_INFINITE) {
+                    if ((res.t == TP_INFINITE && res.v.i < 0) || (srcv.t == TP_INFINITE && srcv.v.i > 0)) {
+                        return (res.t == TP_INFINITE && res.v.i < 0);
+                    }
+                    else if ((srcv.t == TP_INFINITE && srcv.v.i < 0) || (res.t == TP_INFINITE && res.v.i > 0)) {
+                        res.copyFrom(srcv);
+                        return (srcv.t == TP_INFINITE && srcv.v.i < 0);
+                    }
+                }
+                else if (srcv.isScalarInt() && res.isScalarInt()) {
+                    if (srcv.v.i < res.v.i)
+                        res.copyFrom(srcv);
+                }
+                else {
+                    if (srcv.numAsReal() < res.numAsReal())
+                        res.copyFrom(srcv);
+                }
+
+            }
+            else {
+                ctx->valueError(ctx->modp()->ctrl()->printBuffer("invalid argument for function '%s'", funcName()), src, se);
+                return true;
+            }
+        }
+
+        return false;
+    }
 
 
     /****** ValFunctionInternAnd ****/
@@ -240,6 +329,7 @@ namespace cmpl
         //  - Ergebnis bin 0, wenn mindest ein Eingangsdatum bin 0 ist
         //  - Ergebnis formula, aus und-verknüpften Eingangsformeln, wenn alle nicht-formula Eingangswerte bin 1 sind
         //  - Ergebnis bin 1 sonst (insbesondere auch wenn gar kein Eingangsdatum)
+        // oder Funktionalitaet des &&-Operators aufrufen (bei Array mehrfach)?
 
         ctx->opResult().set(TP_BIN, false);
         return true;
@@ -261,6 +351,7 @@ namespace cmpl
         //  - Ergebnis bin 1, wenn mindest ein Eingangsdatum bin 1 ist
         //  - Ergebnis formula, aus oder-verknüpften Eingangsformeln, wenn alle nicht-formula Eingangswerte bin 0 sind
         //  - Ergebnis bin 0 sonst (insbesondere auch wenn gar kein Eingangsdatum)
+        // oder Funktionalitaet des ||-Operators aufrufen (bei Array mehrfach)?
 
         ctx->opResult().set(TP_BIN, false);
         return true;
@@ -427,50 +518,123 @@ namespace cmpl
 
 	/****** ValFunctionInternLen ****/
 
-	/**
-	 * calls the cmpl function call operation and store result in execution context, if this value has a special handling for it
-	 * @param ctx			execution context
-	 * @param arg			pointer to argument value
-	 * @return				true
-	 */
-	bool ValFunctionInternLen::operCall(ExecContext *ctx, StackValue *arg)
+    /**
+     * calls the function for a simple source value (no array or list)
+     * @param ctx			execution context
+     * @param res			store for result value
+     * @param src			source value
+     * @param aggr          called for aggregating elements of an array or a list
+     * @param se			syntax element id of source value
+     * @return              only used if aggr: true if result is final
+     */
+    bool ValFunctionInternLen::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se)
 	{
-		ctx->valueError(ctx->modp()->ctrl()->printBuffer("function '%s' not implemented", funcName()), arg);
-		//TODO: returns int / inf
-		
-		ctx->opResult().set(TP_NULL);
-		return true;
+        if (src.isSet()) {
+            if (src.isSetFin())
+                res.set(TP_INT, (intType)SetBase::cnt(src));
+            else
+                res.set(TP_INFINITE, 1);
+        }
+        else if (src.isTuple()) {
+            // tuple is handled as a set with one element
+            res.set(TP_INT, 1);
+        }
+        else if (src.isScalarString()) {
+            // function used for string len
+            if (src.t == TP_STRINGP)
+                res.set(TP_INT, (intType)(src.v.s->size()));
+            else
+                res.set(TP_INT, (intType)(strlen(src.stringAsCharP(ctx->modp()))));
+        }
+        else {
+            ctx->valueError(ctx->modp()->ctrl()->printBuffer("invalid argument for function '%s'", funcName()), src, se);
+            res.set(TP_INT, 0);
+            return true;
+        }
+
+        return false;
 	}
 
 
 	/****** ValFunctionInternRank ****/
-
-	/**
-	 * calls the cmpl function call operation and store result in execution context, if this value has a special handling for it
-	 * @param ctx			execution context
-	 * @param arg			pointer to argument value
-	 * @return				true
-	 */
-	bool ValFunctionInternRank::operCall(ExecContext *ctx, StackValue *arg)
-	{
-		ctx->valueError(ctx->modp()->ctrl()->printBuffer("function '%s' not implemented", funcName()), arg);
-		//TODO: returns int / interval
-		
-		ctx->opResult().set(TP_NULL);
-		return true;
-	}
-
-
-	/****** ValFunctionInternEcho ****/
 
     /**
      * calls the function for a simple source value (no array or list)
      * @param ctx			execution context
      * @param res			store for result value
      * @param src			source value
+     * @param aggr          called for aggregating elements of an array or a list
      * @param se			syntax element id of source value
+     * @return              only used if aggr: true if result is final
      */
-    void ValFunctionInternEcho::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, unsigned se)
+    bool ValFunctionInternRank::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se)
+    {
+        if (src.isSet()) {
+            unsigned l = SetBase::minRank(src);
+            unsigned u = SetBase::maxRank(src, UINT_MAX);
+
+            if (l == u) {
+                res.set(TP_INT, (intType)l);
+            }
+            else {
+                CmplVal lb(TP_INT, (intType)l);
+                CmplVal ub;
+                if (u == UINT_MAX)
+                    ub.set(TP_INFINITE, 1);
+                else
+                    ub.set(TP_INT, (intType)u);
+
+                Interval::construct(res, lb, ub);
+            }
+        }
+        else if (src.isTuple()) {
+            res.set(TP_INT, (intType)(Tuple::rank(src)));
+        }
+        else if (!src.isSpecial()) {
+            res.set(TP_INT, 1);
+        }
+        else {
+            ctx->valueError(ctx->modp()->ctrl()->printBuffer("invalid argument for function '%s'", funcName()), src, se);
+            res.set(TP_INT, 0);
+            return true;
+        }
+
+        return false;
+	}
+
+
+	/****** ValFunctionInternEcho ****/
+
+    /**
+     * calls the cmpl function call operation and store result in execution context, if this value has a special handling for it
+     * @param ctx			execution context
+     * @param arg			pointer to argument value
+     * @return				true
+     */
+    bool ValFunctionInternEcho::operCall(ExecContext *ctx, StackValue *arg)
+    {
+        LockGlobalGuard(true, LockGlobalGuard::coutLock);
+
+        if (ctx->modp()->echoDuration())
+            cout << ctx->modp()->durStartApp().count() / 1000. << ": ";
+
+        callForArrayAggr(ctx, ctx->opResult(), arg);
+        cout << endl;
+
+        ctx->opResult().set(TP_NULL);
+        return true;
+    }
+
+    /**
+     * calls the function for a simple source value (no array or list)
+     * @param ctx			execution context
+     * @param res			store for result value
+     * @param src			source value
+     * @param aggr          called for aggregating elements of an array or a list
+     * @param se			syntax element id of source value
+     * @return              only used if aggr: true if result is final
+     */
+    bool ValFunctionInternEcho::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se)
     {
         if (!res || res.t == TP_NULL)
             res.set(TP_INT, (intType)0);
@@ -482,6 +646,8 @@ namespace cmpl
             t.write(cout, ctx->modp());
         else
             src.write(cout, ctx->modp());
+
+        return false;
     }
 
 //	/**
@@ -635,8 +801,8 @@ namespace cmpl
 	 * @param arg			pointer to argument value
 	 * @return				true
 	 */
-	bool ValFunctionInternSrand::operCall(ExecContext *ctx, StackValue *arg)
-	{
+    bool ValFunctionInternSrand::operCall(ExecContext *ctx, StackValue *arg)
+    {
         CmplVal *v = arg->simpleValue();
         intType i;
         if (v && !v->isList()) {
@@ -654,8 +820,8 @@ namespace cmpl
         }
 
 
-		return true;
-	}
+        return true;
+    }
 
 
 	/****** ValFunctionInternRand ****/
@@ -666,8 +832,8 @@ namespace cmpl
 	 * @param arg			pointer to argument value
 	 * @return				true
 	 */
-	bool ValFunctionInternRand::operCall(ExecContext *ctx, StackValue *arg)
-	{
+    bool ValFunctionInternRand::operCall(ExecContext *ctx, StackValue *arg)
+    {
         CmplVal *v = arg->simpleValue();
         intType i,res;
         if (v && !v->isList()) {
@@ -689,8 +855,8 @@ namespace cmpl
             ctx->opResult().set(TP_NULL);
         }
 
-		return true;
-	}
+        return true;
+    }
 
 }
 

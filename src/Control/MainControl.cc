@@ -113,7 +113,7 @@ namespace cmpl
 
 		_instanceName = "cmpl";	// default for instance name
 
-		_printVersion = _printUsage = false;
+        _printVersion = _printUsage = _usageAll = false;
 	}
 
 
@@ -204,7 +204,7 @@ namespace cmpl
 
         if (!_isSilent) {
             version(cout);
-            CmplOutput(cout, "Interpreting Cmpl code");
+            CmplOutput(cout, "Compiling and interpreting Cmpl code");
         }
 
 		// iterating over modules
@@ -403,8 +403,9 @@ namespace cmpl
 				}
 
 				// print usage
-				if (opt->opt() == "h" && !opt->neg()) {
+                if ((opt->opt() == "h" || opt->opt() == "help") && !opt->neg()) {
 					_printUsage = true;
+                    _usageAll = (opt->size() == 0 && opt->opt() == "help");
 					opt->markUsed();
 
 					if (opt->size() == 0)
@@ -595,12 +596,13 @@ namespace cmpl
         parseControlOpts(_startOpts, false, false, false, true, false);
         ModulesConf modConf(this, &_modConfigFile, _modConfLoc);
 
-		if (_usageModule.empty()) {
+        if (_usageAll || _usageModule.empty()) {
 			s << endl << "usage info: cmpl [options ...]" << endl;
 		
 			s << endl << "options for cmpl main control:" << endl;
 			s << "  -h [<module>]                 print this usage info or the usage info for a module" << endl;
-			s << "  -v                            print version info" << endl;
+            s << "  -help                         print this usage info and the usage info for all modules" << endl;
+            s << "  -v                            print version info" << endl;
 			s << "  -p [<file>]                   output protocol messages of cmpl main control to <file> or stdout" << endl;
 			s << "  -e [<file>]                   output error messages to file or stderr" << endl;
 			s << "  -config <file>                use <file> for module configuration instead of " << modConfigFileDefault() << endl;
@@ -625,32 +627,47 @@ namespace cmpl
 			}
 			s << endl;
 
-
+            if (_usageAll) {
+                for (unsigned m = 0; m < modConf._modNames.size(); m++) {
+                    const char *mod = modConf._modNames[m];
+                    if (modConf._modules.count(mod) > 0)
+                        usageModule(s, modConf, mod);
+                }
+            }
 		}
-		else
-		{
+
+        else {
             const char *mod = modConf._modNames.store(_usageModule);
-            if (modConf._modules.count(mod) > 0) {
-                ModuleBase *modObj = modConf.constructModule(mod, mod);
-
-				s << endl << "module '" << mod << "'";
-                for (vector<ModulesConf::ModDescr>::iterator it = modConf._modDescr.begin(); it != modConf._modDescr.end(); it++) {
-					if (!it->modAggr && it->name == mod) {
-						s << ": " << it->descr;
-					}
-				}
-				s << endl;
-
-				s << "options:" << endl;
-				modObj->usage(s);
-				s << endl;
-				delete modObj;
-			}
-			else {
+            if (modConf._modules.count(mod) > 0)
+                usageModule(s, modConf, mod);
+            else
 				cerr << "no module '" << _usageModule << "'" << endl;
-			}
 		}
 	}
+
+    /**
+     * writes usage info for a given module to stream
+     * @param s             stream to write to
+     * @param modConf       object for construction and configuration of module
+     * @param mod           module name
+     */
+    void MainControl::usageModule(ostream& s, ModulesConf& modConf, const char *mod)
+    {
+        ModuleBase *modObj = modConf.constructModule(mod, mod);
+
+        s << endl << "module '" << mod << "'";
+        for (vector<ModulesConf::ModDescr>::iterator it = modConf._modDescr.begin(); it != modConf._modDescr.end(); it++) {
+            if (!it->modAggr && it->name == mod) {
+                s << ": " << it->descr;
+            }
+        }
+        s << endl;
+
+        s << "options:" << endl;
+        modObj->usage(s);
+        s << endl;
+        delete modObj;
+    }
 
 
 	/**

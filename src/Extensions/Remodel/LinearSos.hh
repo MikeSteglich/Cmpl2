@@ -162,7 +162,7 @@ namespace cmpl
             LinearSos *_ext;                 ///< extension object
             bool _sos2;                      ///< true: SOS2 / false: SOS
             bool _linearized;                ///< true: SOS is already linearized
-            int _fLoc;                       ///< number of location info of first element
+            const LocationInfo *_fLoc;       ///< location info of first element
 
             vector<unsigned> _rows;          ///< index numbers within LinearSos::_storeSos
 
@@ -491,9 +491,11 @@ namespace cmpl
          * @param ctx			execution context
          * @param res			store for result value
          * @param src			source value
+         * @param aggr          called for aggregating elements of an array or a list
          * @param se			syntax element id of source value
+         * @return              only used if aggr: true if result is final
          */
-        void operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, unsigned se) override     { addSOSVar(ctx, res, src, se); }
+        bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se) override     { addSOSVar(ctx, res, src, se); return false; }
     };
 
 
@@ -544,7 +546,7 @@ namespace cmpl
         SosContFunctionName(LinearSos *ext): SosContFunctionBase(ext)      { }
 
     protected:
-        virtual const char *funcName() const 		{ return "<sos>.name"; }                    ///< name of the function
+        virtual const char *funcName() const override 		{ return "<sos>.name"; }                    ///< name of the function
 
         /**
          * calls the cmpl function call operation and store result in execution context, if this value has a special handling for it
@@ -569,7 +571,7 @@ namespace cmpl
         SosContFunctionAdd(LinearSos *ext): SosContFunctionBase(ext)      { }
 
     protected:
-        virtual const char *funcName() const 		{ return "<sos>.add"; }                    ///< name of the function
+        virtual const char *funcName() const override 		{ return "<sos>.add"; }                    ///< name of the function
 
         /**
          * calls the cmpl function call operation and store result in execution context, if this value has a special handling for it
@@ -584,9 +586,11 @@ namespace cmpl
          * @param ctx			execution context
          * @param sosVal    	store for result value
          * @param src			source value
+         * @param aggr          called for aggregating elements of an array or a list
          * @param se			syntax element id of source value
+         * @return              only used if aggr: true if result is final
          */
-        void operCallSimple(ExecContext *ctx, CmplVal& sosVal, CmplVal& src, unsigned se) override;
+        bool operCallSimple(ExecContext *ctx, CmplVal& sosVal, CmplVal& src, bool aggr, unsigned se) override;
     };
 
     /**
@@ -603,7 +607,7 @@ namespace cmpl
         SosContFunctionAsVar(LinearSos *ext): SosContFunctionBase(ext)      { }
 
     protected:
-        virtual const char *funcName() const 		{ return "<sos>.as_var"; }                    ///< name of the function
+        virtual const char *funcName() const override 		{ return "<sos>.as_var"; }                    ///< name of the function
 
         /**
          * calls the cmpl function call operation and store result in execution context, if this value has a special handling for it
@@ -628,7 +632,7 @@ namespace cmpl
         SosContFunctionAsString(LinearSos *ext): SosContFunctionBase(ext)      { }
 
     protected:
-        virtual const char *funcName() const 		{ return "<sos>.as_string"; }                    ///< name of the function
+        virtual const char *funcName() const override 		{ return "<sos>.as_string"; }                    ///< name of the function
 
         /**
          * calls the cmpl function call operation and store result in execution context, if this value has a special handling for it

@@ -89,13 +89,16 @@ namespace cmpl
 	 */
 	void SyntaxElement::fillMap(map<unsigned, const SyntaxElement *> *mp)
 	{
-		(*mp)[_id] = this;
+        SyntaxElement *s = this;
+        while (s) {
+            (*mp)[s->_id] = s;
 
-		if (_child)
-			_child->fillMap(mp);
+            if (s->_child)
+                s->_child->fillMap(mp);
 
-		if (_next)
-			_next->fillMap(mp);
+
+            s = s->_next;
+        }
 	}
 
 	/**
@@ -153,34 +156,36 @@ namespace cmpl
 	 */
 	void SyntaxElement::writeXML(ostream& ostr, const char **etnm, const string &indent, int childIndentAdd)
 	{
-		ostr << indent << "<" << etnm[_type] << " id='" << _id << "'";
+        SyntaxElement *se = this;
+        while (se) {
+            ostr << indent << "<" << etnm[se->_type] << " id='" << se->_id << "'";
 
-		if (_text)
-			ostr << " text='" << _text << "'";
-		if (_alttext)
-			ostr << " alttext='" << _alttext << "'";
+            if (se->_text)
+                ostr << " text='" << se->_text << "'";
+            if (se->_alttext)
+                ostr << " alttext='" << se->_alttext << "'";
 
-		if (_symId != 0)
-			ostr << " symid='" << _symId << "'";
+            if (se->_symId != 0)
+                ostr << " symid='" << se->_symId << "'";
 
-		ostr << " loc='" << _loc << "'";
+            ostr << " loc='" << se->_loc << "'";
 
-		if (_child)
-		{
-			ostr << ">" << endl;
+            if (se->_child)
+            {
+                ostr << ">" << endl;
 
-			const string childIndent(indent.length() + childIndentAdd, ' ');
-			_child->writeXML(ostr, etnm, childIndent, childIndentAdd);
+                const string childIndent(indent.length() + childIndentAdd, ' ');
+                se->_child->writeXML(ostr, etnm, childIndent, childIndentAdd);
 
-			ostr << indent << "</" << etnm[_type] << ">" << endl;
-		}
-		else
-		{
-			ostr << " />" << endl;
-		}
+                ostr << indent << "</" << etnm[se->_type] << ">" << endl;
+            }
+            else
+            {
+                ostr << " />" << endl;
+            }
 
-		if (_next)
-			_next->writeXML(ostr, etnm, indent, childIndentAdd);
+            se = se->_next;
+        }
 	}
 
 
@@ -192,20 +197,22 @@ namespace cmpl
 	{
 		StringStore *gs = data->globStrings();
 
-		if (_text)
-			gs->store(_text);
+        SyntaxElement *se = this;
+        while (se) {
+            if (se->_text)
+                gs->store(se->_text);
 
-		if (_alttext)
-			gs->store(_alttext);
+            if (se->_alttext)
+                gs->store(se->_alttext);
 
-		_loc = data->persistentLocation(_loc);
-		data->searchInsertInGlobLocs(&_loc);
+            se->_loc = data->persistentLocation(se->_loc);
+            data->searchInsertInGlobLocs(&(se->_loc));
 
-		if (_child)
-			_child->insertStringsAndLocs(data);
+            if (se->_child)
+                se->_child->insertStringsAndLocs(data);
 
-		if (_next)
-			_next->insertStringsAndLocs(data);
+            se = se->_next;
+        }
 	}
 
 
@@ -224,7 +231,7 @@ namespace cmpl
 
 		int cre = cur++;
 		(*si.ostr) << prv << ';' << (child ? 1 : 0) << ';' << _id << ';' << (int)_type << ';' << (_text ? (int)(data->globStrings()->search(_text)) : -1) << ';' << (_alttext ? (int)(data->globStrings()->search(_alttext)) : -1) << ';'
-			<< _symId << ';' << data->searchLoc(&_loc) << endl;
+            << _symId << ';' << data->searchLoc(si, &_loc) << endl;
 
 		if (_child)
 			_child->serializeTo(si, data, cur, cre, true);
@@ -248,8 +255,7 @@ namespace cmpl
 		_cnt = (r ? r->count() : 0);
 		_symbols = s;
 
-		insertStringsAndLocs(data);
-
+        insertStringsAndLocs(data);
 	}
 
 	/**
@@ -350,7 +356,7 @@ namespace cmpl
 				(*si.ostr) << i << '#';
 
 			SymbolInfo *s = it->second;
-            (*si.ostr) << it->first << ';' << data->globStrings()->search(s->_name) << ';' << s->_defId << ';' << s->_globId << ';' << data->searchLoc(&(s->_loc)) << ';'
+            (*si.ostr) << it->first << ';' << data->globStrings()->search(s->_name) << ';' << s->_defId << ';' << s->_globId << ';' << data->searchLoc(si, &(s->_loc)) << ';'
                 << s->_predef << ';' << (s->_subSymbol ? 1 : 0) << ';'<< s->_predefCont << ';'  << (s->_readOnly ? 1 : 0) << ';' << s->_scopeType << ';' << s->_special << endl;
 		}
 
@@ -398,7 +404,7 @@ namespace cmpl
 			sy->_name = data->globStrings()->at(si.mapStrings[MainData::getNextLong(line, si.pos)]);
 			sy->_defId = MainData::getNextLong(line, si.pos);
 			sy->_globId = MainData::getNextLong(line, si.pos);
-			sy->_loc = *(si.mapLocs[MainData::getNextLong(line, si.pos)]);
+            sy->_loc = *(si.mapLocsFrom[MainData::getNextLong(line, si.pos)]);
 			sy->_predef = MainData::getNextLong(line, si.pos);
 			sy->_subSymbol = (MainData::getNextLong(line, si.pos) != 0);
             sy->_predefCont = MainData::getNextLong(line, si.pos);
@@ -446,7 +452,7 @@ namespace cmpl
 			se->_alttext = (tx >= 0 ? data->globStrings()->at(si.mapStrings[tx]) : NULL);
 
 			se->_symId = MainData::getNextLong(line, si.pos);
-			se->_loc = *(si.mapLocs[MainData::getNextLong(line, si.pos)]);
+            se->_loc = *(si.mapLocsFrom[MainData::getNextLong(line, si.pos)]);
 
 			ses[i] = se;
 

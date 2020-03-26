@@ -122,8 +122,8 @@ namespace cmpl
 
 		bool _printVersion;							///< print version and exit
 		bool _printUsage;							///< print usage and exit
-		string _usageModule;						///< print usage for this module / empty: for MainControl
-
+        bool _usageAll;                             ///< print usage for MainControl and all modules
+        string _usageModule;						///< print usage for this module / empty: for MainControl (only used if !_usageAll)
 
 
 		/****** main execution ****/
@@ -193,6 +193,14 @@ namespace cmpl
 		 * @param s             stream to write to
 		 */
 		virtual void usage(ostream& s);
+
+        /**
+         * writes usage info for a given module to stream
+         * @param s             stream to write to
+         * @param modConf       object for construction and configuration of module
+         * @param mod           module name
+         */
+        void usageModule(ostream& s, ModulesConf& modConf, const char *mod);
 
 		/**
 		 * writes version info to stream

@@ -144,6 +144,19 @@ namespace cmpl
 
 
         /**
+         * fill this from another array
+         * @param src           source array
+         */
+        void copyFrom(CmplArray *src);
+
+        /**
+         * clear this array
+         * @param defset        new definition set / NULL: use TP_SET_EMPTY
+         */
+        void clear(CmplVal *defset = NULL);
+
+
+        /**
          * get mutex for access lock
          */
         inline mutex& accMtx()                               { return _accMtx; }

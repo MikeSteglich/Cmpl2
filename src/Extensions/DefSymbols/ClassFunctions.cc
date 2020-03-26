@@ -267,9 +267,11 @@ namespace cmpl
      * @param ctx			execution context
      * @param res			store for result value
      * @param src			source value
+     * @param aggr          called for aggregating elements of an array or a list
      * @param se			syntax element id of source value
+     * @return              only used if aggr: true if result is final
      */
-    void ClassFunctionCopy::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, unsigned se)
+    bool ClassFunctionCopy::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se)
     {
         // work only for containers
         if (src.t == TP_CONTAINER) {
@@ -279,6 +281,8 @@ namespace cmpl
             ctx->valueError("ignore value because not a container", src, se, ERROR_LVL_WARN);
             res.copyFrom(src, true, false);
         }
+
+        return false;
     }
 
 
@@ -287,9 +291,11 @@ namespace cmpl
      * @param ctx			execution context
      * @param res			store for result value
      * @param src			source value
+     * @param aggr          called for aggregating elements of an array or a list
      * @param se			syntax element id of source value
+     * @return              only used if aggr: true if result is final
      */
-    void ClassFunctionRefCopy::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, unsigned se)
+    bool ClassFunctionRefCopy::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se)
     {
         // work only for containers
         if (src.t == TP_CONTAINER) {
@@ -299,6 +305,8 @@ namespace cmpl
             ctx->valueError("ignore value because not a container", src, se, ERROR_LVL_WARN);
             res.copyFrom(src, true, false);
         }
+
+        return false;
     }
 
 
@@ -307,9 +315,11 @@ namespace cmpl
      * @param ctx			execution context
      * @param res			store for result value
      * @param src			source value
+     * @param aggr          called for aggregating elements of an array or a list
      * @param se			syntax element id of source value
+     * @return              only used if aggr: true if result is final
      */
-    void ClassFunctionFinalize::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, unsigned se)
+    bool ClassFunctionFinalize::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se)
     {
         // work only for containers
         if (src.t == TP_CONTAINER) {
@@ -321,6 +331,7 @@ namespace cmpl
 
         // use source as result
         res.copyFrom(src, true, false);
+        return false;
     }
 }
 

@@ -47,7 +47,7 @@ using namespace std;
 #define POSITION_TYPE_WORDARR	3				// position in an array of words
 #define POSITION_TYPE_DESCR		4				// position is only a description
 
-#define POSITION_TYPE_FIXLOC	99				// position is a fixed location
+#define POSITION_TYPE_FIXLOC	5				// position is a fixed location
 
 
 namespace cmpl
@@ -458,11 +458,15 @@ namespace cmpl
 		 */
 		inline const LocationInfo* fixLoc() const	{ return _begin.fixLoc(); }
 
-		/*
+        /**
 		 * get name
 		 */
 		inline const char* name() const				{ return _begin.name(); }
 
+        /**
+         * get a key value that is equal for equal locations (but also different locations can have the same key value)
+         */
+        inline unsigned long key() const            { return (_begin.isFixLoc() ? _begin.fixLoc()->key() : ((_begin.type() & 0x0fUL) << 28) | (((_begin.name() ? _begin.name()[0] : 0) & 0x0fUL) << 24) | ((_begin.line() & 0xffUL) << 16) | ((_begin.col() & 0xffUL) << 8) | ((_end.line() & 0x0fUL) << 4) | ((_end.col() & 0x0fUL) << 0));  }
 
 		/**
 		 * get begin position of location

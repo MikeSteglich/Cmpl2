@@ -91,6 +91,8 @@ namespace cmpl
             _cbContextCap = 0;
         }
 
+        _curVarCondMap = (prv ? prv->_curVarCondMap : NULL);
+
         _assRhs = NULL;
         _assDataType = NULL;
 
@@ -125,6 +127,12 @@ namespace cmpl
             }
 
             delete _cbContext;
+        }
+
+        while (_curVarCondMap && _curVarCondMap->_execContext == this) {
+            VarCondMapping *vcm = _curVarCondMap;
+            _curVarCondMap = vcm->_parent;
+            delete vcm;
         }
 
         _opRes.dispose();
@@ -483,43 +491,50 @@ namespace cmpl
             // error, already reported
             sv->_val.set(TP_INT, 0);
         }
-        else if (cd->v.c.par & ICPAR_FETCH_INCDEC) {
-            intType i;
-            {
-                LockGuard<mutex> lckS(needLockSym, symval->accMtx());
-
-                if (symval->readOnly() || !(symval->hasValueStore())) {
-                    CmplVal v;
-                    v.setP(TP_SYMBOL_VAL, symval);
-                    valueError((symval->readOnly() ? "constant symbol used for increment/decrement" : "uninitialized symbol used for increment/decrement"), v, cd->se);
-                    i = 0;
-                }
-                else {
-                    needLockVS = (_needLock && (fetchId < _localSymbolCreateTo || symval->valueStore()->values()->refCnt() > 1));
-                    LockGuard<mutex> lckV(needLockVS, symval->valueStore()->accMtx());
-
-                    i = symval->valueStore()->fetchInc(this, (bool)(cd[2].v.n.n1), (cd[2].v.n.n2 ? 1 : -1), cd->se);
-                }
-            }
-
-            sv->_val.set(TP_INT, i);
-            sv->_syntaxElem = cd[2].se;
-        }
         else {
-            LockGuard<mutex> lckS(needLockSym, symval->accMtx());
+            //TODO: Pruefung auf Mapping
+            VarCondMapVS *map = (_curVarCondMap ? checkGetMappedVS(symval, false): NULL);
 
-            needLockVS = (_needLock && symval->hasValueStore() && !symval->valueStore()->isConst());
-            LockGuard<mutex> lckV(needLockVS, symval->valueStore()->accMtx());
+            if (cd->v.c.par & ICPAR_FETCH_INCDEC) {
+                intType i;
+                {
+                    LockGuard<mutex> lckS(needLockSym, symval->accMtx());
 
-			// if simple value then fetch value directly to stack, else fetch as array
-			CmplVal *v = symval->simpleValue();
-			if (v)
-				sv->_val.copyFrom(*v, true, false);
-            else if (symval->valueStore())
-                sv->_val.set(TP_ARRAY, symval->valueStore()->values(), true);
-            else
-                sv->_val.set(TP_NULL);		// value for symbol is not set
-		}
+                    if (symval->readOnly() || !(symval->hasValueStore()) || map) {
+                        CmplVal v;
+                        v.setP(TP_SYMBOL_VAL, symval);
+                        valueError((symval->readOnly() ? "constant symbol used for increment/decrement" : (!(symval->hasValueStore()) ? "uninitialized symbol used for increment/decrement" : "inconsistent mix of assignments within a codeblock part with conditions over optimization variables")), v, cd->se);
+                        i = 0;
+                    }
+                    else {
+                        needLockVS = (_needLock && (fetchId < _localSymbolCreateTo || symval->valueStore()->values()->refCnt() > 1));
+                        LockGuard<mutex> lckV(needLockVS, symval->valueStore()->accMtx());
+
+
+                        i = symval->valueStore()->fetchInc(this, (bool)(cd[2].v.n.n1), (cd[2].v.n.n2 ? 1 : -1), cd->se);
+                    }
+                }
+
+                sv->_val.set(TP_INT, i);
+                sv->_syntaxElem = cd[2].se;
+            }
+            else {
+                LockGuard<mutex> lckS(needLockSym, symval->accMtx());
+                ValueStore *vs = (map ? map->getDstVS() : (symval->hasValueStore() ? symval->valueStore() : NULL));
+
+                needLockVS = (_needLock && vs && !vs->isConst());
+                LockGuard<mutex> lckV(needLockVS, (vs ? &(vs->accMtx()) : NULL));
+
+                // if simple value then fetch value directly to stack, else fetch as array
+                CmplVal *v = (vs ? vs->simpleValue() : symval->simpleValue());
+                if (v)
+                    sv->_val.copyFrom(*v, true, false);
+                else if (vs)
+                    sv->_val.set(TP_ARRAY, vs->values(), true);
+                else
+                    sv->_val.set(TP_NULL);		// value for symbol is not set
+            }
+        }
 
         if (valCont) {
             sv->_addVal.moveFrom(valCont);
@@ -696,6 +711,8 @@ namespace cmpl
                         valueError("internal error: lvalue expected on stack, but not given", _assRhs, ERROR_LVL_FATAL);
                     if (_assRhs->hasIndex())
                         valueError("right hand side of ref assignment cannot have indexation", _assRhs);
+                    if (_curVarCondMap)
+                        valueError("ref assignment not possible within codeblock with condition over optimization variables", _assRhs);
                     _assObjType = -1;
                     _assDataType = NULL;
                     break;
@@ -738,12 +755,22 @@ namespace cmpl
                         bool needLockSym = (_needLock && (sym->global() || (!sym->global() && (sym - _localSymbols) < _localSymbolCreateTo)));
                         LockGuard<mutex> lckS(needLockSym, sym->accMtx());
 
+                        VarCondMapVS *map = NULL;
+                        if (_curVarCondMap) {
+                            map = checkGetMappedVS(sym, (cd->v.c.minor != ICS_ASSIGN_ASSERT && !assignConst /*TODO: && !nocond-Modificator*/));
+                            if (map && (assignConst /*TODO: || nocond-Modificator*/)) {
+                                valueError("inconsistent mix of assignments within a codeblock part with conditions over optimization variables", svLhs);
+                                map = NULL;
+                            }
+                        }
+                        //TODO: Verwendung map in den folgenden Funktionsaufrufen bei der Ausfuehrung der Zuweisungsfunktionalitaet
+
                         if (cd->v.c.minor == ICS_ASSIGN_EXTERN)
                             svLhs->importExtern(this, assignConst, cd->se);
                         else if (cd->v.c.minor == ICS_ASSIGN_ASSERT)
                             svLhs->checkAssert(this, assignConst, _assDataType, _assObjType, cd->se);
                         else
-                            svLhs->doAssign(this, op, (cd->v.c.minor == ICS_ASSIGN_REF), assignConst, assignInitial, assignOrdered, setResName);
+                            svLhs->doAssign(this, op, (cd->v.c.minor == ICS_ASSIGN_REF), assignConst, assignInitial, assignOrdered, setResName, map);
                     }
                 }
                 else {  // svLhs->val().t == TP_SPECIALSYM
@@ -1021,7 +1048,7 @@ namespace cmpl
                 }
 
                 cbLvl++;
-                cb = CodeBlockContext::newContext(this, cd);
+                cb = CodeBlockContext::newContextStart(this, cd);
                 pushCBContext(cb, cd->se);
                 break;
 
@@ -1163,33 +1190,37 @@ namespace cmpl
                             cbhRes.set(TP_BIN, false);
                             delete cbhIter;
                         }
-                        else if (cbHeader) {
-                            cbhRes.setP(TP_CBHEAD_ITER, cbhIter);
-                        }
-                        else if (cb) {
-                            cb->storeHeader(cbhIter, cd);
+                        else if (cb && !cb->hasVarCondition()) {
+                            if (cbHeader)
+                                cbhRes.setP(TP_CBHEAD_ITER, cbhIter);
+                            else
+                                cb->storeHeader(cbhIter, cd);
                         }
                         else {
                             delete cbhIter;
-                            internalError("missing codeblock context for iteration");
+                            if (!cb)
+                                internalError("missing codeblock context for iteration");
+                            else
+                                valueError("mix of iterations and conditions over optimization variables is not allowed in same codeblock", sv);
                         }
                     }
-                    else if (b || v->t == TP_FORMULA) {
+                    else if (v->t == TP_FORMULA) {
                         if (cbHeader) {
-                            if (v->t == TP_FORMULA)
-                                cbhRes.copyFrom(v);
-                            else
-                                cbhRes.set(TP_BIN, true);
+                            cbhRes.copyFrom(v);
                         }
                         else {
-                            if (cb && (cd->v.c.par & ICPAR_CBHP_HCNT) == 0)
-                                cb->storeHeader(NULL, cd);
+                            if (!cb)
+                                cb = setCBContext(cd);
 
-                            if (v->t == TP_FORMULA) {
-                                //TODO: variablenhaltige Bedingung
-                                //TODO: Codeblockcontext wird benoetigt, dort effektive Bedingung pro Codeblockpart verwalten
-                                internalError("not implemented");
-                            }
+                            cb->addCurVarCondition(v, sv->syntaxElem());
+                        }
+                    }
+                    else if (b) {
+                        if (cbHeader) {
+                            cbhRes.set(TP_BIN, true);
+                        }
+                        else if (cb && (cd->v.c.par & ICPAR_CBHP_HCNT) == 0) {
+                            cb->storeHeader(NULL, cd);
                         }
                     }
                     else {
@@ -1568,6 +1599,25 @@ namespace cmpl
     }
 
     /**
+     * replace empty top element on code block context stack by a new code block context object
+     * @param cd        intermediary code command (must be INTCODE_CB_HEADER/ICS_CBHEADER_END)
+     * @return          code block context object
+     */
+    CodeBlockContext *ExecContext::setCBContext(IntCode::IcElem *cd)
+    {
+        if (!_cbContextTop)
+            internalError("missing code block context object stack element");
+
+        CodeBlockContext *cb = _cbContext[_cbContextTop - 1];
+        if (!cb) {
+            cb = CodeBlockContext::newContextAdd(this, cd);
+            _cbContext[_cbContextTop - 1] = cb;
+        }
+
+        return cb;
+    }
+
+    /**
      * get next upper existing code block context object on the code block stack
      * @param lvl       start position in the code block stack
      * @return          code block context object or NULL if no such context object exists
@@ -1677,6 +1727,100 @@ namespace cmpl
         }
     }
 
+
+    /**
+     * start mapping for codeblock part with conditions over optimization variables
+     * @param cb        codeblock context
+     * @param cbp       number of current codeblock part
+     * @param varCond   condition formula ver optimization variables (must be TP_FORMULA or TP_BIN with value true)
+     * @param lsf       number of first symbol within array _localSymbols that doesn't need mapping
+     * @param init      init new mapping object (if false then there must be a current mapping object matching the codeblock)
+     */
+    void ExecContext::varCondMapStartPart(CodeBlockContext *cb, int cbp, CmplVal& varCond, unsigned lsf, bool init)
+    {
+        VarCondMapping *vcm;
+        if (init) {
+            vcm = new VarCondMapping(this, cb, lsf);
+            _curVarCondMap = vcm;
+        }
+        else {
+            vcm = VarCondMapping::check(this, cb, -1);
+        }
+
+        vcm->startPart(cbp, varCond);
+    }
+
+    /**
+     * end mapping for codeblock part with conditions over optimization variables
+     * @param cb        codeblock context (must match the current mapping object)
+     * @param cbp       number of current codeblock part (must match the current mapping object)
+     */
+    void ExecContext::varCondMapEndPart(CodeBlockContext *cb, int cbp)
+    {
+        VarCondMapping *vcm = VarCondMapping::check(this, cb, cbp);
+        vcm->endPart();
+    }
+
+    /**
+     * set codeblock result using mapping for codeblock part with conditions over optimization variables
+     * @param cb        codeblock context (must match the current mapping object)
+     * @param cbp       number of current codeblock part (must match the current mapping object)
+     * @param val       codeblock result value of current codeblock part
+     * @param ovr       override all existing results
+     * @param se		syntax element id of source value
+     */
+    void ExecContext::varCondMapSetCBResult(CodeBlockContext *cb, int cbp, CmplVal& val, bool ovr, unsigned se)
+    {
+        VarCondMapping *vcm = VarCondMapping::check(this, cb, cbp);
+        vcm->setMappedCBResult(val, ovr, se);
+    }
+
+    /**
+     * merge mapped values for conditions over optimization variables at the end of codeblock, and remove mapping object
+     * @param cb        codeblock context (must match the current mapping object)
+     * @param res       return of merged codeblock result
+     */
+    void ExecContext::varCondMapMerge(CodeBlockContext *cb, CmplVal& res)
+    {
+        VarCondMapping *vcm = VarCondMapping::check(this, cb, -1);
+        vcm->mergeAll(res);
+
+        _curVarCondMap = vcm->_parent;
+        delete vcm;
+
+        //TODO anderswo: varCondMapMerge() muss bei jeder regulaeren Beendigung des Codeblocks gerufen werden; abraeumen des MappingInfos auch bei jeder irregulaeren Beendigung
+        //                  insbesondere auch Beendigung ueber Codeblock-Control-Kommandos beruecksichtigen
+    }
+
+
+    /**
+     * check if mapping is needed and given, and get the mapped value store
+     * @param sym       mapping for the value store of this symbol
+     * @param nw        if mapping is needed but doesn't exist, then create a new mapped value store
+     * @return          mapping info for the value store / NULL: no mapping
+     */
+    VarCondMapVS *ExecContext::checkGetMappedVS(SymbolValue *sym, bool nw)
+    {
+        if (!_curVarCondMap)
+            return NULL;
+
+        int locSymNo = (!sym->global() ? (sym - _localSymbols) : -1);
+        if (locSymNo >= 0 && (unsigned)locSymNo >= _curVarCondMap->_unmappedLSFrom)
+            return NULL;
+
+        bool needLockSym = (_needLock && (locSymNo < 0 || (unsigned)locSymNo < _localSymbolCreateTo));
+        LockGuard<mutex> lckS(needLockSym, sym->accMtx());
+
+        ValueStore *vs = sym->valueStore();
+        if (!vs) {
+            if (nw && sym->isUninitialized())
+                vs = sym->valueStore(true);
+            else
+                return NULL;
+        }
+
+        return _curVarCondMap->getMappedVSRec(0, this, locSymNo, vs, nw);
+    }
 
 
     /****** assignment ****/
@@ -1914,5 +2058,492 @@ namespace cmpl
         }
     }
 
+
+
+    /*********** VarCondMapping **********/
+
+    /**
+     * constructor
+     * @param ctx       execution context
+     * @param cb        codeblock context of the codeblock this mapping is created for
+     * @param lsf       number of first symbol within the execution context that doesn't need mapping
+     */
+    VarCondMapping::VarCondMapping(ExecContext *ctx, CodeBlockContext *cb, unsigned lsf)
+    {
+        _execContext = ctx;
+        _parent = ctx->curVarCondMap();
+
+        _cbContext = cb;
+        _unmappedLSFrom = lsf;
+        _partCnt = cb->partCnt();
+        _curCBPart = -1;
+
+        _partVarCond.resize(_partCnt);
+        for (unsigned i = 0; i < _partCnt; i++)
+            _partVarCond[i].unset();
+
+        _trueCondPart = -1;
+        _mapCBRes = NULL;
+    }
+
+    /**
+     * destructor
+     */
+    VarCondMapping::~VarCondMapping()
+    {
+        if (_mapCBRes)
+            delete _mapCBRes;
+
+        for (auto ma : _mapVS) {
+            VarCondMapVS *cma = ma.second;
+            if (cma)
+                delete cma;
+        }
+    }
+
+    /**
+     * check and get current mapping object within the execution context
+     * @param ctx       execution context
+     * @param cb        codeblock context of the codeblock this mapping is created for
+     * @param cbp       number of current codeblock part / -1: no one
+     * @return          pointer to current mapping object within the execution context
+     */
+    VarCondMapping *VarCondMapping::check(ExecContext *ctx, CodeBlockContext *cb, int cbp)
+    {
+        VarCondMapping *vcm = ctx->curVarCondMap();
+
+        if (!vcm)
+            ctx->internalError("missing mapping info for execution within a codeblock part with conditions over optimization variables");
+
+        if (vcm->_execContext != ctx || vcm->_cbContext != cb || vcm->_curCBPart != cbp)
+            ctx->internalError("inconsistent mapping info for execution within a codeblock part with conditions over optimization variables");
+
+        return vcm;
+    }
+
+
+    /**
+     * start of execution for one codeblock part
+     * @param cbp       number of current codeblock part
+     * @param varCond   condition formula ver optimization variables (must be TP_FORMULA or TP_BIN with value true)
+     */
+    void VarCondMapping::startPart(int cbp, CmplVal& varCond)
+    {
+        if (_trueCondPart != -1 || cbp < 0 || (unsigned)cbp >= _partVarCond.size() || _partVarCond[cbp].t != TP_EMPTY)
+            _execContext->internalError("inconsistent start of codeblock part in mapping info for execution within a codeblock part with conditions over optimization variables");
+
+        _curCBPart = cbp;
+        _partVarCond[cbp].copyFrom(varCond);
+
+        if (varCond.t == TP_BIN)
+            _trueCondPart = cbp;
+    }
+
+    /**
+     * end of execution for one codeblock part
+     */
+    void VarCondMapping::endPart()
+    {
+        _curCBPart = -1;
+    }
+
+
+    /**
+     * get mapping info for an value store
+     * @param lvl       recursion level
+     * @param ctxOrg    original execution context
+     * @param locSymNo  symbol no of local symbol within ctxOrg / -1: no local symbol
+     * @param srcVS     source value store of mapping
+     * @param nw        if mapping doesn't exist, then insert new mapping
+     * @param sv        stack value, only for error handling
+     * @return          mapping info for the value store / NULL: no mapping
+     */
+    VarCondMapVS *VarCondMapping::getMappedVSRec(unsigned lvl, ExecContext *ctxOrg, int locSymNo, ValueStore *srcVS, bool nw)
+    {
+        //TODO: Sperren so ausreichend und richtig?
+        //  (Sperre fuer Symbol schon durch Aufrufer gesetzt; Sperre fuer ValueStore hier gesetzt, bevor daraus kopiert wird)
+
+        VarCondMapVS *map = (_mapVS.count(srcVS) ? _mapVS[srcVS] : NULL);
+        if (map && map->getDstVS())
+            return map;
+
+        VarCondMapVS *parmap = NULL;
+        if (_parent && (locSymNo < 0 || ((!_execContext->_fctContext || _execContext == _parent->_execContext) && (unsigned)locSymNo < _parent->_unmappedLSFrom)))
+            parmap = _parent->getMappedVSRec(lvl+1, ctxOrg, locSymNo, srcVS, nw);
+
+        if (!nw || _curCBPart < 0)
+            return parmap;
+
+        if (!map) {
+            ValueStore *vs = (parmap ? parmap->getDstVS() : srcVS);
+            LockGuard<mutex> lckVS(_execContext->needLock(), vs->accMtx());
+            _mapVS[srcVS] = map = new VarCondMapVS(this, vs, parmap);
+        }
+
+        map->setCopyVS();
+        return map;
+    }
+
+    /**
+     * set codeblock result
+     * @param val       codeblock result value of current codeblock part
+     * @param ovr       override all existing results
+     * @param se		syntax element id of source value
+     */
+    void VarCondMapping::setMappedCBResult(CmplVal& val, bool ovr, unsigned se)
+    {
+        if (!_mapCBRes)
+            _mapCBRes = new vector<CmplValAuto>(_partCnt);
+
+        CmplValAuto& v = (*_mapCBRes)[_curCBPart];
+
+        if (val.t != TP_ARRAY && (v.t == TP_EMPTY || v.t == TP_BLANK || (ovr && v.t != TP_VALUESTORE))) {
+            v.copyFrom(val, true, true);
+        }
+        else {
+            if (v.t != TP_VALUESTORE) {
+                CmplVal cbn(TP_VALUESTORE, new ValueStore(v));
+                v.moveFrom(cbn, true);
+            }
+
+            v.valueStore()->setValue(_execContext, NULL, ovr, NULL, &val, se);
+        }
+    }
+
+
+    /**
+     * merge symbol values and codeblock result
+     * @param res       return of merged codeblock result
+     */
+    void VarCondMapping::mergeAll(CmplVal& res)
+    {
+        // merge symbol values
+        for (auto kvp : _mapVS) {
+            CmplValAuto arr;
+            VarCondMapVS *map = kvp.second;
+            ValueStore *dst = map->_srcVS.valueStore();
+
+            LockGuard<mutex> lckVS(_execContext->needLock(), dst->accMtx());
+            if (mergeArray(arr, (map->chgInfo()->fullChg() ? NULL : dst), map->_dstMapVS, map->chgInfo()))
+                dst->setValue(_execContext, NULL, true, NULL, &arr, _cbContext->syntaxElem());
+        }
+
+        // merge codeblock result
+        if (_mapCBRes) {
+            if (!mergeArray(res, NULL, *_mapCBRes, NULL))
+                res.set(TP_NULL);
+        }
+
+        //TODO: Behandlung Elemente fuer Ergebnismatrix
+    }
+
+    /**
+     * merge all values of an array
+     * @param res       return of merged result (array of values or scalar value) or value store to set result values in
+     * @param dstVS     value store to set result values in (alternative to res) / NULL: no such alternative
+     * @param map       values or value store per codeblock part
+     * @param chg       original values and change info / NULL: no original values
+     * @return          true if result is returned in res
+     */
+    bool VarCondMapping::mergeArray(CmplVal& res, ValueStore *dstVS, vector<CmplValAuto>& map, VSChangeInfo *chg)
+    {
+        vector<CmplValAuto> pvals((_trueCondPart < 0 ? _partCnt + 1 : _partCnt));
+        unsigned ptc = (_trueCondPart < 0 ? _partCnt : _trueCondPart);
+
+        unsigned pfrom = 0, pend = 0;
+        for (unsigned p = 0; p < _partVarCond.size(); p++) {
+            if (_partVarCond[p]) {
+                if (!pend)
+                    pfrom = p;
+                pend = p + 1;
+            }
+        }
+
+        if (!pend)
+            return false;
+
+        if (!chg && _trueCondPart < 0)
+            pvals[_partCnt].set(TP_NULL);
+
+        unsigned pend2 = pend;
+        if (_trueCondPart > 0) {
+            pend2 = _trueCondPart - 1;
+            while (pend2 > pfrom && !_partVarCond[pend2])
+                pend2--;
+        }
+
+        // check if definition set of destination array is directly given
+        CmplValAuto dds(TP_EMPTY);
+        CmplVal ntpls(TP_SET_NULL);
+        CmplVal vnull(TP_NULL);
+
+        if (!chg || chg->fullChg()) {
+            // definition set of destination array is directly given if all source definition sets are equal
+            CmplVal& vp = map[pfrom];
+            dds.copyFrom(vp.t == TP_VALUESTORE ? vp.valueStore()->values()->defset() : (vp.t == TP_ARRAY ? vp.array()->defset() : ntpls));
+
+            for (unsigned p = pfrom + 1; p < pend; p++) {
+                CmplVal& vp2 = map[p];
+                if (vp2) {
+                    CmplVal& ds2 = (vp2.t == TP_VALUESTORE ? vp2.valueStore()->values()->defset() : (vp2.t == TP_ARRAY ? vp2.array()->defset() : ntpls));
+                    if (ds2 != dds) {
+                        dds.dispUnset();
+                        break;
+                    }
+                }
+            }
+
+            if (chg && _trueCondPart < 0 && dds) {
+                CmplVal& ds2 = chg->baseVS()->values()->defset();
+                if (ds2 != dds)
+                    dds.dispUnset();
+            }
+        }
+        else if (!chg->defsetChg()) {
+            // definition set of destination array is directly given if all elements in the source array are changed
+            bool allChg;
+            bool hasChg = chg->hasChgElem(allChg);
+
+            if (!hasChg)
+                return false;
+
+            if (allChg)
+                dds.copyFrom(chg->baseVS()->values()->defset());
+        }
+
+        // execute merging
+        if (dds) {
+            if (dds.t == TP_SET_NULL) {
+                for (unsigned p = pfrom; p < pend; p++) {
+                    CmplVal& vp = map[p];
+                    if (vp)
+                        pvals[p].copyFrom((vp.t == TP_VALUESTORE ? vp.valueStore()->values()->at(0) : (vp.t == TP_ARRAY ? vp.array()->at(0) : &vp)));
+                }
+
+                if (chg && _trueCondPart < 0)
+                    pvals[_partCnt].copyFrom(chg->baseVS()->values()->at(0));
+
+                mergeVal(res, pvals, pfrom, pend2, ptc);
+            }
+
+            else {
+                CmplArray *arr = new CmplArray(dds);
+                res.set(TP_ARRAY, arr);
+
+                unsigned long sz = arr->size();
+                for (unsigned long i = 0; i < sz; i++) {
+                    for (unsigned p = pfrom; p < pend; p++) {
+                        CmplVal& vp = map[p];
+                        if (vp)
+                            pvals[p].copyFrom((vp.t == TP_VALUESTORE ? vp.valueStore()->values()->at(i) : (vp.t == TP_ARRAY ? vp.array()->at(i) : &vnull)));
+                    }
+
+                    if (chg && _trueCondPart < 0)
+                        pvals[_partCnt].copyFrom(chg->baseVS()->values()->at(i));
+
+                    mergeVal(*(arr->at(i)), pvals, pfrom, pend2, ptc);
+                }
+            }
+
+            return true;
+        }
+
+        else {
+            ValueStore *dt = NULL;
+            CmplValAuto dtv;
+
+            if (dstVS) {
+                dt = dstVS;
+            }
+            else {
+                dt = new ValueStore();
+                dtv.set(TP_VALUESTORE, dt);
+            }
+
+            CmplVal *iset;
+            bool useChgFlags, useInd;
+            bool useSrcArr = (chg && (!chg->fullChg() || _trueCondPart < 0));
+            unsigned long n;
+
+            if (useSrcArr) {
+                iset = &(chg->baseVS()->values()->defset());
+                useChgFlags = !chg->fullChg();
+                useInd = (!chg->fullChg() && !chg->defsetChg());
+            }
+            else {
+                CmplVal& vp2 = map[pfrom];
+                iset = (vp2.t == TP_VALUESTORE ? &(vp2.valueStore()->values()->defset()) : (vp2.t == TP_ARRAY ? &(vp2.array()->defset()) : &ntpls));
+                useChgFlags = false;
+                useInd = false;
+            }
+
+            // use tuples from all part sets for the result, beginning with source array or first part
+            bool fset = true;
+            unsigned pnxt = (useSrcArr ? pfrom : (pfrom + 1));
+            while (iset) {
+                SetIterator iter(*iset);
+                for (iter.begin(); iter; iter++) {
+                    // get value from every part for the tuple
+                    unsigned long i = iter.curIndex();
+                    const CmplVal& curtp = iter.curTuple();
+
+                    if (fset) {
+                        if (useChgFlags && !chg->chgInd(i))
+                            continue;
+
+                        for (unsigned p = pfrom; p < pend; p++) {
+                            CmplVal& vp = map[p];
+                            if (vp) {
+                                CmplArray *a = (vp.t == TP_VALUESTORE ? vp.valueStore()->values() : (vp.t == TP_ARRAY ? vp.array() : NULL));
+                                if (!a)
+                                    pvals[p].copyFrom(curtp.t == TP_ITUPLE_NULL ? vp : vnull);
+                                if (useInd || (!useSrcArr && p == pfrom))
+                                    pvals[p].copyFrom(a->at(i));
+                                else
+                                    pvals[p].copyFrom((SetUtil::tupleInSet(_execContext, a->defset(), curtp, n) ? a->at(n) : &vnull));
+                            }
+                        }
+                        if (ptc >= pend) {
+                            CmplArray *a = chg->baseVS()->values();
+                            if (useInd || useSrcArr)
+                                pvals[ptc].copyFrom(a->at(i));
+                            else
+                                pvals[ptc].copyFrom((SetUtil::tupleInSet(_execContext, a->defset(), curtp, n) ? a->at(n) : &vnull));
+                        }
+                    }
+                    else {
+                        if (SetUtil::tupleInSet(_execContext, dt->values()->defset(), curtp, n))
+                            continue;
+
+                        for (unsigned p = pnxt-1; p < pend; p++) {
+                            CmplVal& vp = map[p];
+                            if (vp) {
+                                CmplArray *a = (vp.t == TP_VALUESTORE ? vp.valueStore()->values() : (vp.t == TP_ARRAY ? vp.array() : NULL));
+                                if (!a)
+                                    pvals[p].copyFrom(curtp.t == TP_ITUPLE_NULL ? vp : vnull);
+                                if (p < pnxt)
+                                    pvals[p].copyFrom(a->at(i));
+                                else
+                                    pvals[p].copyFrom((SetUtil::tupleInSet(_execContext, a->defset(), curtp, n) ? a->at(n) : &vnull));
+                            }
+                        }
+                    }
+
+                    // store merged value in result value store
+                    CmplValAuto dv;
+                    mergeVal(dv, pvals, pfrom, pend2, ptc);
+                    if (dv.t != TP_NULL)
+                        dt->setSingleValue(_execContext, &curtp, 0, dv, _cbContext->syntaxElem());
+                }
+
+                if ((!chg || chg->fullChg() || chg->defsetChg()) && pnxt < pend) {
+                    // go to next part to use tuples from
+                    while (!(map[pnxt]))
+                        pnxt++;
+
+                    for (unsigned p = pfrom; p < pnxt; p++)
+                        pvals[p].dispSet((map[p] ? TP_BLANK : TP_EMPTY));
+                    if (useSrcArr && fset)
+                        pvals[ptc].dispSet(TP_BLANK);
+
+                    CmplVal& vp2 = map[pnxt++];
+                    iset = (vp2.t == TP_VALUESTORE ? &(vp2.valueStore()->values()->defset()) : (vp2.t == TP_ARRAY ? &(vp2.array()->defset()) : &ntpls));
+                    fset = false;
+                }
+                else {
+                    iset = NULL;
+                }
+            }
+
+            if (!dstVS)
+                res.set(TP_ARRAY, dt->values());
+        }
+
+        return !dstVS;
+
+        // Test ob Ziel-Definitionsset direkt gegeben:
+        //  wenn kein chgInfo:
+        //      potentielles Ziel-Definitionsset ist das des ersten verwendeten Teils
+        //      Vergleich mit den Sets aller uebrigen verwendeten Teile (einfacher cmplVal-Vergleich (bei Objekt nur auf Objektidentitaet))
+        //      wenn alle gleich: Ziel-Definitionsset gegeben
+        //  wenn chgInfo und fullChg:
+        //      potentielles Ziel-Definitionsset ist das des ersten verwendeten Teils
+        //      Vergleich mit den Sets aller uebrigen verwendeten Teile (einfacher cmplVal-Vergleich (bei Objekt nur auf Objektidentitaet))
+        //          wenn _trueCondPart < 0 dann auch Vergleich mit Ausgangsarray
+        //      wenn alle gleich: Ziel-Definitionsset gegeben
+        //  wenn chgInfo und !fullChg:
+        //      Nur moeglich wenn !_defsetAdd && !_defsetDel
+        //      Pruefen ueber _chgFlags:
+        //          gar kein Element geaendert (sollte nie vorkommen): Ergebnis ist TP_NULL, weiter nichts zu tun
+        //          alle Elemente geaendert: Ziel-Definitionsset gegeben aus Ausgangsarray
+        //          sonst: nicht gegeben
+
+        // Wenn Ziel-Definitionsset direkt gegeben:
+        //      Ergebnisarray mit dem Definitionsset anlegen
+        //      Pro Index durchgehen (Tuple ist unwichtig, keine Iteration darueber notwendig):
+        //          Quellwerte aus allen Teilen holen (abhaengig von _trueCondPart auch aus Ausgangsarray); ueberall einfach mit selbem Index
+        //          Eigentliches Merge aufrufen, Ergebnis daraus im Zielarray unter dem Index
+        //      abweichend wenn Definitionsset Nulltupleset:
+        //          kein Ergebnisarray, sondern einzelnen Ergebniswert direkt verwenden
+        // Sonst wenn chgInfo und !fullChg:
+        //      Wenn !_defsetAdd && !_defsetDel:
+        //          Leeres Ergebnisarray anlegen
+        //          Set-Iteration ueber Definitionsset des Ausgangsarrays:
+        //              Pruefen ob Tupel einzubeziehen: ueber Indexnummer in _chgFlags, wenn ja:
+        //                  Quellwerte aus allen Teilen holen (abhaengig von _trueCondPart auch aus Ausgangsarray); ueberall einfach mit selbem Index
+        //                  Eigentliches Merge aufrufen
+        //                  Ergebnis daraus dem Ergebnisarray hinzufuegen, unter dem aktuellen Tupel der Iteration
+        //      Sonst:
+        //          Leeres Ergebnisarray anlegen
+        //          Set-Iteration ueber Definitionsset des Ausgangsarrays analog oben; aber bei Bestimmung der Quellwerte unterscheiden:
+        //              wenn Set des Teilarrays gleich dem des Ausgangsarrays (einfacher cmplVal-Vergleich): wie oben einfach mit selbem Index
+        //                  sonst muss Index jeweils ueber Tupelsuche bestimmt werden
+        //              wenn _trueCondPart >= 0, dann kann Tupel in saemtlichen Teilarrays fehlen, dann nicht in Ergebnisarray
+        //          Wenn _defsetAdd, danach alle Teilarrays durchgehen:
+        //              Vergleich mit Ausgangsarray (einfacher cmplVal-Vergleich), nur wenn ungleich:
+        //                  Set-Iteration ueber das Teilarray, Tupel im bisherigen Ergebnisarray suchen, nur wenn noch nicht enthalten:
+        //                      Quellwerte aus nachfolgenden Teilarrays ueber Tupelsuche holen (im Ausgangsarray und davorliegenden Teilarrays jedenfalls nicht enhalten)
+        //                      wie oben eigentliches Merge
+        // Sonst (kein chgInfo oder fullChg):
+        //          Wie im vorherigen Fall, aber wenn _trueCondPart >= 0, dann ist das erste Teilarray das erste durchzugehende Array (anstelle des Ausgangsarrays)
+        //              und keine Pruefung ueber _chgFlags, sondern immer alle Arrayelemente einbeziehen
+    }
+
+
+    /**
+     * merge one value
+     * @param res       return of merged result
+     * @param pvals     source value per codeblock part
+     * @param pfrom     first used codeblock part
+     * @param pend      after last used codeblock part
+     * @param ptc       part in pvals with condition TP_TRUE
+     */
+    void VarCondMapping::mergeVal(CmplVal& res, vector<CmplValAuto>& pvals, unsigned pfrom, unsigned pend, unsigned ptc)
+    {
+
+        // Eigentlicher Merge:
+        //  erhaelt: pro Teil den dortigen Wert bzw. TP_NULL wenn nicht enthalten; wenn _trueCondPart < 0 dann auch aus Ausgangsarray
+        //              (in mindestens 1 uebergebenem Teil existiert ein Wert, sonst gar nicht erst im Zieldefinitionsset)
+        //      Teile durchgehen und pruefen (jeweils pfrom - pend-1, und zusaetzlich ptc):
+        //          alle gleich (und auch kein TP_NULL): Wert ist direkt Ergebniswert
+        //          sonst:
+        //                  (c1: v1), (!c1 && c2: v2), (!c1 && !c2 ... && cn: vn), (!c1 && !c2 ... && !cn: tv)
+        //              Teile, deren Wert TP_NULL ist, werden weggelassen
+        //              Teile, deren Wert gleich ist, werden zusammengefasst, mit soweit als moeglicher Vereinfachung der Bedingung (ohne den Inhalt der Bedingung zu betrachten)
+        //                      z.B.: v1==v2 -> (c1 || (!c1 && c2): v1)
+        //                                   -> ((c1 || !c1) && (c1 || c2): v1)
+        //                                   -> (c1 || c2: v1)
+        //                  (vielleicht der Einfachheit halber nur aufeinanderfolgende gleiche Werte betrachten)
+        //              Alle c muessen binaer (Formel mit Binaerkennzeichen) sein
+        //              Alle v muessen numerisch (auch TP_BIN) oder Formel oder Restriktion sein
+        //              Ergebnis ist Bedingungsformel
+        //                  Wird in Restriktion verpackt, wenn alle Teile v1..vn,tv Restriktion; als Teile werden dann die Formeln aus den Teilrestriktionen verwendet
+        //                  TODO: Zuweisung mit ":"
+        //              Ergebnisbedingungsformel hat Kennzeichen dass binaer, wenn alle Teilwerte v1..vn,tv binaer sind
+        //              Wenn ein c eine Bedingungsformel (mit Kennzeichen binaer) ist:
+        //                  Umwandlung in logische Formel: jedes Teil (c: n) -> c && n; und alle Teile Oder-verknuepft
+        //              Wenn ein v (v1..vn,tv) eine Bedingungsformel ist:
+        //                  Alle Teile in die Ergebnisbedingungsformel uebernehmen, mit Und-Verknuepfung der bisherigen und der neuen Bedingung
+    }
 }
 

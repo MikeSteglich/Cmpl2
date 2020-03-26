@@ -44,6 +44,7 @@ using namespace std;
 namespace cmpl
 {
 	class ExecContext;
+    class VarCondMapVS;
 
 
 	/**
@@ -172,8 +173,9 @@ namespace cmpl
          * @param init          only initial assignment
          * @param ord			ordered assignment
          * @param srn			set row/col name for result matrix
+         * @param map           mapping for assign destination / NULL: no mapping
          */
-        void doAssign(ExecContext *ctx, char op, bool ref, bool cnst, bool init, bool ord, bool srn);
+        void doAssign(ExecContext *ctx, char op, bool ref, bool cnst, bool init, bool ord, bool srn, VarCondMapVS *map);
 
         /**
          * perform assignment with this (being a TP_SPECIALSYM value) as assign destination
@@ -210,8 +212,9 @@ namespace cmpl
          * @param se            syntax element id of right hand side value
          * @param op			assign operation (+,-,*,/) or '\0'
          * @param srn			set row/col name for result matrix
+         * @param map           mapping for assign destination / NULL: no mapping
          */
-        void doAssignScalar(ExecContext *ctx, SymbolValue *sym, CmplVal *tpl, CmplVal *rhs, unsigned se, char op, bool srn);
+        void doAssignScalar(ExecContext *ctx, SymbolValue *sym, CmplVal *tpl, CmplVal *rhs, unsigned se, char op, bool srn, VarCondMapVS *map);
 
         /**
          * assign with operation, for a non scalar left hand side or right hand side
@@ -220,8 +223,9 @@ namespace cmpl
          * @param ind			indexing set for the left hand side / NULL: no index given
          * @param rhs			right hand side value
          * @param op			assign operation (+,-,*,/)
+         * @param map           mapping for assign destination / NULL: no mapping
          */
-        void doAssignOp(ExecContext *ctx, SymbolValue *sym, CmplVal *ind, StackValue *rhs, char op);
+        void doAssignOp(ExecContext *ctx, SymbolValue *sym, CmplVal *ind, StackValue *rhs, char op, VarCondMapVS *map);
 
         /**
          * check assertion for this

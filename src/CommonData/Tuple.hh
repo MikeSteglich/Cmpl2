@@ -218,7 +218,7 @@ namespace cmpl
 		 * @param modp			calling module
 		 * @param mode			mode for output: 0=direct; 1=part of other value
 		 */
-		virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const;
+        virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const override;
 
 
 		/**

@@ -2152,7 +2152,7 @@ namespace cmpl {
   case 106:
 #line 561 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[2].location, yystack_[0].location, "^"); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_EXP, 2); }
+                                                                                  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_POW, 2); }
 #line 2157 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 

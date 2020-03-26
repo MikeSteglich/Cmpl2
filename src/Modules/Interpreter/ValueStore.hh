@@ -33,6 +33,7 @@
 #define VALUESTORE_HH
 
 #include <mutex>
+#include <vector>
 
 #include "../../CommonData/CmplVal.hh"
 #include "../../CommonData/CmplArray.hh"
@@ -52,6 +53,7 @@ namespace cmpl
     class OptModel;
     class ValueTree;
     class ValueAssertion;
+    class VSChangeInfo;
 
 
     /**
@@ -183,6 +185,16 @@ namespace cmpl
 		 */
         inline ValueStore(): ValueAssertionBase(), _values(NULL), _constVal(false), _constSet(false)				{ }
 
+        /**
+         * constructor as copy of another value store
+         */
+        inline ValueStore(ValueStore *src): ValueStore()				{ if (src->_values) { src->_values->incRef(); _values = src->_values; } if (src->_nextAss) { _nextAss = new ValueAssertion(*(src->_nextAss)); } }
+
+        /**
+          * constructor as copy of another value (can be TP_VALUESTORE, TP_ARRAY, or ordinary value (no array or list))
+          */
+        ValueStore(CmplVal& v);
+
 		/**
 		 * destructor
 		 */
@@ -206,6 +218,11 @@ namespace cmpl
         inline CmplVal *simpleValue() const volatile        { return (_values ? _values->simpleValue() : NULL); }
 
         /**
+         * get whether value is an simple empty value
+         */
+        inline bool isSimpleEmpty() const volatile          { CmplVal *v = simpleValue(); return (v ? v->isEmpty() : false); }
+
+        /**
          * get whether value store is constant
          */
         inline bool isConst() const volatile                { return (_constVal && _constSet); }
@@ -223,8 +240,9 @@ namespace cmpl
          * @param srn				set row/col name for result matrix to this name
          * @param va                value, alternative to <code>sv</code>
          * @param se                syntax element, only used if <code>va</code> is given
-		 */
-        void setValue(ExecContext *ctx, StackValue *sv, bool disp, const char *srn = NULL, CmplVal *va = NULL, unsigned se = 0);
+         * @param chgInfo           track changes in this object / NULL: no change tracking
+         */
+        void setValue(ExecContext *ctx, StackValue *sv, bool disp, const char *srn = NULL, CmplVal *va = NULL, unsigned se = 0, VSChangeInfo *chgInfo = NULL);
 
         /**
          * set single value within the array
@@ -235,8 +253,9 @@ namespace cmpl
          * @param se                syntax element
          * @param srn				set row/col name for result matrix to this name
          * @param op                assign operation (+,-,*,/) or '\0'
+         * @param chgInfo           track changes in this object / NULL: no change tracking
          */
-        void setSingleValue(ExecContext *ctx, const CmplVal *tpl, unsigned long ind1, CmplVal& val, unsigned se, const char *srn = NULL, char op = '\0');
+        void setSingleValue(ExecContext *ctx, const CmplVal *tpl, unsigned long ind1, CmplVal& val, unsigned se, const char *srn = NULL, char op = '\0', VSChangeInfo *chgInfo = NULL);
 
         /**
          * fetch and increment single int value
@@ -292,7 +311,97 @@ namespace cmpl
     };
 
 
-	/**
+    /**
+     * info for changes within a value store
+     */
+    class VSChangeInfo
+    {
+        friend class ValueStore;
+
+    private:
+        ValueStore _baseVS;                         ///< unchanged base value store
+
+        bool _fullChg;                              ///< all elements of the array are changed
+
+        bool _defsetAdd;                            ///< element added to definition set (only used if !_fullChg)
+        bool _defsetDel;                            ///< element deleted from definition set (only used if !_fullChg)
+
+        unsigned long _chgIndFrom;                  ///< index number of first changed element of the array (only used if !_fullChg)
+        unsigned long _chgIndEnd;                   ///< index number + 1 of last changed element of the array (only used if !_fullChg)
+
+        vector<bool> _chgFlags;                     ///< changed elements per index number in _baseArray (only used if !_fullChg)
+
+    public:
+        /**
+         * constructor
+         * @param src           source value store
+         */
+        VSChangeInfo(ValueStore *src): _baseVS(src), _fullChg(false), _defsetAdd(false), _defsetDel(false), _chgIndFrom(0), _chgIndEnd(0)      { }
+
+        /**
+         * get unchanged base value store
+         */
+        ValueStore *baseVS()                                { return &_baseVS; }
+
+        /**
+         * get whether all elements of the array are changed
+         */
+        bool fullChg()                                      { return _fullChg; }
+
+        /**
+         * get whether element added to definition set
+         */
+        bool defsetAdd()                                    { return _defsetAdd; }
+
+        /**
+         * get whether element deleted from definition set
+         */
+        bool defsetDel()                                    { return _defsetDel; }
+
+        /**
+         * get whether definition set is changed
+         */
+        bool defsetChg()                                    { return (_defsetAdd || _defsetDel); }
+
+        /**
+         * get whether an element is changed
+         * @param ind           index number of element
+         * @return              true if element is changed
+         */
+        bool chgInd(unsigned long ind)                      { return (_fullChg || (ind < _chgFlags.size() && _chgFlags[ind])); }
+
+        /**
+         * get whether there is at least one changed element
+         * @param allChg        return whether all elements are changed
+         * @return              true if at least one element is changed
+         */
+        bool hasChgElem(bool& allChg);
+
+    private:
+        /**
+         * mark all elements as changed
+         */
+        void chgFull()                                      { _fullChg = true; }
+
+        /**
+         * mark change of element indexed by the null tuple
+         * @param ctx               execution context
+         */
+        void chgScalar(ExecContext *ctx)                    { CmplVal tpl(TP_ITUPLE_NULL); chgTpl(ctx, &tpl); }
+
+        /**
+         * mark change of one element
+         * @param ctx				execution context
+         * @param tpl               indexing tuple for the value within the array / NULL: not given
+         * @param del               element is deleted
+         * @param ind1              direct index+1 for the value within the array / 0: not given (at least tpl or ind1 must be given, if both given it must match)
+         * @param set               set to which ind1 belongs (must be given if ind1 is used)
+         */
+        void chgTpl(ExecContext *ctx, const CmplVal *tpl, bool del = false, unsigned long ind1 = 0, CmplVal *set = NULL);
+    };
+
+
+    /**
 	 * the <code>SymbolValue</code> contains the value of a cmpl symbol
 	 */
 	class SymbolValue

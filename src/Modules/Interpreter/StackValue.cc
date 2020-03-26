@@ -442,26 +442,32 @@ namespace cmpl
      * @param init          only initial assignment
      * @param ord			ordered assignment
      * @param srn			set row/col name for result matrix
+     * @param map           mapping for assign destination / NULL: no mapping
      */
-    void StackValue::doAssign(ExecContext *ctx, char op, bool ref, bool cnst, bool init, bool ord, bool srn)
+    void StackValue::doAssign(ExecContext *ctx, char op, bool ref, bool cnst, bool init, bool ord, bool srn, VarCondMapVS *map)
     {
         // this contains a SymbolValue
         SymbolValue *sym = (SymbolValue *)(_val.v.p);
+        ValueStore *mapVS = (map ? map->getDstVS() : NULL);
 
         if (init) {
             if (sym->readOnly())
                 return;
 
-            if (!sym->isUninitialized() && !sym->isNull() && !sym->isSimpleEmpty()) {
+            if (!sym->isUninitialized() && !(mapVS ? mapVS->isNull() : sym->isNull()) && !(mapVS ? mapVS->isSimpleEmpty() : sym->isSimpleEmpty())) {
                 //TODO: Fall beruecksichtigen, dass hasIndex() && _addVal->isSet():
                 //  dann pruefen, ob sich durch die Indizierung ein nichtleeres Array ergibt, wenn ja, dann return
                 //  -> ueber TupleMatching pruefen? (dann vielleicht weiterer Modus, damit nur Pruefung ob ueberhaupt ein Match existiert)
                 //      (kann dann auch den Fall _addVal.isITuple() gleich mit uebernehmen)
 
+                //TODO: wie wenn mapVS gesetzt?
+                //      vielleicht "init" dann ganz verbieten (in derselben Art wie "ref")?
+                //          aber sollte dann Pseudozuweisung aus nur linker Seite trotzdem erlaubt sein (kommt hier auch mit "init")?
+
                 if (!hasIndex() || !(_addVal.isITuple()))
                     return;
 
-                CmplArray *arr = _val.array();
+                CmplArray *arr = (mapVS ?: sym->valueStore())->values();
                 unsigned long i;
                 if (SetUtil::tupleInSet(ctx, arr->defset(), _addVal, i) && !(arr->at(i)->isEmpty()))
                     return;
@@ -486,6 +492,8 @@ namespace cmpl
                 ctx->valueError("right hand side of ref assignment must be an lvalue", rhs);
             else if (rhs->hasIndex())
                 ctx->valueError("right hand side of ref assignment cannot have indexation", rhs);
+            else if (mapVS)
+                ctx->internalError("ref assignment not possible within codeblock with condition over optimization variables");
             else {
                 SymbolValue *src = (SymbolValue *)(rhs->val().v.p);
                 if (sym != src) {
@@ -502,16 +510,17 @@ namespace cmpl
 
         CmplVal *rhsSimple = rhs->simpleValue();
         CmplVal *lhsInd = (hasIndex() ? &_addVal : NULL);
+        CmplVal *lhsSimple = (mapVS ? mapVS->simpleValue() : sym->simpleValue());
         StackValue *popTo = NULL;
 
-        if (!sym->isUninitialized() && (hasIndex() || (rhsSimple && sym->simpleValue()) || op)) {
-            bool needLockVS = (sym->hasValueStore() && sym->valueStore()->refCnt() > 1);
+        if (!sym->isUninitialized() && (hasIndex() || (rhsSimple && lhsSimple) || op)) {
+            bool needLockVS = (!mapVS && sym->hasValueStore() && sym->valueStore()->refCnt() > 1);
             LockGuard<mutex> lckV(needLockVS, (needLockVS ? &(sym->valueStore()->accMtx()) : NULL));
 
-            if ((!lhsInd || lhsInd->isITuple() || ((lhsInd->t == TP_SET_ALL || lhsInd->t == TP_SET_NULL) && rhsSimple && rhsSimple->t != TP_NULL)) && (!op || sym->simpleValue())) {
+            if ((!lhsInd || lhsInd->isITuple() || ((lhsInd->t == TP_SET_ALL || lhsInd->t == TP_SET_NULL) && rhsSimple && rhsSimple->t != TP_NULL)) && (!op || lhsSimple)) {
                 // assign scalar value
                 if (rhsSimple && rhsSimple->t != TP_NULL)
-                    doAssignScalar(ctx, sym, (lhsInd && lhsInd->isITuple() ? lhsInd : NULL), rhsSimple, rhs->syntaxElem(), op, srn);
+                    doAssignScalar(ctx, sym, (lhsInd && lhsInd->isITuple() ? lhsInd : NULL), rhsSimple, rhs->syntaxElem(), op, srn, map);
                 else
                     ctx->valueError("left hand side is indexed as scalar, but right hand side is an array", rhs);
             }
@@ -523,7 +532,7 @@ namespace cmpl
                 //  (vielleicht Ablauf generell umstellen, da sich manches hier und unten doppelt)
 
                 if (op) {
-                    doAssignOp(ctx, sym, lhsInd, rhs, op);
+                    doAssignOp(ctx, sym, lhsInd, rhs, op, map);
                 }
                 else {
                     if (rhsSimple && rhsSimple->t != TP_NULL) {
@@ -542,8 +551,8 @@ namespace cmpl
                     }
 
                     PROTO_MOD_OUTL(ctx->modp(), "  setValueStore: sym " << sym->defId());
-                    ValueStore *store = sym->valueStore(true);
-                    store->setValue(ctx, rhs, false, (srn ? ctx->modp()->symbolInfo(sym->defId())->name() : NULL));
+                    ValueStore *store = (mapVS ?: sym->valueStore(true));
+                    store->setValue(ctx, rhs, false, (srn ? ctx->modp()->symbolInfo(sym->defId())->name() : NULL), NULL, 0, (map ? map->chgInfo() : NULL));
                 }
             }
         }
@@ -589,10 +598,10 @@ namespace cmpl
                 }
 
                 PROTO_MOD_OUTL(ctx->modp(), "  setValueStore: sym " << sym->defId());
-                ValueStore *store = sym->valueStore(true);
+                ValueStore *store = (mapVS ?: sym->valueStore(true));
 
                 LockGuard<mutex> lckV((ctx->needLock() && store->refCnt() > 1), store->accMtx());
-                store->setValue(ctx, rhs, true, (srn ? ctx->modp()->symbolInfo(sym->defId())->name() : NULL));
+                store->setValue(ctx, rhs, true, (srn ? ctx->modp()->symbolInfo(sym->defId())->name() : NULL), NULL, 0, (map ? map->chgInfo() : NULL));
 
                 if (cnst)
                     sym->setReadOnly();
@@ -730,8 +739,9 @@ namespace cmpl
      * @param rhs			right hand side value
      * @param op			assign operation (+,-,*,/) or '\0'
      * @param srn			set row/col name for result matrix
+     * @param map           mapping for assign destination / NULL: no mapping
      */
-    void StackValue::doAssignScalar(ExecContext *ctx, SymbolValue *sym, CmplVal *tpl, CmplVal *rhs, unsigned se, char op, bool srn)
+    void StackValue::doAssignScalar(ExecContext *ctx, SymbolValue *sym, CmplVal *tpl, CmplVal *rhs, unsigned se, char op, bool srn, VarCondMapVS *map)
     {
         if (!sym->hasValueStore()) {
             ctx->valueError("illegal left hand side", this);
@@ -742,7 +752,8 @@ namespace cmpl
         CmplVal& itpl = (tpl ? *tpl : tplNull);
         const char *srname = (srn && rhs->isOptRC() ? ctx->modp()->symbolInfo(sym->defId())->name() : NULL);
 
-        sym->valueStore()->setSingleValue(ctx, &itpl, 0, *rhs, se, srname, op);
+        ValueStore *store = (map ? map->getDstVS() : sym->valueStore());
+        store->setSingleValue(ctx, &itpl, 0, *rhs, se, srname, op, (map ? map->chgInfo() : NULL));
 
         /*
          *TODO: entfaellt alles (nach setSingleValue() verschoben)
@@ -813,10 +824,11 @@ namespace cmpl
      * @param rhs			right hand side value
      * @param se            syntax element id of right hand side value
      * @param op			assign operation (+,-,*,/)
+     * @param map           mapping for assign destination / NULL: no mapping
      */
-    void StackValue::doAssignOp(ExecContext *ctx, SymbolValue *sym, CmplVal *ind, StackValue *rhs, char op)
+    void StackValue::doAssignOp(ExecContext *ctx, SymbolValue *sym, CmplVal *ind, StackValue *rhs, char op, VarCondMapVS *map)
     {
-        ValueStore *store = sym->valueStore(false);
+        ValueStore *store = (map ? map->getDstVS() : sym->valueStore());
         if (!store) {
             ctx->valueError("invalid left hand side for re-assignment with operation", this);
             return;
@@ -835,11 +847,10 @@ namespace cmpl
         }
 
         // indexation for left hand side value
-        CmplArray *arr = store->values();
         CmplVal setall(TP_SET_ALL);
         CmplValAuto lset;
 
-        TupleMatching tm(ctx, TupleMatching::matchIndex, arr->defset(), (ind ? *ind : setall), true);
+        TupleMatching tm(ctx, TupleMatching::matchIndex, store->values()->defset(), (ind ? *ind : setall), true);
         tm.match(lset, true);
 
         if (!rhssc && ((rhsSimple && lset != TP_SET_EMPTY) || (!rhsSimple && !SetUtil::compareEq(&lset, &(rhs->val().array()->defset()))))) {
@@ -850,17 +861,18 @@ namespace cmpl
         if (lset.t != TP_SET_EMPTY) {
             // execution of operation
             vector<unsigned long> *resinds = tm.resIndex();
+            VSChangeInfo *chgInfo = (map ? map->chgInfo() : NULL);
             unsigned i;
 
             if (rhssc) {
                 for (i = 0; i < resinds->size(); i++) {
-                    store->setSingleValue(ctx, NULL, resinds->at(i)+1, *rhsSimple, rhs->syntaxElem(), NULL, op);
+                    store->setSingleValue(ctx, NULL, resinds->at(i)+1, *rhsSimple, rhs->syntaxElem(), NULL, op, chgInfo);
                 }
             }
             else {
                 CmplArrayIterator rhsit(*(rhs->val().array()), false, true, false);
                 for (i = 0, rhsit.begin(); i < resinds->size() && rhsit; i++, rhsit++) {
-                    store->setSingleValue(ctx, NULL, resinds->at(i)+1, *(*rhsit), rhs->syntaxElem(), NULL, op);
+                    store->setSingleValue(ctx, NULL, resinds->at(i)+1, *(*rhsit), rhs->syntaxElem(), NULL, op, chgInfo);
                 }
             }
         }
@@ -1921,6 +1933,9 @@ namespace cmpl
      */
     bool StackValue::ArrayCastInd::checkArrayCastPartRec(CmplVal& arrds, CmplVal& nds, unsigned start)
     {
+        if (arrds.t == TP_SET_FIN)
+            SetUtil::checkBaseSplitFinSet(arrds, true, true);
+
         vector<CmplValAuto> dsparts;
         SetBase::partsToVector(arrds, dsparts, true);
 

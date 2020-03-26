@@ -58,7 +58,7 @@ namespace cmpl
 	MainData::MainData()
 	{
         _globStrings = new StringStore(true);
-		_globLocs = new vector<LocationInfo *>;
+        _globLocs = new map<unsigned long, vector<LocationInfo *>>;
 
 		_cmplFileBase = NULL;
 		_executedModules = NULL;
@@ -84,6 +84,11 @@ namespace cmpl
 	 */
     void MainData::cleanUp(bool delData)
 	{
+        //TODO: Pruefung Aufruf mit !delData:
+        //  (scheint derzeit nirgends verwendet)
+        //  sinnvoll hoechstens fuer src nach Aufruf copyShallowFrom(src), weil dann das neue MainData-Objekt owner der Subobjekte ist
+        //  aber auch copyShallowFrom() scheint nicht verwendet
+
 		_cmplFileBase = NULL;
 		
 		if (delData && _executedModules) {
@@ -111,7 +116,7 @@ namespace cmpl
 		}
 		else {
             _globStrings = new StringStore(true);
-			_globLocs = new vector<LocationInfo *>;
+            _globLocs = new map<unsigned long, vector<LocationInfo *>>;
 		}
 	}
 
@@ -188,36 +193,58 @@ namespace cmpl
 	 */
 	LocationInfo *MainData::searchInsertInGlobLocs(const LocationInfo *loc)
 	{
-		for (vector<LocationInfo*>::iterator it = _globLocs->begin(); it != _globLocs->end(); it++) {
-			if (*loc == **it)
-				return *it;
-		}
+        //TODO: Suche geht so nicht bei groesseren Modellen.
+        //  _globLocs muss irgendwie so organisiert werden, dass besser darin gesucht werden kann
+
+        // LocationInfo-Objekte muessen auf dem Heap angelegt werden, damit es dauerhaft gueltige Pointer darauf gibt
+        // Die owner-Struktur muss diese Pointer speichern
+        // Fuer schnelle Suche sollte Schluessel aus den Eigenschaften gebildet werden, die nicht von persistentLocation() veraendert werden
+        // So ein Schluessel kann fuer verschiedene LocationInfo-Objekte gleich sein, alle zum selben Schluessel muessen dann wie bisher durchsucht werden
+        //  -> map<key, vector<LocationInfo *>>
+        // key ist dafuer ein aus LocationInfo holbares Objekt einer zusaetzlichen Klasse, dass den Operator < definiert
+        //  oder vielleicht besser: key ist long (oder long long?); und wird mit bitshift geeignet gefuellt (dann ist kein eigenes Objekt notwendig, das erzeugt werden muesste)
+
+        unsigned long key = loc->key();
+        vector<LocationInfo*>& vl = (*_globLocs)[key];
+
+        if (!vl.empty()) {
+            for (vector<LocationInfo*>::iterator it = vl.begin(); it != vl.end(); it++) {
+                if (*loc == **it)
+                    return *it;
+            }
+        }
 
 		LocationInfo *res = new LocationInfo(persistentLocation(*loc));
-		_globLocs->push_back(res);
+        vl.push_back(res);
 		return res;
 	}
 
 	/**
 	 * search aequivalent location in _globLocs and return number of it or -1 if not found
-	 * @param loc		given location
+     * @param si		serialization info (si.mapLocsTo must be filled)
+     * @param loc		given location
 	 */
-    int MainData::searchLoc(const LocationInfo *loc) const
+    int MainData::searchLoc(SerializeInfo& si, const LocationInfo *loc) const
 	{
-		// search for object identity
-        int res = searchVector<LocationInfo*>(*_globLocs, loc);
-		if (res >= 0)
-			return res;
-		
-		// search for aequivalent location
-		res = 0;
-		for (vector<LocationInfo*>::iterator it = _globLocs->begin(); it != _globLocs->end(); it++, res++) {
-			if (*loc == **it)
-				return res;
-		}
+        if (si.mapLocsTo.count(loc))
+            return (int)si.mapLocsTo[loc];
 
-		return -1;
-	}
+        unsigned long key = loc->key();
+        if (_globLocs->count(key)) {
+            vector<LocationInfo*>& vl = (*_globLocs)[key];
+            for (vector<LocationInfo*>::iterator it = vl.begin(); it != vl.end(); it++) {
+                if (*loc == **it) {
+                    LocationInfo *gloc = *it;
+                    if (si.mapLocsTo.count(gloc))
+                        return (int)si.mapLocsTo[gloc];
+                    else
+                        throw invalid_argument("serialize info object is not filled");
+                }
+            }
+        }
+
+        return -1;
+    }
 
 
 
@@ -407,21 +434,34 @@ namespace cmpl
 		}
 
 		// locations
-		cnt = _globLocs->size();
-		(*si.ostr) << "**Locations" << endl << "*:" << cnt << ";2" << endl;
+        si.mapLocsTo.clear();
+        si.mapLocsFrom.clear();
+
+        i = 0;
+        for (auto it = _globLocs->begin(); it != _globLocs->end(); ++it) {
+            vector<LocationInfo*>& vl = it->second;
+            for (auto it2 = vl.begin(); it2 != vl.end(); ++it2, ++i) {
+                LocationInfo *loc = *it2;
+                si.mapLocsTo[loc] = i;
+                si.mapLocsFrom.push_back(loc);
+            }
+        }
+
+        (*si.ostr) << "**Locations" << endl << "*:" << si.mapLocsFrom.size() << ";2" << endl;
 
 		i = 0;
-		for (vector<LocationInfo*>::iterator it = _globLocs->begin(); it != _globLocs->end(); it++, i++) {
-			LocationInfo *loc = *it;
-			for (int j = 0; j < 2; j++) {
-				if (si.lineNums)
-					(*si.ostr) << i << '#';
-				
-				const PositionInfo &pos = (j == 0 ? loc->begin() : loc->end());
-				LocationInfo *inLoc = (LocationInfo*) (pos.type() == POSITION_TYPE_FIXLOC ? pos.fixLoc() : pos.inLoc());
-				(*si.ostr) << pos.type() << ';' << _globStrings->search(pos.name()) << ';' << pos.line() << ';' << pos.col() << ';' << (inLoc ? searchVector<LocationInfo*>(*_globLocs, inLoc) : -1) << endl;
-			}
-		}
+        for (auto it = si.mapLocsFrom.begin(); it != si.mapLocsFrom.end(); ++it, ++i) {
+            LocationInfo *loc = *it;
+            for (int j = 0; j < 2; j++) {
+                if (si.lineNums)
+                    (*si.ostr) << i << '#';
+
+                const PositionInfo &pos = (j == 0 ? loc->begin() : loc->end());
+                const LocationInfo *inLoc = (pos.type() == POSITION_TYPE_FIXLOC ? pos.fixLoc() : pos.inLoc());
+                int inLocNo = (inLoc ? (int)si.mapLocsTo[inLoc] : -1);
+                (*si.ostr) << pos.type() << ';' << _globStrings->search(pos.name()) << ';' << pos.line() << ';' << pos.col() << ';' << inLocNo << endl;
+            }
+        }
 
 		// data of MainControl
 		(*si.ostr) << "**MainControl:3" << endl;
@@ -467,7 +507,7 @@ namespace cmpl
 
 				MainData::ErrorEntry &err = *it;
 				(*si.ostr) << err.lvl << ';' << (err.cont ? 1 : 0) << ";" << _globStrings->search(err.msg) << ';' << (err.exc ? (int)(_globStrings->search(err.exc)) : -1) << ';'
-						<< _globStrings->search(err.module) << ';' << _globStrings->search(err.step) << ';' << searchVector<LocationInfo*>(*_globLocs, err.loc) << endl;
+                        << _globStrings->search(err.module) << ';' << _globStrings->search(err.step) << ';' << si.mapLocsTo[err.loc] << endl;
 			}
 		}
 		else {
@@ -701,13 +741,11 @@ namespace cmpl
 		PositionInfo pb, pe;
 		PositionInfo *p;
 
-		si.mapLocs = new LocationInfo*[cnt];
-		LocationInfo **lp = si.mapLocs;
+        vector<int> iln(cnt*2);
+        si.mapLocsFrom.clear();
+        si.mapLocsFrom.resize(cnt);
 
-		_globLocs->reserve(_globLocs->size() + cnt);
-
-		for (int i = 0; i < cnt; i++, lp++) {
-
+        for (int i = 0; i < cnt; i++) {
 			for (int j = 0; j < 2; j++) {
 				getline(*si.istr, line);
 				if (!si.istr->good())
@@ -727,16 +765,29 @@ namespace cmpl
 
 				p->setLine(l);
 				p->setCol(c);
-				if (il >= 0)
-					p->setInLoc((*_globLocs)[il]);
+                iln[2*i + j] = il;
 
 				si.pos->addLines();
 			}
 
-			*lp = new LocationInfo(pb, pe);
-			_globLocs->push_back(*lp);
+            si.mapLocsFrom[i] = new LocationInfo(pb, pe);
 		}
-	}
+
+        for (int i = 0; i < cnt; i++) {
+            LocationInfo *loc = si.mapLocsFrom[i];
+
+            for (int j = 0; j < 2; j++) {
+                if (iln[2*i + j] >= 0) {
+                    p = const_cast<PositionInfo *>(j==0 ? &(loc->begin()) : &(loc->end()));  // location info is not in use yet, so discarding const is safe
+                    p->setInLoc(si.mapLocsFrom[iln[2*i + j]]);
+                }
+            }
+
+            unsigned long key = loc->key();
+            vector<LocationInfo *>& vl = (*_globLocs)[key];
+            vl.push_back(loc);
+        }
+    }
 
 	/**
 	 * read section for MainControl data from input stream
@@ -822,7 +873,7 @@ namespace cmpl
 						n6 = getNextLong(line, si.pos);
 						n7 = getNextLong(line, si.pos);
 						_errorList->push_back(ErrorEntry(n1, n2, _globStrings->at(si.mapStrings[n3]), (n4 >= 0 ? _globStrings->at(si.mapStrings[n4]) : NULL),
-								_globStrings->at(si.mapStrings[n5]), _globStrings->at(si.mapStrings[n6]), si.mapLocs[n7]));
+                                _globStrings->at(si.mapStrings[n5]), _globStrings->at(si.mapStrings[n6]), si.mapLocsFrom[n7]));
 						break;
 				}
 

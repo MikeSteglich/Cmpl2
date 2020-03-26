@@ -156,6 +156,48 @@ namespace cmpl
 		return 0;
 	}
 
+    /**
+     * get lower bound of interval v and set r to it (can be TP_INT, TP_REAL or TP_INFINITE)
+     */
+    void Interval::lowBoundVal(CmplVal &r, const CmplVal &v)
+    {
+        r.dispUnset();
+
+        if (v.t == TP_INTERVAL)
+            r.copyFrom(v.interval()->_lowBound);
+        else if (v.t == TP_INTERVAL_EMPTY)
+            r.set(TP_INFINITE, 1);
+        else if (!hasLowBound(v))
+            r.set(TP_INFINITE, -1);
+        else if (v.bound0Upp())
+            r.set(TP_INT, 0);
+        else if (v.bound1Upp())
+            r.set(TP_INT, 1);
+        else if (v.useReal())
+            r.set(TP_REAL, v.v.r);
+        else if (v.useInt())
+            r.set(TP_INT, v.v.i);
+    }
+
+    /**
+     * get upper bound of interval v and set r to it (can be TP_INT, TP_REAL or TP_INFINITE)
+     */
+    void Interval::uppBoundVal(CmplVal &r, const CmplVal &v)
+    {
+        r.dispUnset();
+
+        if (v.t == TP_INTERVAL)
+            r.copyFrom(v.interval()->_uppBound);
+        else if (v.t == TP_INTERVAL_EMPTY)
+            r.set(TP_INFINITE, -1);
+        else if (!hasUppBound(v))
+            r.set(TP_INFINITE, 1);
+        else if (v.useReal())
+            r.set(TP_REAL, v.v.r);
+        else if (v.useInt())
+            r.set(TP_INT, v.v.i);
+    }
+
 
     /**
      * get whether a numerical value n is within an interval v

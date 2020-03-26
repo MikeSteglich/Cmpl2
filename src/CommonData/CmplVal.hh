@@ -120,6 +120,7 @@ namespace cmpl
 		 * @return				true if reference counter is 0 after decrement
 		 */
         inline bool decRef() volatile				{ if (_refCnt.load()) return (_refCnt-- <= 1); else return true; }
+                //TODO: so nicht threadsicher!!!
 
         /**
          * decrement reference counter and delete object if reference counter is 0 after decrement
@@ -172,6 +173,7 @@ namespace cmpl
     class OptVarConBase;			///< optimization result object (variable/constraint)	(common use for result elements)
 
 	class CmplArray;				///< array of other values								(common use for result elements)
+    class ValueStore;               ///< store for values within an array                       (defined and only used in module <code>Interpreter</code>)
 
 
 	/************** type for generic cmpl values **********/
@@ -273,7 +275,7 @@ namespace cmpl
 		// other parameter values
 		TP_FORMULA			= 0x408000,		///< formula																			tp_u.valFormula
         //TP_FORMULA_EMPTY	= 0x400000,		///< empty formula																		(tp_u not used)
-        TP_FUNCTION			= 0x488000,		///< function object					TP_ITUPLE_NULL												tp_u.valFunction
+        TP_FUNCTION			= 0x488000,		///< function object                        											tp_u.valFunction
 		TP_CONTAINER		= 0x498000,		///< container object																	tp_u.valContainer
         TP_SPECIALSYM       = 0x4a8000,     ///< pseudo symbol handling value                                                       tp_u.ValSpecialBase
 		TP_DATA_TYPE		= 0x4c8000,		///< cmpl data type object																tp_u.valType
@@ -297,6 +299,7 @@ namespace cmpl
 		TP_REF_LIST			= 0xe5c000,		///< reference to a list value on a stack												tp_u.p (used for pointer to the stack element with the actual list)
 
         TP_SYMBOL_VAL		= 0xf8c000,		///< value for a symbol	lvalue															tp_u.p (used for pointer to the symbol value entry)
+        TP_VALUESTORE       = 0xf98000,     ///< store for values within an array                                                   tp_u.valueStore
 
         TP_DEF_CB_SYM       = 0xe82000,     ///< value for definition of code block symbol                                          tp_u.i (used for index number within current local symbol table)
         TP_DEF_CB_SYM_TUPLE = 0xe88010,     ///< value for a tuple with at least one TP_DEF_CB_SYM as element                       tp_u.tuple
@@ -349,7 +352,7 @@ namespace cmpl
 	#define TP_USE_STRINGP(t)					((((unsigned)t) & 0x00f000) == 0x004000)		// o1oo				///< use tp_u.s
 	#define TP_USE_VALP(t)						((((unsigned)t) & 0x00c000) == 0x008000)		// 1o..				///< use pointer to class derived from CmplValBase
 	#define TP_USE_VOIDP(t)						((((unsigned)t) & 0x00f000) == 0x00c000)		// 11oo				///< use tp_u.p
-    #define TP_USE_PTR(t)						((((unsigned)t) & 0x00c000) != 0)				// 1... oder .1..	///< use pointer within tp_u
+    #define TP_USE_PTR(t)						((((unsigned)t) & 0x00c000) != 0)				// 1... or .1..     ///< use pointer within tp_u
 
 	// rank of value (only for TP_IS_COMPOSITE) (bit 12 - 15)
 	#define TP_RANK_UNKNOWN(t)					((((unsigned)t) & 0x000e00) == 0x000000)		// ooo.				///< rank is not specified by type
@@ -542,6 +545,7 @@ namespace cmpl
 		inline OptCon *optCon() const								{ return (OptCon *) v.vp; }						///< optimization constraint or objective
         inline OptVarConBase *optRC() const							{ return (OptVarConBase *) v.vp; }				///< optimization row or col (variable or constraint)
 		inline CmplArray *array() const								{ return (CmplArray *) v.vp; }					///< array of other values
+        inline ValueStore *valueStore() const						{ return (ValueStore *) v.vp; }					///< store for values within an array
 
 		// dispose value (not if useVoidP())
 		inline void dispose(bool dec=true)							{ if (dec && usePtr()) { if (useValP() && v.vp->decRef()) { delete v.vp; v.vp = 0; } else if (useStringP()) { delete v.s; v.s = 0; } } unset(); }
@@ -551,7 +555,9 @@ namespace cmpl
 		inline void dispSet(tp_e ct)								{ if (usePtr()) dispose(true); t = ct; }
 		inline void dispSet(tp_e ct, realType r)					{ if (usePtr()) dispose(true); t = ct; v.r = r; }
 		inline void dispSet(tp_e ct, intType i)						{ if (usePtr()) dispose(true); t = ct; v.i = i; }
-		inline void dispSet(tp_e ct, string *s)						{ if (usePtr()) dispose(true); t = ct; v.s = s; }
+        inline void dispSet(tp_e ct, int i)                         { if (usePtr()) dispose(true); t = ct; v.i = i; }
+        inline void dispSet(tp_e ct, bool b)                        { if (usePtr()) dispose(true); t = ct; v.i = (b ? 1 : 0); }
+        inline void dispSet(tp_e ct, string *s)						{ if (usePtr()) dispose(true); t = ct; v.s = s; }
 		inline void dispSet(tp_e ct, CmplObjBase *p, bool inc=true)	{ if (usePtr()) dispose(true); t = ct; v.vp = p; if (inc) p->incRef(); }
 
 		// output value

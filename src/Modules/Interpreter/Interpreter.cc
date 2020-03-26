@@ -84,6 +84,7 @@ namespace cmpl
 		_globSymbols = NULL;
 
         _intOutOfRangeMode = INT_OPER_OORANGE_ERROR;
+        _echoDuration = false;
 
         _resModel = NULL;
 
@@ -101,6 +102,8 @@ namespace cmpl
 
 #define OPTION_INTERPRETER_INT_THREADS      20
 
+#define OPTION_INTERPRETER_INT_ECHO_DUR     21
+
 #define OPTION_INTERPRETER_FILEALIAS        30
 
 	//TODO
@@ -117,6 +120,7 @@ namespace cmpl
         REG_CMDL_OPTION( OPTION_INTERPRETER_INT_OORANGE_MODE, "int-out-of-range", 1, 1, CMDL_OPTION_NEG_ERROR, true );
 
         REG_CMDL_OPTION( OPTION_INTERPRETER_INT_THREADS, "threads", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
+        REG_CMDL_OPTION( OPTION_INTERPRETER_INT_ECHO_DUR, "duration", 0, 0, CMDL_OPTION_NEG_NO_ARG, true );
 
         REG_CMDL_OPTION( OPTION_INTERPRETER_FILEALIAS, "filealias", 0, -1, CMDL_OPTION_NEG_ERROR, false );
 
@@ -159,6 +163,10 @@ namespace cmpl
                 _threadHandler.setMaxThreads((unsigned)(opt->neg() ? 0 : opt->argAsInt(0, _ctrl)));
                 return true;
 
+            case OPTION_INTERPRETER_INT_ECHO_DUR:
+                _echoDuration = !(opt->neg());
+                return true;
+
             case OPTION_INTERPRETER_FILEALIAS:
                 parseFileAliases(opt, _fileAlias, _fileAliasPrio);
                 return true;
@@ -195,8 +203,9 @@ namespace cmpl
 	{
 		ModuleBase::usage(s);
 
-        s << "  -int-out-of-range             mode for handling integer operation results out of range (ignore/error/convert)" << endl;
+        s << "  -int-out-of-range <mode>      mode for handling integer operation results out of range (ignore/error/convert)" << endl;
         s << "  -threads <n>                  use maximal n concurrently running worker threads (0: no threading)" << endl;
+        s << "  -echoduration                 include duration since start in all outputs of echo function" << endl;
         s << "  -filealias <from1>=<to1> ...  defines aliases for data file names" << endl;
 
         //TODO

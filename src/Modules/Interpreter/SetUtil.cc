@@ -2717,6 +2717,96 @@ namespace cmpl
     }
 
 
+    /**
+     * get lower and upper bound of integer elements within a rank 1 set
+     * @param low           return of lower bound (can be only TP_INT or TP_INFINITE)
+     * @param upp           return of upper bound (can be only TP_INT or TP_INFINITE)
+     * @param src           source set
+     * @return              false if set is not a rank 1 set
+     */
+    bool SetUtil::rank1IntBounds(CmplVal& low, CmplVal& upp, const CmplVal& src)
+    {
+        const CmplVal& set = SET_VAL_WO_ORDER(src);
+
+        switch (set.t) {
+            case TP_SET_R1_0_UB:
+            case TP_SET_R1_0_UB_MNF:
+                low.dispSet(TP_INT, 0);
+                upp.dispSet(TP_INT, set.v.i);
+                return true;
+
+            case TP_SET_R1_1_UB:
+            case TP_SET_R1_1_UB_MNF:
+                low.dispSet(TP_INT, 1);
+                upp.dispSet(TP_INT, set.v.i);
+                return true;
+
+            case TP_SET_EMPTY:
+                low.dispSet(TP_INFINITE, 1);
+                upp.dispSet(TP_INFINITE, -1);
+                return true;
+
+            case TP_SET_1INT:
+                low.dispSet(TP_INT, set.v.i);
+                upp.dispSet(TP_INT, set.v.i);
+                return true;
+
+            case TP_SET_R1_ALG:
+                low.dispSet(TP_INT, SetAlg::bound(set, false));
+                upp.dispSet(TP_INT, SetAlg::bound(set, true));
+                return true;
+
+            case TP_SET_R1_ENUM:
+                {
+                    SetEnum *se = set.setEnum();
+                    if (se->cntInt()) {
+                        low.dispSet(TP_INT, se->array()[0]);
+                        upp.dispSet(TP_INT, se->array()[se->cntInt() - 1]);
+                    }
+                    else {
+                        low.dispSet(TP_INFINITE, 1);
+                        upp.dispSet(TP_INFINITE, -1);
+                    }
+                }
+                return true;
+
+            case TP_SET_R1_LB_INF:
+            case TP_SET_R1_LB_INF_MNF:
+                low.dispSet(TP_INT, set.v.i);
+                upp.dispSet(TP_INFINITE, 1);
+                return true;
+
+            case TP_SET_R1_INF_UB:
+            case TP_SET_R1_INF_UB_MNF:
+                low.dispSet(TP_INFINITE, -1);
+                upp.dispSet(TP_INT, set.v.i);
+                return true;
+
+            case TP_SET_R1_IINF:
+            case TP_SET_R1_IINF_MNF:
+                low.dispSet(TP_INFINITE, -1);
+                upp.dispSet(TP_INFINITE, 1);
+                return true;
+
+            case TP_SET_R1A:
+            case TP_SET_R1A_MNF:
+                low.dispSet(TP_INFINITE, -1);
+                upp.dispSet(TP_INFINITE, 1);
+                return true;
+
+            case TP_SET_R1A_INT:
+            case TP_SET_R1A_INT_MNF:
+                low.dispSet(TP_INT, 0);
+                upp.dispSet(TP_INFINITE, 1);
+                return true;
+
+            default:
+                return false;
+        }
+    }
+
+
+
 	/****** SetConstructHelper ****/
 
 	/**

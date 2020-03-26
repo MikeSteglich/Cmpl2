@@ -1344,18 +1344,27 @@ namespace cmpl
 		unsigned a = _codeCnt;
 
 		ParseScope *pp = curParseScope();
+        ParseScope *pb = pp->_blockScope;
+
         unsigned short par = ((pp->_cntBlockPart - 1) & ICPAR_CBHP_HCNT)
                 + (exp->countLvalues() > 0 ? ICPAR_CBHP_CBS : 0)
                 + (exp->assignOp() && *(exp->assignOp()) == 'i' ? ICPAR_CBHP_IN : 0)
                 + (exp->ncSymAccess() ? ICPAR_CBHP_NCSYM : 0)
                 + (exp->cbSymAccess() ? ICPAR_CBHP_PHCBS : 0);
 
-        compCmd(elem, INTCODE_CB_HEADER, ICS_CBHEADER_END, par, 1);
+        compCmd(elem, INTCODE_CB_HEADER, ICS_CBHEADER_END, par, 2);
 		compArg(elem, 0, 0);
 
-        compCBHeaderInsParAddr(addrStart, par, a, elem);
+        vector<unsigned> *vp = pb->_blockPos;
+        unsigned abcs = (vp && !vp->empty() ? vp->at(0) : 0);
+        unsigned apcs = (vp && !vp->empty() ? vp->at(vp->size() - 1) : 0);
+        if (_code[abcs].tp != IntCode::icTypeCommand || _code[abcs].v.c.major != INTCODE_CODEBLOCK || _code[abcs].v.c.minor != ICS_CB_BLOCK_START
+                || _code[apcs].tp != IntCode::icTypeCommand || _code[apcs].v.c.major != INTCODE_CODEBLOCK || _code[apcs].v.c.minor != ICS_CB_PART_START)
+            _modp->ctrl()->errHandler().internalError("wrong code address in CompilerContext::compCBHeaderEnd()");
 
-		ParseScope *pb = pp->_blockScope;
+        compArg(elem, abcs, apcs);
+
+        compCBHeaderInsParAddr(addrStart, par, a, elem);
 
 		if (!pb->_cbHeaderPos)
 			pb->_cbHeaderPos = new vector<unsigned>();

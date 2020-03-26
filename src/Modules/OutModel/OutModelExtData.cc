@@ -60,9 +60,8 @@ namespace cmpl
                     res = true;
                 }
                 else if (info.errLvl) {
-                    if (info.errLoc >= 0) {
-                        LocationInfo *lp = (*(modp->data()->globLocs()))[info.errLoc];
-                        modp->ctrl()->errHandler().error(info.errLvl, modp->ctrl()->printBuffer("module '%s' cannot handle special model data: %s", modp->moduleName(), info.errMsg.c_str()), *lp);
+                    if (info.errLoc) {
+                        modp->ctrl()->errHandler().error(info.errLvl, modp->ctrl()->printBuffer("module '%s' cannot handle special model data: %s", modp->moduleName(), info.errMsg.c_str()), *(info.errLoc));
                     }
                     else {
                         LocationInfo loc(PositionInfo(POSITION_TYPE_DESCR, "(unknown)"));

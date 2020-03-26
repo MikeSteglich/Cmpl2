@@ -414,7 +414,7 @@ namespace cmpl
 				(*si.ostr) << i++ << '#';
 
 			(*si.ostr) << s->search(opt->_opt) << ';' << s->search(opt->_module) << ';' << 
-				data->searchLoc(&(opt->_locName)) << ';' << data->searchLoc(&(opt->_locOpt)) << ';' <<
+                data->searchLoc(si, &(opt->_locName)) << ';' << data->searchLoc(si, &(opt->_locOpt)) << ';' <<
 				(opt->_neg ? 1 : 0) << ';' << opt->_prio << ';' << opt->_sepArgStart << ';' << opt->_useCount << ';' <<
 				opt->_args.size();
 
@@ -422,7 +422,7 @@ namespace cmpl
 			vector<PositionInfo>::iterator itl = opt->_argPos.begin();
 			for (; its != opt->_args.end(); its++, itl++) {
 				LocationInfo loc(*itl);
-				(*si.ostr) << ';' << s->search(*its) << ';' << data->searchLoc(&loc);
+                (*si.ostr) << ';' << s->search(*its) << ';' << data->searchLoc(si, &loc);
 			}
 
 			(*si.ostr) << endl;
@@ -451,8 +451,8 @@ namespace cmpl
 			SingleOption *opt = new SingleOption(this);
 			opt->_opt = data->globStrings()->at(si.mapStrings[MainData::getNextLong(line, si.pos)]);
 			opt->_module = data->globStrings()->at(si.mapStrings[MainData::getNextLong(line, si.pos)]);
-			opt->_locName = *(si.mapLocs[MainData::getNextLong(line, si.pos)]);
-			opt->_locOpt = *(si.mapLocs[MainData::getNextLong(line, si.pos)]);
+            opt->_locName = *(si.mapLocsFrom[MainData::getNextLong(line, si.pos)]);
+            opt->_locOpt = *(si.mapLocsFrom[MainData::getNextLong(line, si.pos)]);
 			opt->_neg = (MainData::getNextLong(line, si.pos) != 0);
 			opt->_prio = MainData::getNextLong(line, si.pos);
 			opt->_sepArgStart = MainData::getNextLong(line, si.pos);
@@ -465,7 +465,7 @@ namespace cmpl
 
 				for (unsigned a = 0; a < ac; a++) {
 					opt->_args.push_back(string(data->globStrings()->at(si.mapStrings[MainData::getNextLong(line, si.pos)])));
-					opt->_argPos.push_back(si.mapLocs[MainData::getNextLong(line, si.pos)]->begin());
+                    opt->_argPos.push_back(si.mapLocsFrom[MainData::getNextLong(line, si.pos)]->begin());
 				}
 			}
 

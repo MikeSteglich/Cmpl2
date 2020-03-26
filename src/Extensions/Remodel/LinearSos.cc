@@ -857,20 +857,27 @@ namespace cmpl
                 t._sos2 = (bool)s2;
                 t._linearized = (bool)li;
                 t._rows.clear();
-                t._fLoc = -1;
+                t._fLoc = NULL;
             }
         }
 
         // fill info from SOS store
+        ValueTreeRoot& cols = modp->getResModel()->cols();
         for (unsigned i = 0; i < _storeSos.size(); i++) {
             const SOSStore& sos = _storeSos[i];
             if (sos.vars.size()) {
                 OutModelExtData& t = _transfer[OutModelExtData::num((bool)sos.sos2, (bool)sos.linearized)];
                 t._rows.push_back(i);
 
-                if (t._fLoc < 0) {
-                    const LocationInfo& loc = modp->syntaxElement(_storeSos[i].syntaxElem)->loc();
-                    t._fLoc = modp->data()->searchLoc(&loc);
+                if (!t._fLoc)
+                    t._fLoc = &(modp->syntaxElement(_storeSos[i].syntaxElem)->loc());
+
+                if (!sos.linearized) {
+                    // mark SOS vars as used
+                    for (unsigned long vid : sos.vars) {
+                        OptVar *v = (OptVar*)(cols.getElem(vid));
+                        v->setUsedByCon(1);
+                    }
                 }
             }
         }
@@ -1164,9 +1171,11 @@ namespace cmpl
      * @param ctx			execution context
      * @param sosVal		store for result value
      * @param src			source value
+     * @param aggr          called for aggregating elements of an array or a list
      * @param se			syntax element id of source value
+     * @return              only used if aggr: true if result is final
      */
-    void SosContFunctionAdd::operCallSimple(ExecContext *ctx, CmplVal& sosVal, CmplVal& src, unsigned se)
+    bool SosContFunctionAdd::operCallSimple(ExecContext *ctx, CmplVal& sosVal, CmplVal& src, bool aggr, unsigned se)
     {
         // get sos store if necessary
         LinearSos::SOSStore *sos;
@@ -1181,6 +1190,7 @@ namespace cmpl
 
         // add variable
         sos->addSOSVar(ctx, src, se);
+        return false;
     }
 
 
