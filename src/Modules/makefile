@@ -5,7 +5,7 @@ CXX ?= g++
 CXXFLAGS ?= -DSTANDALONE -DPROTO -DCHDIR -ggdb -std=c++0x -Wall -Wno-parentheses
 
 
-MODULES := TestModule Serialize Transfer Precompiler Compiler Interpreter OutModel Solver SolutionReport
+MODULES :=  Serialize Transfer Precompiler Compiler Interpreter OutModel Solver SolutionReport CmplServerClient
 
 all : modules
 

@@ -12,7 +12,7 @@ default			run cmpl with default modules
 	inputFunctions
 	classFunctions
 	externDataFile
-        solverSelect
+    solverSelect
 	boundRow
 	linearSos -warn-invalid-sos
 	linearVarProd
@@ -113,6 +113,8 @@ script			run cmpl in script mode without writing and solving the instance
 	compile -no-warn-insert-eos -compat-linenamepref -compat-cbsymbols -compat-cbh-assign
     	interpret
     
+onserver 	runs the problem on a CmplServer or in a CmplServerGrid
+	runOnServer 
 
 
 

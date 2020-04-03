@@ -64,6 +64,9 @@
 #define MODULE_CONF_ORDER_SOLUTIONCSV   301         // csv solution report
 #define MODULE_CONF_ORDER_SOLUTIONXML   302         // CmplSolution report
 
+
+#define MODULE_CONF_ORDER_RUNONSERVER   400         // Runs a problem on a CmplServer or a CmplServerGrid
+
 using namespace std;
 
 

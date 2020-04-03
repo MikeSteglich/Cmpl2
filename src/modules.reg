@@ -53,4 +53,8 @@ MODULE_CLASS_REG( MODULE_CONF_ORDER_SOLUTIONASCII,   solutionReportAscii,     "s
 MODULE_CLASS_REG( MODULE_CONF_ORDER_SOLUTIONCSV,   solutionReportCsv   ,     "csv solution report" )
 MODULE_CLASS_REG( MODULE_CONF_ORDER_SOLUTIONXML,   solutionReportXml   ,     "CmplSolution solution report" )
 
+//Runs problem on CmplServer or CmplServerGrid
+MODULE_CLASS_REG( MODULE_CONF_ORDER_RUNONSERVER,        runOnServer,          "Runs a problem on a CmplServer or a CmplServerGrid" )
+
+
 
