@@ -39,6 +39,7 @@ MODULE_CLASS_REG( MODULE_CONF_ORDER_CMPL_EXEC,     interpret,            "execut
 // output of generated model
 MODULE_CLASS_REG( MODULE_CONF_ORDER_OUTRES,        writeMps,             "writes the generated model to an MPS file" )
 MODULE_CLASS_REG( MODULE_CONF_ORDER_MATRIX,        writeMatrix,             "writes the generated matrix to an file" )
+MODULE_CLASS_REG( MODULE_CONF_ORDER_CMPLINFO,        writeCmplInfo,             "writes the generated infos to an file" )
 
 
 // solver
@@ -52,9 +53,6 @@ MODULE_CLASS_REG( MODULE_CONF_ORDER_SOLVERSCIP,       solverScip,       "execute
 MODULE_CLASS_REG( MODULE_CONF_ORDER_SOLUTIONASCII,   solutionReportAscii,     "standard solution report" )
 MODULE_CLASS_REG( MODULE_CONF_ORDER_SOLUTIONCSV,   solutionReportCsv   ,     "csv solution report" )
 MODULE_CLASS_REG( MODULE_CONF_ORDER_SOLUTIONXML,   solutionReportXml   ,     "CmplSolution solution report" )
-
-//Runs problem on CmplServer or CmplServerGrid
-MODULE_CLASS_REG( MODULE_CONF_ORDER_RUNONSERVER,        runOnServer,          "Runs a problem on a CmplServer or a CmplServerGrid" )
 
 
 

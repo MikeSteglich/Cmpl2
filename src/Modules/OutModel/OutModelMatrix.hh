@@ -87,6 +87,15 @@ namespace cmpl
 		 */
 		virtual void run();
 
+
+
+        /**
+         * write generated model to stream
+         * @param om			generated model
+         * @param ostr			output to this stream
+         */
+        void writeMatrix(OptModel *om, ostream& ostr);
+
 	protected:
 		/**
 		 * register command line options options for delivery to this module
@@ -120,12 +129,6 @@ namespace cmpl
          */
         void writeMatrix(OptModel *om, FileOutput *file);
 
-        /**
-         * write generated model to stream
-         * @param om			generated model
-         * @param ostr			output to this stream
-         */
-        void writeMatrix(OptModel *om, ostream& ostr);
 
         /**
          * write column coefficients for one column

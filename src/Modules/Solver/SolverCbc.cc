@@ -112,7 +112,7 @@ namespace cmpl
             readSolFile(sol);
 
 
-            //deleteTmpFiles();
+            deleteTmpFiles();
             PROTO_OUTL("End SolverCbc module " << moduleName());
         }
 

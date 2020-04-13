@@ -112,23 +112,7 @@ script			run cmpl in script mode without writing and solving the instance
 	precompile
 	compile -no-warn-insert-eos -compat-linenamepref -compat-cbsymbols -compat-cbh-assign
     	interpret
-    
-onserver 	runs the problem on a CmplServer or in a CmplServerGrid
-	runOnServer 
 
-
-
-# start as client-only cmpl
-#client			use only modules of a client cmpl and force transfer of execution to the server
-#	compatSymbols
-#	externDataFile
-#	precompile
-#	transferToServer -client-only
-
-# run server cmpl
-#server			run server cmpl, only for use by the server control
-#	transferFromClient
-#	transferToClient
 
 
 # checks the syntax of cmpl input, but don't execute it
@@ -157,19 +141,4 @@ precomp			runs only the precompiler and outputs the generated file
 	externDataFile
 	precompile -o-pre 1
 
-
-
-# use module test with option "b" set to default 1
-#test1			use module test with option "b" set to default 1
-#	test -a -b 1
-
-# use module test two times, first with option "a" set, second with option "a" not set, even if option "a" is specified on command line
-#test2			use module test two times, first with option "a" set, second with option "a" not set
-#	test=t1 -a!
-#	test=t2 -no-a!
-
-# use module test three times, over module aggregations test1 and test2, test2 with option "b" set to default 2
-#test3			use module test three times, over module aggregations test1 and test2
-#	test1
-#	test2 -b 2
 

@@ -21,8 +21,9 @@ default			run cmpl with default modules
 	precompile
 	compile -no-warn-insert-eos -compat-linenamepref -compat-cbsymbols -compat-cbh-assign
     interpret
-    #writeMps
+    writeMps
     #writeMatrix
+    writeCmplInfo	
     solverCbc
     solverGlpk
     solverCplex
@@ -30,7 +31,7 @@ default			run cmpl with default modules
     solverScip
     #solutionReportAscii -solStdOut
     #solutionReportCsv
-	solutionReportXml
+    solutionReportXml -solution
 
 
 
