@@ -7,8 +7,8 @@ bin/cmpl
 bin/cmpl.opt
 bin/cmpl
 *.d
-*.d
 bin/cmpl
 cmpl-Entwicklung.odt
 *.user
 *.log
+*.d
