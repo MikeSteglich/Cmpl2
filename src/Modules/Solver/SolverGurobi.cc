@@ -1,3 +1,33 @@
+/***********************************************************************
+ *  This code is part of CMPL
+ *
+ *  Copyright (C) 2007, 2008, 2009, 2010, 2011
+ *  Mike Steglich - Technical University of Applied Sciences
+ *  Wildau, Germany and Thomas Schleiff - Halle(Saale),
+ *  Germany
+ *
+ *  Coliop3 and CMPL are projects of the Technical University of
+ *  Applied Sciences Wildau and the Institute for Operations Research
+ *  and Business Management at the Martin Luther University
+ *  Halle-Wittenberg.
+ *  Please visit the project homepage <www.coliop.org>
+ *
+ *  CMPL is free software; you can redistribute it and/or modify it
+ *  under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  CMPL is distributed in the hope that it will be useful, but WITHOUT
+ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ *  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, see <http://www.gnu.org/licenses/>.
+ *
+ ***********************************************************************/
+
+
 #include "SolverGurobi.hh"
 #include "../../Control/MainControl.hh"
 #include "../../CommonData/Solution.hh"
@@ -7,8 +37,6 @@ namespace cmpl
 {
 /*********** module definition **********/
 
-// defines the module "SolveCbc" that is implemented in class "SolveCbc".
-// to register this module you have to insert "MODULE_CLASS_REG(1, SolverCbc)" to file "modules.reg"
 MODULE_CLASS( solverGurobi, SolverGurobi )
 
 
@@ -29,8 +57,6 @@ void SolverGurobi::init(MainControl *ctrl, MainData *data, const char *name)
 
 
 /*********** handling of command line options **********/
-
-
 
 
 /**
@@ -82,7 +108,6 @@ void SolverGurobi::run()
         if (!om->isLinearModel())
             _ctrl->errHandler().internalError("Gurobi cannot solve a nonlinear model"  );
 
-
         PROTO_OUTL("Start SolverGurobi module " << moduleName());
 
         setBinFullName();
@@ -92,14 +117,12 @@ void SolverGurobi::run()
 
         PROTO_OUTL("SolverGurobi: solving instance" << moduleName());
 
-        //GET_DATA(Solution,sol);
-        //if (!sol)
         GET_NEW_DATA(Solution,sol);
 
         string probName = string( modp()->data()->cmplFileBase() )+".cmpl";
         sol->prepareSolutionData(probName, _solverName, _integerRelaxation, _data,this);
 
-        generateCmdLine(sol,om);
+        generateCmdLine();
 
         cout << _solverCmdLine << endl;
 
@@ -116,10 +139,11 @@ void SolverGurobi::run()
 }
 
 
-void SolverGurobi::generateCmdLine(Solution* sol, OptModel* om ) {
+/**
+  * @brief generates the the solver specific command line for the solver
+  */
+void SolverGurobi::generateCmdLine() {
 
-   // string cwd = getWorkingDir();
-    //cwd=StringStore::replaceAll(cwd," ","%");
     string solPool = ( _solutionPool ? "1" :"0");
 
     _solverCmdLine=_solverBinName+" "+solPool+" " + StringStore::replaceAll(_instanceFileName," ","%") + " " + StringStore::replaceAll(_instanceSolName," ","%");
@@ -130,7 +154,11 @@ void SolverGurobi::generateCmdLine(Solution* sol, OptModel* om ) {
      _solverCmdLine+= " 2>&1";
 }
 
-
+/**
+ * @brief reads a key and a val from an Xml string
+ * @param valString     Xml string
+ * @return
+ */
 string SolverGurobi::readXmlVal(string valString) {
     string ret;
     vector <string> valList;
@@ -143,6 +171,11 @@ string SolverGurobi::readXmlVal(string valString) {
 
 }
 
+/**
+ * @brief reads the solver specific solution file
+ * @param sol   pointer to Solution object
+ * @param om    pointer to ObtModel object
+ */
 void SolverGurobi::readSolFile(Solution* sol,  OptModel* om) {
 
     string line;
@@ -165,14 +198,12 @@ void SolverGurobi::readSolFile(Solution* sol,  OptModel* om) {
     LinearModel *lm = om->getRowModel();
     const vector<LinearModel::Coefficient> *coeffs = lm->coeffs();
 
-
     try {
 
         ifstream  solFile( _instanceSolName, ifstream::binary) ;
 
         if (!solFile.is_open())
             _ctrl->errHandler().internalError(_ctrl->printBuffer("Cannot read solution file '%s'", _instanceSolName.c_str() )  ,NULL);
-
 
         while ( getline( solFile, line) && continueReading ) {
 
@@ -229,7 +260,6 @@ void SolverGurobi::readSolFile(Solution* sol,  OptModel* om) {
                     }
                }
 
-
                 sol->setSolution(*solution);
                 delete solution;
 
@@ -278,7 +308,6 @@ void SolverGurobi::readSolFile(Solution* sol,  OptModel* om) {
 
             if (headerSection) {
 
-
                 vector<string> varXmlVals;
                 StringStore::split(line,varXmlVals);
 
@@ -321,6 +350,10 @@ void SolverGurobi::readSolFile(Solution* sol,  OptModel* om) {
 
                 if (varSection) {
                     solElem.setModelElement(sol->modelVariable(varIdx));
+                    if (sol->modelVariable(varIdx)->type()!="C") {
+                        activity=round(activity);
+                        solElem.setActivity(activity);
+                    }
                     solution->setVariable(solElem);
                     varIdx++;
                 } else {

@@ -12,3 +12,9 @@ cmpl-Entwicklung.odt
 *.user
 *.log
 *.d
+*.d
+*.cflags
+*.cxxflags
+*.user
+*.user
+bin/cmpl

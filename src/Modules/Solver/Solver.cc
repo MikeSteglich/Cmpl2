@@ -1,3 +1,32 @@
+/***********************************************************************
+ *  This code is part of CMPL
+ *
+ *  Copyright (C) 2007, 2008, 2009, 2010, 2011
+ *  Mike Steglich - Technical University of Applied Sciences
+ *  Wildau, Germany and Thomas Schleiff - Halle(Saale),
+ *  Germany
+ *
+ *  Coliop3 and CMPL are projects of the Technical University of
+ *  Applied Sciences Wildau and the Institute for Operations Research
+ *  and Business Management at the Martin Luther University
+ *  Halle-Wittenberg.
+ *  Please visit the project homepage <www.coliop.org>
+ *
+ *  CMPL is free software; you can redistribute it and/or modify it
+ *  under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  CMPL is distributed in the hope that it will be useful, but WITHOUT
+ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ *  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, see <http://www.gnu.org/licenses/>.
+ *
+ ***********************************************************************/
+
 #include "Solver.hh"
 
 #include "../../Control/MainControl.hh"
@@ -14,7 +43,12 @@
 namespace cmpl
 {
 
-
+/**
+ * @brief initialize modul, to call immediately after the constructor.
+ * @param ctrl  pointer to MainControl object
+ * @param data  pointer to MainData object
+ * @param name  module name (or alias)
+ */
 void Solver::init(MainControl *ctrl, MainData *data, const char *name)
 {
     ModuleBase::init(ctrl, data, name);
@@ -25,7 +59,6 @@ void Solver::init(MainControl *ctrl, MainData *data, const char *name)
     char tmpFilename[L_tmpnam];
     std::tmpnam(tmpFilename);
 
-    //_instanceBaseName = FileBase::getTmpPath()+FileBase::getTmpFileName("cmpl",10000);
     _instanceBaseName = tmpFilename;
 
     _instanceFileName = _instanceBaseName+".mps";
@@ -45,8 +78,6 @@ void Solver::init(MainControl *ctrl, MainData *data, const char *name)
 
     readOptFile();
 
-
-
 }
 
 
@@ -57,111 +88,113 @@ void Solver::init(MainControl *ctrl, MainData *data, const char *name)
 
 
 
-    /**
+/**
      * register command line options options for delivery to this module
      * @param modOptReg		vector to register in
      */
-    void Solver::regModOptions(vector<CmdLineOptList::RegOption> &modOptReg)
-    {
-        ModuleBase::regModOptions(modOptReg);
+void Solver::regModOptions(vector<CmdLineOptList::RegOption> &modOptReg)
+{
+    ModuleBase::regModOptions(modOptReg);
 
 
 
-        REG_CMDL_OPTION( OPTION_SOLVER_SOLVERNAME, "solver", 1, 1, CMDL_OPTION_NEG_NO_ARG, false );
+    REG_CMDL_OPTION( OPTION_SOLVER_SOLVERNAME, "solver", 1, 1, CMDL_OPTION_NEG_NO_ARG, false );
 
-        REG_CMDL_OPTION( OPTION_SOLVER_OPTION, "opt", 2, 200, CMDL_OPTION_NEG_NO_ARG, false );
+    REG_CMDL_OPTION( OPTION_SOLVER_OPTION, "opt", 2, 200, CMDL_OPTION_NEG_NO_ARG, false );
 
-        REG_CMDL_OPTION( OPTION_SOLVER_DISPLAY, "display", 1, 200, CMDL_OPTION_NEG_NO_ARG, false );
+    REG_CMDL_OPTION( OPTION_SOLVER_DISPLAY, "display", 1, 200, CMDL_OPTION_NEG_NO_ARG, false );
 
-        REG_CMDL_OPTION( OPTION_SOLVER_INTEGERRELAXATION, "int-relax", 0, 0, CMDL_OPTION_NEG_DELIV, false );
+    REG_CMDL_OPTION( OPTION_SOLVER_INTEGERRELAXATION, "int-relax", 0, 0, CMDL_OPTION_NEG_DELIV, false );
 
 
 
-    }
+}
 
-    /**
+/**
      * parse single option from command line options, this function is called for every delivered option
      * @param ref			reference number of option registration, should be used for discriminate the options
      * @param prio			priority value of option
      * @param opt			option
      * @return				true if option is used by the module
      */
-    bool Solver::parseOption(int ref, int prio, CmdLineOptList::SingleOption *opt)
-    {
-        if (ModuleBase::parseOption(ref, prio, opt))
-            return true;
+bool Solver::parseOption(int ref, int prio, CmdLineOptList::SingleOption *opt)
+{
+    if (ModuleBase::parseOption(ref, prio, opt))
+        return true;
 
-        switch (ref) {
+    switch (ref) {
 
-        case OPTION_SOLVER_DISPLAY:
-            if (!opt->neg()) {
-                string dispOpt = (*opt)[0];
-                if (StringStore::upperCase(dispOpt)=="SOLUTIONPOOL")
-                    _solutionPool=true;
-            }
-
-            return true;
-
-        case OPTION_SOLVER_SOLVERNAME:
-            if (!opt->neg()) {
-                string solverName = (*opt)[0];
-                _solverName=StringStore::upperCase(solverName);
-                if (!isImplemented(_solverName))
-                    _ctrl->errHandler().error(ERROR_LVL_NORMAL, _ctrl->printBuffer("Solver '%s' is not supported", solverName.c_str()), opt->loc(true) );
-            }
-
-            return true;
-
-        case  OPTION_SOLVER_OPTION:
-            if (!opt->neg()) {
-                string solverName = (*opt)[0];
-                solverName = StringStore::lrTrim(StringStore::upperCase(solverName));
-
-                if (solverName==_solverModule) {
-
-                    for (size_t i=1; i<opt->size();i++) {
-                        string option=(*opt)[i];
-                        vector <string> optList;
-                        StringStore::split(option,optList,"=");
-                        solverOption solOpt;
-                        solOpt.key=optList[0];
-                        if (optList.size()>1)
-                            solOpt.value=optList[1];
-                        else
-                            solOpt.value="";
-
-                        _solverOpts.push_back(solOpt);
-                    }
-
-                }
-            }
-
-            return true;
-
-        case OPTION_SOLVER_INTEGERRELAXATION:
-            _integerRelaxation=true;
-            return true;
-
-
+    case OPTION_SOLVER_DISPLAY:
+        if (!opt->neg()) {
+            string dispOpt = (*opt)[0];
+            if (StringStore::upperCase(dispOpt)=="SOLUTIONPOOL")
+                _solutionPool=true;
         }
 
-        return false;
+        return true;
+
+    case OPTION_SOLVER_SOLVERNAME:
+        if (!opt->neg()) {
+            string solverName = (*opt)[0];
+            _solverName=StringStore::upperCase(solverName);
+            if (!isImplemented(_solverName))
+                _ctrl->errHandler().error(ERROR_LVL_NORMAL, _ctrl->printBuffer("Solver '%s' is not supported", solverName.c_str()), opt->loc(true) );
+        }
+
+        return true;
+
+    case  OPTION_SOLVER_OPTION:
+        if (!opt->neg()) {
+            string solverName = (*opt)[0];
+            solverName = StringStore::lrTrim(StringStore::upperCase(solverName));
+
+            if (solverName==_solverModule) {
+
+                for (size_t i=1; i<opt->size();i++) {
+                    string option=(*opt)[i];
+                    vector <string> optList;
+                    StringStore::split(option,optList,"=");
+                    solverOption solOpt;
+                    solOpt.key=optList[0];
+                    if (optList.size()>1)
+                        solOpt.value=optList[1];
+                    else
+                        solOpt.value="";
+
+                    _solverOpts.push_back(solOpt);
+                }
+
+            }
+        }
+
+        return true;
+
+    case OPTION_SOLVER_INTEGERRELAXATION:
+        _integerRelaxation=true;
+        return true;
+
+
     }
 
-    /**
+    return false;
+}
+
+/**
      * writes usage info for the module to stream
      * @param s				stream to write to
      */
-    void Solver::usage(ostream& s)
-    {
-        ModuleBase::usage(s);
+void Solver::usage(ostream& s)
+{
+    ModuleBase::usage(s);
 
-        s << "  -solver <solverName>                       specifies the Solver to be invoked" << endl;
-        s << "  -opt <solverName> [<option>[=<val>] ...]   specifies the Solver to be invoked" << endl;
-    }
+    s << "  -solver <solverName>                       specifies the Solver to be invoked" << endl;
+    s << "  -opt <solverName> [<option>[=<val>] ...]   specifies the Solver to be invoked" << endl;
+}
 
 
-
+/**
+* @brief reads the Cmpl solver option file
+*/
 void Solver::readOptFile() {
 
     //bool solverFileNameFound=false;
@@ -190,6 +223,12 @@ void Solver::readOptFile() {
                 solver=StringStore::upperCase((StringStore::lrTrim(solver)));
                 solverPath=StringStore::lrTrim(solverPath);
 
+                string dirSep(1,dirSepChar);
+
+                if ( !StringStore::startsWith(solverPath, dirSep ) ) {
+                    solverPath = FileBase::replFileInPath(_ctrl->binFullName() , &solverPath, dirSepChar);
+                }
+
                 _implementedSolvers.push_back(solver);
                 _solverBinNames[solver]=solverPath;
 
@@ -205,6 +244,9 @@ void Solver::readOptFile() {
 
 }
 
+/**
+ * @brief sets the full path to the solver binary
+ */
 void Solver::setBinFullName(){
 
     if (!isImplemented(_solverName))
@@ -217,12 +259,19 @@ void Solver::setBinFullName(){
 
 }
 
+/**
+ * @brief Returns true if the solver is implemented
+ * @param SolverName    solver to be checked
+ * @return
+ */
 bool Solver::isImplemented(string solverName){
 
     return (find(_implementedSolvers.begin(), _implementedSolvers.end(), solverName) != _implementedSolvers.end() );
 }
 
-
+/**
+ * @brief writes the generated Mps into the tmp folder
+ */
 void Solver::writeInstanceFile(string opts) {
     deleteTmpFiles();
 
@@ -246,7 +295,9 @@ void Solver::writeInstanceFile(string opts) {
 
 }
 
-
+/**
+ * @brief deletes all generated files in the tmp folder
+ */
 void Solver::deleteTmpFiles() {
     if (FileBase::exists(_instanceFileName))
         remove(_instanceFileName.c_str());
@@ -260,7 +311,9 @@ void Solver::deleteTmpFiles() {
 
 }
 
-
+/**
+ * @brief Neccessary to setting up the binary
+ */
 void Solver::replaceFullBinName() {
     char dirSepChar = (_ctrl->binFullName() ? FileBase::getDirSepChar(_ctrl->binFullName()->c_str()) : '\0');
 
@@ -271,8 +324,10 @@ void Solver::replaceFullBinName() {
         _solverBinName= FileBase::replFileInPath(_ctrl->binFullName(), &_solverBinName, dirSepChar);
 }
 
-
-
+/**
+ * @brief starts the solver as external process
+ * @return          status of the solver
+ */
 int Solver::solve() {
 
     int buffSize = 128;
@@ -316,7 +371,6 @@ int Solver::solve() {
     }
 
     return ret;
-
 }
 
 

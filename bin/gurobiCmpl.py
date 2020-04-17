@@ -47,7 +47,7 @@ def cleanBlanks(str):
 	return str.replace('%', ' ').strip()
 	
 if not module_exists('gurobipy'):
-    print 'Cant find Gurobi'
+    print('Cant find Gurobi')
     quit(-1)
 
 from gurobipy import *
@@ -176,7 +176,7 @@ def writeSol(solFile, solutions):
                 f.write(' />\n')
 
         f.write('		</constraints>\n')
-	f.write('	</solution>\n')
+        f.write('	</solution>\n')
 
         idx+=1
 
@@ -193,13 +193,15 @@ def main():
     i = 0
     #print sys.argv
 
+    modFile=""
     for arg in sys.argv:
             #print "%i %s\n" % (i, arg)
 
             if i == 1:
                     solutionPool = arg
             if i == 2:
-                    model = read(cleanBlanks(arg))
+                    modFile = cleanBlanks(arg)
+                    #model = read(cleanBlanks(arg))
             if i == 3:
                     solFile = cleanBlanks(arg)
             if i > 3:
@@ -207,10 +209,12 @@ def main():
                     exec(s)
             i += 1
 
+
     nrOfSolutions = 0
 
     try:
 
+        model = read(modFile)
         model.optimize()
 
         solutions=[]
@@ -277,15 +281,15 @@ def main():
 
                         solutions.append(sol)
 
-        print 'Writing solution'
+        print('Writing solution')
         writeSol(solFile, solutions)
         model.Params.outputFlag = 1
 
-        print '...done'
+        print('...done')
 
     except:
         traceback.print_exc(file=sys.stdout)
-        print sys.exc_info()[1]
+        print(sys.exc_info()[1])
 
 #*************** end main ****************************************
 

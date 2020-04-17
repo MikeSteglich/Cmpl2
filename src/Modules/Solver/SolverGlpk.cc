@@ -1,3 +1,32 @@
+/***********************************************************************
+ *  This code is part of CMPL
+ *
+ *  Copyright (C) 2007, 2008, 2009, 2010, 2011
+ *  Mike Steglich - Technical University of Applied Sciences
+ *  Wildau, Germany and Thomas Schleiff - Halle(Saale),
+ *  Germany
+ *
+ *  Coliop3 and CMPL are projects of the Technical University of
+ *  Applied Sciences Wildau and the Institute for Operations Research
+ *  and Business Management at the Martin Luther University
+ *  Halle-Wittenberg.
+ *  Please visit the project homepage <www.coliop.org>
+ *
+ *  CMPL is free software; you can redistribute it and/or modify it
+ *  under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  CMPL is distributed in the hope that it will be useful, but WITHOUT
+ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ *  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, see <http://www.gnu.org/licenses/>.
+ *
+ ***********************************************************************/
+
 #include "SolverGlpk.hh"
 #include "../../Control/MainControl.hh"
 #include "../../CommonData/Solution.hh"
@@ -7,8 +36,6 @@ namespace cmpl
 {
 /*********** module definition **********/
 
-// defines the module "SolveCbc" that is implemented in class "SolveCbc".
-// to register this module you have to insert "MODULE_CLASS_REG(1, SolverCbc)" to file "modules.reg"
 MODULE_CLASS( solverGlpk, SolverGlpk )
 
 
@@ -93,16 +120,12 @@ void SolverGlpk::run()
 
         PROTO_OUTL("SolverGlpk: solving instance" << moduleName());
 
-        //GET_DATA(Solution,sol);
-        //if (!sol)
         GET_NEW_DATA(Solution,sol);
 
         string probName = string( modp()->data()->cmplFileBase() )+".cmpl";
         sol->prepareSolutionData(probName, _solverName, _integerRelaxation, _data,this);
 
         generateCmdLine(sol);
-
-        //cout << _solverCmdLine << endl;
 
         int ret = solve();
 
@@ -119,21 +142,25 @@ void SolverGlpk::run()
 
 }
 
-
+/**
+  * @brief generates the the solver specific command line for the solver
+  * @param sol   pointer to Solution object
+  */
 void SolverGlpk::generateCmdLine(Solution* sol) {
-
-    //progString+="\"glpsol --freemps \""+ QString::fromStdString(args->mps.fileName())+"\"  --"+ QString::fromStdString(cmplInst->objSense()) +" --write \""+QString::fromStdString(args->gsolFile())+"\"" + QString::fromStdString(args->solverOpts());
-
 
     _solverCmdLine=_solverBinName+" --freemps " + " --"+sol->objSense()+ " --write "+_instanceSolName;
 
     for (size_t i=0; i<_solverOpts.size(); i++)
-            _solverCmdLine+= " --" + _solverOpts[i].key + " " + _solverOpts[i].value;
+        _solverCmdLine+= " --" + _solverOpts[i].key + " " + _solverOpts[i].value;
 
     _solverCmdLine+=  " " + _instanceFileName + " 2>&1";
 }
 
 
+/**
+ * @brief reads the solver specific solution file
+ * @param sol   pointer to Solution object
+ */
 void SolverGlpk::readSolFile(Solution* sol) {
 
     string line;
@@ -148,12 +175,9 @@ void SolverGlpk::readSolFile(Solution* sol) {
         if (!solFile.is_open())
             _ctrl->errHandler().internalError(_ctrl->printBuffer("Cannot read solution file '%s'", _instanceSolName.c_str() )  ,NULL);
 
-
         SingleSolution solution;
 
         while ( getline( solFile, line) ) {
-
-            //lineNr++;
 
             line=StringStore::lrTrim(line);
 
@@ -189,11 +213,6 @@ void SolverGlpk::readSolFile(Solution* sol) {
                     int vPos;
                     vPos = solList.size() -1;
 
-//                    if ( StringStore::lrTrim(solList[4])=="u")
-//                        vPos=6;
-//                    else
-//                        vPos=5;
-
                     double objVal;
                     if (!StringStore::toDouble(solList[vPos],objVal))
                         _ctrl->errHandler().internalError("Internal error while reading obValue" ,NULL);
@@ -219,8 +238,6 @@ void SolverGlpk::readSolFile(Solution* sol) {
 
                 double activity=0;
                 double marginal=0;
-
-
 
                 int aPos=0;
                 int mPos=0;
@@ -252,6 +269,10 @@ void SolverGlpk::readSolFile(Solution* sol) {
 
                 if ( StringStore::startsWith(line,"j") ){
                     solElem.setModelElement(sol->modelVariable(varIdx));
+                    if (sol->modelVariable(varIdx)->type()!="C") {
+                        activity=round(activity);
+                        solElem.setActivity(activity);
+                    }
                     solution.setVariable(solElem);
                     varIdx++;
                 }

@@ -1,3 +1,34 @@
+
+/***********************************************************************
+ *  This code is part of CMPL
+ *
+ *  Copyright (C) 2007, 2008, 2009, 2010, 2011
+ *  Mike Steglich - Technical University of Applied Sciences
+ *  Wildau, Germany and Thomas Schleiff - Halle(Saale),
+ *  Germany
+ *
+ *  Coliop3 and CMPL are projects of the Technical University of
+ *  Applied Sciences Wildau and the Institute for Operations Research
+ *  and Business Management at the Martin Luther University
+ *  Halle-Wittenberg.
+ *  Please visit the project homepage <www.coliop.org>
+ *
+ *  CMPL is free software; you can redistribute it and/or modify it
+ *  under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  CMPL is distributed in the hope that it will be useful, but WITHOUT
+ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ *  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, see <http://www.gnu.org/licenses/>.
+ *
+ ***********************************************************************/
+
+
 #include "Solution.hh"
 
 #include "../Control/MainData.hh"
@@ -18,6 +49,9 @@ DATA_CLASS( Solution );
 
 
 
+/**
+ * constructor
+ */
 ModelElement::ModelElement() {
     _type="";
     _name="";
@@ -26,6 +60,9 @@ ModelElement::ModelElement() {
 }
 
 
+/**
+ * constructor
+ */
 SolutionElement::SolutionElement() {
     _activity=0;
     _marginal=0;
@@ -33,13 +70,21 @@ SolutionElement::SolutionElement() {
 }
 
 
-
+/**
+ * constructor
+ */
 SingleSolution::SingleSolution() {
     _status="";
     _value=0;
 }
 
-
+/**
+ * @brief calculates the activity of a constraint (used for Gurobi and Scip)
+ * @param con       pointer to an object of a constraint
+ * @param sol       pointer to an object of a single solution
+ * @param coeffs    pointer to a vector of coefficients
+ * @return          activity of the constraint
+ */
 double SingleSolution::calculateConActivity(OptModel *om, Solution* sol, const vector<LinearModel::Coefficient>& coeffs)  {
 
     double conAct=0;
@@ -50,19 +95,22 @@ double SingleSolution::calculateConActivity(OptModel *om, Solution* sol, const v
         itIdx=it->idRC - 1;
         idx = sol->varMpsIdxByIdx(itIdx);
 
-        if (om->isInteger())
+        if (it->iCoeff != 0 || it->rCoeff == 0)
             conAct +=  it->iCoeff * _variables[idx].activity();
         else
             conAct +=  it->rCoeff * _variables[idx].activity();
-
     }
 
     return conAct;
 }
 
 
-
-
+/**
+ * @brief Returns the bounds of a variable
+ * @param ov            Pointer to OptVar object
+ * @param lowerBound    lowerBound var
+ * @param upperBound    upperBound
+ */
 void Solution::getVarBounds(OptVar *ov,double &lowerBound, double &upperBound ) {
 
     CmplVal& lb = ov->lowBound();
@@ -87,14 +135,14 @@ void Solution::getVarBounds(OptVar *ov,double &lowerBound, double &upperBound ) 
 
     if (lb || ub) {
         if (lb)
-          lowerBound=lBound;
+            lowerBound=lBound;
         else
-          lowerBound=-inf;
+            lowerBound=-inf;
 
         if (ub)
-          upperBound=uBound;
+            upperBound=uBound;
         else
-          upperBound=inf;
+            upperBound=inf;
     }
     else {
         lowerBound=-inf;
@@ -102,11 +150,17 @@ void Solution::getVarBounds(OptVar *ov,double &lowerBound, double &upperBound ) 
     }
 }
 
-
-
+/**
+ * @brief prepares the Solution data objects
+ * @param probName      name of the problem
+ * @param solver        name of the solver
+ * @param intRelaxation true if integers should be relaxed
+ * @param md            pointer to main data object
+ * @param mb            pointer to ModulBase object
+ */
 void Solution::prepareSolutionData(string probName, string solver,  bool intRelaxation, MainData *md, ModuleBase *mb) {
 
-    #define GET_DATA_2(n,d)		n *d = (n *)(md->data(string(#n)))
+#define GET_DATA_2(n,d)		n *d = (n *)(md->data(string(#n)))
     GET_DATA_2( OptModel , om);
 
     _probName=probName;
@@ -257,12 +311,12 @@ void Solution::prepareSolutionData(string probName, string solver,  bool intRela
 
                 _colNameMap[colNames[i] ] = mpsIdx;
                 _colIdxMap[i]=mpsIdx;
-               // _colSolIdxMap[mpsIdx]=i;
+                // _colSolIdxMap[mpsIdx]=i;
                 mpsIdx++;
                 _modVariables.push_back(modElem);
             }
         }
-   }
+    }
     if (integerRelaxation) {
         hasInt = false;
         _hasMarginal=true;

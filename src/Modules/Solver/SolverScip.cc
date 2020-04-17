@@ -1,3 +1,33 @@
+/***********************************************************************
+ *  This code is part of CMPL
+ *
+ *  Copyright (C) 2007, 2008, 2009, 2010, 2011
+ *  Mike Steglich - Technical University of Applied Sciences
+ *  Wildau, Germany and Thomas Schleiff - Halle(Saale),
+ *  Germany
+ *
+ *  Coliop3 and CMPL are projects of the Technical University of
+ *  Applied Sciences Wildau and the Institute for Operations Research
+ *  and Business Management at the Martin Luther University
+ *  Halle-Wittenberg.
+ *  Please visit the project homepage <www.coliop.org>
+ *
+ *  CMPL is free software; you can redistribute it and/or modify it
+ *  under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  CMPL is distributed in the hope that it will be useful, but WITHOUT
+ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ *  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, see <http://www.gnu.org/licenses/>.
+ *
+ ***********************************************************************/
+
+
 #include "SolverScip.hh"
 #include "../../Control/MainControl.hh"
 #include "../../CommonData/Solution.hh"
@@ -7,10 +37,7 @@ namespace cmpl
 {
 /*********** module definition **********/
 
-// defines the module "SolveCbc" that is implemented in class "SolveCbc".
-// to register this module you have to insert "MODULE_CLASS_REG(1, SolverCbc)" to file "modules.reg"
 MODULE_CLASS( solverScip, SolverScip )
-
 
 
 /*********** initialization **********/
@@ -29,8 +56,6 @@ void SolverScip::init(MainControl *ctrl, MainData *data, const char *name)
 
 
 /*********** handling of command line options **********/
-
-
 
 
 /**
@@ -91,16 +116,17 @@ void SolverScip::run()
 
         PROTO_OUTL("SolverScip: solving instance" << moduleName());
 
-        //GET_DATA(Solution,sol);
-        //if (!sol)
         GET_NEW_DATA(Solution,sol);
+
+        if (!om->isInteger()){
+             LocationInfo loc(PositionInfo(POSITION_TYPE_DESCR, "(internal)"));
+             _ctrl->errHandler().error(ERROR_LVL_WARN,_ctrl->printBuffer("Warning: Scip runs only (M)ILP problems, marginals are not available in solution") , loc ) ;
+        }
 
         string probName = string( modp()->data()->cmplFileBase() )+".cmpl";
         sol->prepareSolutionData(probName, _solverName, _integerRelaxation, _data,this);
 
         generateCmdLine();
-
-        cout << _solverCmdLine << endl;
 
         int ret = solve();
 
@@ -114,17 +140,17 @@ void SolverScip::run()
     }
 }
 
-
+/**
+ * @brief writes the Scip option file
+ */
 void SolverScip::writeOptFile(){
 
     try {
-
         ofstream  optFile( _instanceCmdName.c_str() ) ;
 
         for (size_t i=0; i<_solverOpts.size(); i++) {
             optFile << _solverOpts[i].key << " = " << _solverOpts[i].value << endl;
         }
-
         optFile.close();
     }
     catch (exception& ex) {
@@ -132,6 +158,9 @@ void SolverScip::writeOptFile(){
     }
 }
 
+/**
+  * @brief generates the the solver specific command line for the solver
+  */
 void SolverScip::generateCmdLine() {
     writeOptFile();
     _solverCmdLine=_solverBinName+" -c \"set load " + _instanceCmdName + "\" ";
@@ -142,6 +171,11 @@ void SolverScip::generateCmdLine() {
 }
 
 
+/**
+ * @brief reads the solver specific solution file
+ * @param sol   pointer to Solution object
+ * @param om    pointer to ObtModel object
+ */
 void SolverScip::readSolFile(Solution* sol,  OptModel* om) {
 
     int nrOfSolutions=0;
@@ -176,7 +210,6 @@ void SolverScip::readSolFile(Solution* sol,  OptModel* om) {
             line=StringStore::lrTrim(line);
             vector<string> solList;
 
-
             lineNr++;
             if (lineNr==1) {
                 StringStore::split(line,solList,":");
@@ -207,6 +240,10 @@ void SolverScip::readSolFile(Solution* sol,  OptModel* om) {
                     _ctrl->errHandler().internalError("Internal error while reading var activity value from Scip solution file");
 
                 unsigned long idx=sol->varMpsIdxByName(varName);
+                if (sol->modelVariable(idx)->type()!="C") {
+                    activity=round(activity);
+                 }
+
                 solution.variable(idx)->setActivity(activity);
             }
         }
@@ -214,7 +251,6 @@ void SolverScip::readSolFile(Solution* sol,  OptModel* om) {
         unsigned long idx=0;
         const char *mode;
         mode = lm->mode();
-
 
         for(unsigned long i=0; i<rowCnt; i++,mode++) {
             char m = *mode;
@@ -231,9 +267,7 @@ void SolverScip::readSolFile(Solution* sol,  OptModel* om) {
             }
         }
 
-
         sol->setSolution(solution);
-
 
     }catch (FileException& e) {
         _ctrl->errHandler().internalError(_ctrl->printBuffer("%s: solution file '%s'", e.what(), _instanceSolName.c_str()) ,&e);

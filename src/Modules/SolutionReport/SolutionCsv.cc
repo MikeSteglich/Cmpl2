@@ -242,10 +242,11 @@ void SolutionCsv::writeSolReport(Solution *sol, ostream& ostr) {
                     string tmpStr=_displayVarList[k].substr(0,starPos);
 
                     for (unsigned long j=0; j<sol->nrOfVariables(); j++ ) {
-                        if ( (starPos>-1 && StringStore::startsWith(  sol->solution(i)->variable(j)->name() ,tmpStr) ) ||
-                             (starPos==-1 &&  sol->solution(i)->variable(j)->name()==tmpStr) ) {
-                            if (!(sol->solution(i)->variable(j)->activity()==0.0 && _ignoreZeros) ) {
-                                unsigned long jj=sol->varMpsIdxByIdx(j);
+                        unsigned long jj=sol->varMpsIdxByIdx(j);
+                        if ( (starPos>-1 && StringStore::startsWith(  sol->solution(i)->variable(jj)->name() ,tmpStr) ) ||
+                             (starPos==-1 &&  sol->solution(i)->variable(jj)->name()==tmpStr) ) {
+
+                            if (!(sol->solution(i)->variable(jj)->activity()==0.0 && _ignoreZeros) ) {
                                 writeVarValues(sol, i,jj, ostr) ;
                             }
                         }

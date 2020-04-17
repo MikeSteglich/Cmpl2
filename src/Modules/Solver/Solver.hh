@@ -1,3 +1,32 @@
+/***********************************************************************
+ *  This code is part of CMPL
+ *
+ *  Copyright (C) 2007, 2008, 2009, 2010, 2011
+ *  Mike Steglich - Technical University of Applied Sciences
+ *  Wildau, Germany and Thomas Schleiff - Halle(Saale),
+ *  Germany
+ *
+ *  Coliop3 and CMPL are projects of the Technical University of
+ *  Applied Sciences Wildau and the Institute for Operations Research
+ *  and Business Management at the Martin Luther University
+ *  Halle-Wittenberg.
+ *  Please visit the project homepage <www.coliop.org>
+ *
+ *  CMPL is free software; you can redistribute it and/or modify it
+ *  under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  CMPL is distributed in the hope that it will be useful, but WITHOUT
+ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ *  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, see <http://www.gnu.org/licenses/>.
+ *
+ ***********************************************************************/
+
 #ifndef SOLVER_HH
 #define SOLVER_HH
 
@@ -35,7 +64,7 @@ class Solver  : public ModuleBase
 
 
 public:
-    //Solver() {};
+
 
     /**
      * initialize modul, to call immediately after the constructor.
@@ -48,6 +77,11 @@ public:
 
 public:
 
+    /**
+     * @brief Returns true if the solver is implemented
+     * @param SolverName    solver to be checked
+     * @return
+     */
     bool isImplemented(string SolverName);
 
 protected:
@@ -106,19 +140,40 @@ protected:
 
     string _solverCmdLine;
 
+    bool _integerRelaxation;
 
+    /**
+     * @brief reads the Cmpl solver option file
+     */
     void readOptFile();
+
+    /**
+     * @brief sets the full path to the solver binary
+     */
     void setBinFullName();
 
+    /**
+     * @brief writes the generated Mps into the tmp folder
+     */
     void writeInstanceFile(string opts);
 
+    /**
+     * @brief starts the solver as external process
+     * @return          status of the solver
+     */
     int solve();
 
+    /**
+     * @brief deletes all generated files in the tmp folder
+     */
     void deleteTmpFiles();
 
+    /**
+     * @brief Neccessary to setting up the binary
+     */
     void replaceFullBinName() ;
 
-    bool _integerRelaxation;
+
 
 
 private:

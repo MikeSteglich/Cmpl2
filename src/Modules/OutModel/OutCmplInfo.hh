@@ -119,7 +119,7 @@ namespace cmpl
 
 	private:
 		/**
-         * write generated model to file
+         * write generated CmplInfo to file
 		 * @param om			generated model
 		 * @param file			output to this file
          */

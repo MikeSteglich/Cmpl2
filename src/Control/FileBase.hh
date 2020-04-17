@@ -68,7 +68,7 @@ namespace cmpl
 #define IO_FILE_STANDARD_PROTO		"{}.proto"			///< protocol file
 #define IO_FILE_STANDARD_SYNTAX		"{}.syntax"			///< syntax info file
 #define IO_FILE_SOLUTION_ASCII		"{}.sol"			///< std solution file
-#define IO_FILE_SOLUTION_SOLCSV		"{}.sol.csv"			///< csv solution file
+#define IO_FILE_SOLUTION_SOLCSV		"{}.csv"		///< csv solution file
 #define IO_FILE_SOLUTION_SOLXML     "{}.csol"			///< CmplSolution file
 //TODO: other file types
 

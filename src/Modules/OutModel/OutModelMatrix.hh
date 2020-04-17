@@ -1,4 +1,3 @@
-
 /***********************************************************************
  *  This code is part of CMPL
  *
@@ -123,7 +122,7 @@ namespace cmpl
 
 	private:
 		/**
-         * write generated model to file
+         * write generated matrix to file
 		 * @param om			generated model
 		 * @param file			output to this file
          */

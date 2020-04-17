@@ -1,3 +1,33 @@
+
+/***********************************************************************
+ *  This code is part of CMPL
+ *
+ *  Copyright (C) 2007, 2008, 2009, 2010, 2011
+ *  Mike Steglich - Technical University of Applied Sciences
+ *  Wildau, Germany and Thomas Schleiff - Halle(Saale),
+ *  Germany
+ *
+ *  Coliop3 and CMPL are projects of the Technical University of
+ *  Applied Sciences Wildau and the Institute for Operations Research
+ *  and Business Management at the Martin Luther University
+ *  Halle-Wittenberg.
+ *  Please visit the project homepage <www.coliop.org>
+ *
+ *  CMPL is free software; you can redistribute it and/or modify it
+ *  under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  CMPL is distributed in the hope that it will be useful, but WITHOUT
+ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ *  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, see <http://www.gnu.org/licenses/>.
+ *
+ ***********************************************************************/
+
 #ifndef SOLUTION_HH
 #define SOLUTION_HH
 
@@ -163,24 +193,80 @@ private:
 
 public:
 
+    /**
+     * @brief Constructor
+     */
     SingleSolution();
 
+    /**
+     * @brief returns the status of the solution
+     * @return      status
+     */
     inline string status() { return _status;}
+
+    /**
+     * @brief returns the status of the solution
+     * @return      status
+     */
     inline void setStatus(string status) { _status=status;}
 
+    /**
+     * @brief returns the status of the solution
+     * @return      status
+     */
     inline double value() { return _value;}
+
+    /**
+     * @brief sets the objective function value of the solution
+     * @param value     objective function value of the solution
+     */
     inline void setValue(double value) { _value=value;}
 
+    /**
+     * @brief sets the objective function value of the solution
+     * @param value     objective function value of the solution
+     */
     inline vector<SolutionElement>* variables() { return &_variables;}
+
+    /**
+     * @brief adds a variable object to the solution
+     * @param variable  SolutionElement object of a variable
+     */
     inline void setVariable(SolutionElement& variable) {_variables.push_back(variable);}
 
+    /**
+     * @brief returns a pointer to an object of a variable
+     * @param idx       Index of the variable
+     * @return          pointer to an object of a variable
+     */
     inline SolutionElement* variable(unsigned long idx) {return &_variables[idx]; }
 
+    /**
+     * @brief returns all constraints
+     * @return  pointer to a vector of the SolutionElement objects of all constraints
+     */
     inline vector<SolutionElement>* constraints() { return &_constraints;}
+
+    /**
+     * @brief adds a constraint object to the solution
+     * @param variable  SolutionElement object of a constraint
+     */
     inline void setConstraint(SolutionElement& constraint) {_constraints.push_back(constraint);}
 
+    /**
+     * @brief returns a pointer to an object of a constraint
+     * @param idx       Index of the constraint
+     * @return          pointer to an object of a constraint
+     */
     inline SolutionElement* constraint(unsigned long idx) {return &_constraints[idx]; }
 
+    /**
+     * @brief calculates the activity of a constraint (used for Gurobi and Scip)
+     * @param con       pointer to an object of a constraint
+     * @param sol       pointer to an object of a single solution
+     * @param coeffs    pointer to a vector of coefficients
+     * @return          activity of the constraint
+     */
     double calculateConActivity(OptModel *om, Solution* sol, const vector<LinearModel::Coefficient>& coeffs);
 
 };
@@ -188,6 +274,9 @@ public:
 
 
 
+/**
+ * @brief The Solution class
+ */
 class Solution : public MainData::DataBase
 {
 
@@ -225,56 +314,195 @@ private:
     vector<ModelElement> _modVariables;
     vector<ModelElement> _modConstraints;
 
+    /**
+     * @brief Returns the bounds of a variable
+     * @param ov            Pointer to OptVar object
+     * @param lowerBound    lowerBound var
+     * @param upperBound    upperBound
+     */
     void getVarBounds(OptVar *ov, double &lowerBound, double &upperBound );
-    //double getVarUpperBound(OptVar *ov );
+
 
 public:
+
+    /**
+     * @brief Constructor
+     */
     Solution (const char *m, MainData *data): MainData::DataBase(m, data)		{ _nrOfSolutions=0; }
 
+    /**
+     * @brief Destructor
+     */
     inline ~Solution()	{ cleanUp(); }
 
+    /**
+     * @brief prepares the Solution data objects
+     * @param probName      name of the problem
+     * @param solver        name of the solver
+     * @param intRelaxation true if integers should be relaxed
+     * @param md            pointer to main data object
+     * @param mb            pointer to ModulBase object
+     */
     void prepareSolutionData(string probName, string solver, bool intRelaxation, MainData *md, ModuleBase *mb);
 
+    /**
+     * @brief returns the name of the problem
+     * @return      name of the problem
+     */
     inline string problemName() {return _probName;}
+
+    /**
+     * @brief sets the problem name
+     * @param name      name of the problem
+     * @return
+     */
     inline void setProblemName(string name) {_probName=name;}
 
+    /**
+     * @brief returns the objective function sense
+     * @return      objective function sense <"MIN","MAX">
+     */
     inline string objSense() { return _objSense;}
+
+    /**
+     * @brief returns the name of the objective function
+     * @return      name of the objective function
+     */
     inline string objName() { return _objName;}
+
+    /**
+     * @brief returns the count of the variables
+     * @return      count of the variables
+     */
     inline unsigned long nrOfVariables() {return _nrOfVariables;}
+
+    /**
+     * @brief returns the count of integer variables
+     * @return      count of the integer variables
+     */
     inline unsigned long nrOfIntegerVariables() {return _nrOfIntegerVariables;}
+
+    /**
+     * @brief returns the count of the constraints
+     * @return      count of the constraints
+     */
     inline unsigned long nrOfConstraints() {return _nrOfConstraints;}
 
+    /**
+     * @brief returns the name of the solver
+     * @return      solver name
+     */
     inline string solver() { return _solver;}
+
+    /**
+     * @brief sets the name of the solver
+     * @param  solver       solver name
+     */
     inline void setSolver(string& solver) { _solver=solver;}
 
-    inline string solverLocation() { return _solverLocation;}
-    inline void solverLocation(string& solverLocation) { _solverLocation=solverLocation;}
 
+    /**
+     * @brief returns the count of the solutions
+     * @return      count of the solutions
+     */
     inline int nrOfSolutions() {return _nrOfSolutions;}
+
+    /**
+     * @brief sets the count of the solutions
+     * @param nr         count of the solutions
+     */
     inline void setNrOfSolutions(int nr) {_nrOfSolutions=nr;}
 
+    /**
+     * @brief returns the generell status of all solutions
+     * @return      generell status
+     */
     inline string status() {return _status;}
+
+    /**
+     * @brief sets the generell status of all solutions
+     * @param status        generell status of all solutions
+     */
     inline void setStatus(string status) {_status=status;}
 
+    /**
+     * @brief returns all solutions
+     * @return      vector of all solutions
+     */
     inline vector<SingleSolution> solutions() {return _solutions;}
+
+    /**
+     * @brief adds a new single solution
+     * @param sol   SingleSolution object
+     */
     inline void setSolution(SingleSolution& sol) { _solutions.push_back(sol);}
 
+
+    /**
+     * @brief returns the single solution with index zero
+     * @return          SingleSolution object
+     */
     inline SingleSolution solution() {return _solutions[0];}
 
+    /**
+     * @brief returns a  single solution found
+     * @param idx       Index of the single solution
+     * @return          SingleSolution object
+     */
     inline SingleSolution* solution(int idx) {return &_solutions[idx];}
 
-    inline map<unsigned long,unsigned long>* varIndicesByIdx() {return &_colIdxMap; }
-
+    /**
+     * @brief Returns the index of a variable based on its name
+     * @param name      name of the variable
+     * @return          index of the variable
+     */
     inline unsigned long varMpsIdxByName(string& name) { return _colNameMap[name];}
+
+    /**
+     * @brief Returns the original index of a variable based on its index
+     * @param name      name of the variable
+     * @return          index of the variable
+     */
     inline unsigned long varMpsIdxByIdx(unsigned long idx) { return _colIdxMap[idx];}
 
+    /**
+     * @brief Returns the index of a constraint based on its name
+     * @param name      name of the constraint
+     * @return          index of the constraint
+     */
     inline unsigned long conMpsIdxByName(string& name) { return _rowNameMap[name];}
+
+    /**
+     * @brief Returns the original index of a constraint based on its index
+     * @param name      name of the constraint
+     * @return          index of the constraint
+     */
     inline unsigned long conMpsIdxByIdx(unsigned long idx) { return _rowIdxMap[idx];}
 
+    /**
+     * @brief returns whether the solution contains marginals
+     * @return          true if the solution contains marginals
+     */
     inline bool hasMarginal() { return _hasMarginal;}
+
+    /**
+     * @brief sets whether the solution contains marginals
+     * @param marginal         true if the solution contains marginals
+     */
     inline void setHasMarginal(bool marginal) {_hasMarginal=marginal;}
 
+    /**
+     * @brief Returns a pointer to a variable object
+     * @param idx       index of the variable
+     * @return          pointer to the ModelElement object of the variable
+     */
     inline ModelElement *modelVariable(unsigned long idx) {return &_modVariables[idx]; }
+
+    /**
+     * @brief Returns a pointer to a constraint object
+     * @param idx       index of the constraint
+     * @return          pointer to the ModelElement object of the constraint
+     */
     inline ModelElement *modelConstraint(unsigned long idx) {return &_modConstraints[idx]; }
 
 

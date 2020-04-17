@@ -1,3 +1,33 @@
+/***********************************************************************
+ *  This code is part of CMPL
+ *
+ *  Copyright (C) 2007, 2008, 2009, 2010, 2011
+ *  Mike Steglich - Technical University of Applied Sciences
+ *  Wildau, Germany and Thomas Schleiff - Halle(Saale),
+ *  Germany
+ *
+ *  Coliop3 and CMPL are projects of the Technical University of
+ *  Applied Sciences Wildau and the Institute for Operations Research
+ *  and Business Management at the Martin Luther University
+ *  Halle-Wittenberg.
+ *  Please visit the project homepage <www.coliop.org>
+ *
+ *  CMPL is free software; you can redistribute it and/or modify it
+ *  under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  CMPL is distributed in the hope that it will be useful, but WITHOUT
+ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ *  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, see <http://www.gnu.org/licenses/>.
+ *
+ ***********************************************************************/
+
+
 #include "SolverCplex.hh"
 #include "../../Control/MainControl.hh"
 #include "../../CommonData/Solution.hh"
@@ -7,8 +37,7 @@ namespace cmpl
 {
 /*********** module definition **********/
 
-// defines the module "SolveCbc" that is implemented in class "SolveCbc".
-// to register this module you have to insert "MODULE_CLASS_REG(1, SolverCbc)" to file "modules.reg"
+
 MODULE_CLASS( solverCplex, SolverCplex )
 
 
@@ -25,11 +54,10 @@ void SolverCplex::init(MainControl *ctrl, MainData *data, const char *name)
 {
     _solverModule="CPLEX";
     Solver::init(ctrl, data, name);
- }
+}
 
 
 /*********** handling of command line options **********/
-
 
 
 
@@ -80,7 +108,7 @@ void SolverCplex::run()
 
         if (!om->isLinearModel()  ) {
             if (om->modelProp().hasConditions())
-                        _ctrl->errHandler().internalError("CPLEX cannot solve a nonlinear model within CMPL"  );
+                _ctrl->errHandler().internalError("CPLEX cannot solve a nonlinear model within CMPL"  );
         }
 
 
@@ -100,7 +128,7 @@ void SolverCplex::run()
         string probName = string( modp()->data()->cmplFileBase() )+".cmpl";
         sol->prepareSolutionData(probName, _solverName, _integerRelaxation, _data,this);
 
-        generateCmdLine(sol,om);
+        generateCmdLine(om);
 
         cout << _solverCmdLine << endl;
 
@@ -109,7 +137,7 @@ void SolverCplex::run()
         PROTO_OUTL("SolverCplex: finished solving  and reading solution" << moduleName());
 
         if (ret==0)
-           readSolFile(sol,om);
+            readSolFile(sol,om);
 
         deleteTmpFiles();
         PROTO_OUTL("End SolverCplex module " << moduleName());
@@ -117,12 +145,13 @@ void SolverCplex::run()
 }
 
 
+/**
+ * @brief writes the Cplex command file
+ * @param om    pointer to OptModel object
+ */
 void SolverCplex::writeCommandFile( OptModel* om){
 
     try {
-
-       // time_t now = time(0);
-       // char* currtime = ctime(&now);
 
         ofstream  cmdFile( _instanceCmdName.c_str() ) ;
 
@@ -140,24 +169,29 @@ void SolverCplex::writeCommandFile( OptModel* om){
         cmdFile << ( _solutionPool ? " all" :"");
         cmdFile << endl;
 
-        //cmdFile << "quit" << endl;
-
         cmdFile.close();
-
-
     }
     catch (exception& ex) {
         _ctrl->errHandler().internalError( _ctrl->printBuffer("Internal error while writing cplex command file >> '%s'", string(ex.what()).c_str() ) ,NULL);
     }
 }
 
-void SolverCplex::generateCmdLine(Solution* sol, OptModel* om ) {
+
+/**
+  * @brief generates the the solver specific command line for the solver
+  * @param om   pointer to OptModel object
+  */
+void SolverCplex::generateCmdLine(OptModel* om ) {
 
     writeCommandFile(om);
     _solverCmdLine=_solverBinName+" -f " + _instanceCmdName + " 2>&1";
 }
 
-
+/**
+ * @brief reads a key and a val from an Xml string
+ * @param valString     Xml string
+ * @return
+ */
 string SolverCplex::readXmlVal(string valString) {
     string ret;
     vector <string> valList;
@@ -170,6 +204,11 @@ string SolverCplex::readXmlVal(string valString) {
 
 }
 
+/**
+ * @brief reads the solver specific solution file
+ * @param sol   pointer to Solution object
+ * @param om    pointer to ObtModel object
+ */
 void SolverCplex::readSolFile(Solution* sol,  OptModel* om) {
 
     string line;
@@ -212,10 +251,8 @@ void SolverCplex::readSolFile(Solution* sol,  OptModel* om) {
             if (lineNr==2 && !StringStore::startsWith(line,"<CPLEXSolution"))
                 _ctrl->errHandler().internalError(_ctrl->printBuffer("Wrong file type for file '%s'", _instanceSolName.c_str() )  ,NULL);
 
-
             if (StringStore::startsWith(line,"<CPLEXSolutions"))
                 continue;
-
 
             if (StringStore::startsWith(line,"<CPLEXSolution")) {
                 solution = new SingleSolution();
@@ -229,7 +266,6 @@ void SolverCplex::readSolFile(Solution* sol,  OptModel* om) {
 
                 continue;
             }
-
 
             if (StringStore::startsWith(line,"</CPLEXSolution") && !StringStore::startsWith(line,"</CPLEXSolutions")) {
                 sol->setSolution(*solution);
@@ -339,6 +375,11 @@ void SolverCplex::readSolFile(Solution* sol,  OptModel* om) {
                 }
 
                 solElem.setModelElement(sol->modelVariable(varIdx));
+                if (sol->modelVariable(varIdx)->type()!="C") {
+                    activity=round(activity);
+                    solElem.setActivity(activity);
+                }
+
                 solution->setVariable(solElem);
                 varIdx++;
 
@@ -401,9 +442,7 @@ void SolverCplex::readSolFile(Solution* sol,  OptModel* om) {
                 conIdx++;
                 continue;
             }
-
         }
-
 
     }catch (FileException& e) {
         _ctrl->errHandler().internalError(_ctrl->printBuffer("%s: solution file '%s'", e.what(), _instanceSolName.c_str()) ,&e);

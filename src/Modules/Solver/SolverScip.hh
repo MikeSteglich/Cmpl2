@@ -1,11 +1,37 @@
+/***********************************************************************
+ *  This code is part of CMPL
+ *
+ *  Copyright (C) 2007, 2008, 2009, 2010, 2011
+ *  Mike Steglich - Technical University of Applied Sciences
+ *  Wildau, Germany and Thomas Schleiff - Halle(Saale),
+ *  Germany
+ *
+ *  Coliop3 and CMPL are projects of the Technical University of
+ *  Applied Sciences Wildau and the Institute for Operations Research
+ *  and Business Management at the Martin Luther University
+ *  Halle-Wittenberg.
+ *  Please visit the project homepage <www.coliop.org>
+ *
+ *  CMPL is free software; you can redistribute it and/or modify it
+ *  under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  CMPL is distributed in the hope that it will be useful, but WITHOUT
+ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ *  or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public
+ *  License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, see <http://www.gnu.org/licenses/>.
+ *
+ ***********************************************************************/
+
 #ifndef SOLVERSCIP_HH
 #define SOLVERSCIP_HH
 
 #include <string>
-//#include <vector>
 #include <iostream>
-
-//#include "../../Control/ModuleBase.hh"
 
 #include "../../CommonData/Solution.hh"
 
@@ -17,16 +43,9 @@ namespace cmpl
 class Solution;
 
 
-
 /**
-* <code>TestModule</code> is only used for tests of cmpl main control.
-* <code>TestModule</code> uses three test command line options:
-* 	-a		boolean option without any argument
-* 	-b		option with one argument, which must be an int number
-* 	-c		option with arbitrary arguments
-* beside these options there is an output control command line options:
-*  -o		option with one file name argument, this file is used for outputs instead of <code>cout</code>
-*/
+ * @brief The SolverScip class
+ */
 class SolverScip : public Solver
 {
 
@@ -45,6 +64,11 @@ public:
      */
     virtual void run();
 
+    /**
+     * @brief reads the solver specific solution file
+     * @param sol   pointer to Solution object
+     * @param om    pointer to ObtModel object
+     */
     void readSolFile(Solution *sol, OptModel* om);
 
 
@@ -71,7 +95,14 @@ protected:
     virtual void usage(ostream& s);
 
 private:
+    /**
+      * @brief generates the the solver specific command line for the solver
+      */
     void generateCmdLine( );
+
+    /**
+     * @brief writes the Scip option file
+     */
     void writeOptFile( );
 };
 
