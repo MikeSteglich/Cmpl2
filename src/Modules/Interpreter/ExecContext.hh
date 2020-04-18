@@ -599,6 +599,7 @@ namespace cmpl
                                                             //  TP_FORMULA containing a boolean formula
                                                             //  TP_BIN with value true (only possible for last non empty part)
                                                             //  TP_EMPTY: codeblock part is not used
+        vector<vector<CmplValAuto>*> _prvPartConds; ///< conditions of previous parts
         int _trueCondPart;                          ///< number of codeblock part with condition value "true" / -1: no one
 
         vector<CmplValAuto> *_mapCBRes;             ///< mapping for codeblock result / NULL: not used or not initialized
@@ -758,6 +759,14 @@ namespace cmpl
          * @param ptc       part in pvals with condition TP_TRUE
          */
         void mergeVal(CmplVal& res, vector<CmplValAuto>& pvals, unsigned pfrom, unsigned pend, unsigned ptc);
+
+        /**
+         * check whether value has valid type for merge
+         * @param res       set this to replacement value if type is invalid
+         * @param v         value to check
+         * @return          true if value has valid type
+         */
+        bool checkType(CmplVal& res, CmplVal& v, OptCon *&oc);
     };
 
     /**

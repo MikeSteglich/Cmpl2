@@ -968,8 +968,106 @@ namespace cmpl
          * @return
          */
         CmplVal *getPart(unsigned i) override       { return (i < _formulas.size() ? &(_formulas[i]) : NULL); }
+
+        /**
+         * write contents of the object to a stream
+         * @param modp			calling module
+         * @param mode			mode for output: 0=direct; 1=part of other value
+         */
+        void write(ostream& ostr, ModuleBase *modp, int mode = 0) const override;
     };
 
+
+    class ValFormulaCondOp;
+
+    /**
+     * formula of a conditional value
+     */
+    class ValFormulaCond : public ValFormula
+    {
+    public:
+        class Part
+        {
+            friend class ValFormulaCond;
+            friend class ValFormulaCondOp;
+
+        private:
+            CmplValAuto _posCond;                   ///< condition which must be true for this part of formula (can only be TP_FORMULA (but not ValFormulaCond) or TP_EMPTY)
+            vector<CmplValAuto> _negConds;          ///< conditions which must be false for this part of formula (can only be TP_FORMULA (but not ValFormulaCond))
+
+            CmplValAuto _val;                       ///< value of this part (is value of the formula, if the conditions match) (can be a numeric type or TP_FORMULA (also ValFormulaCond))
+
+        public:
+            /**
+             * constructor
+             */
+            Part(CmplValAuto& pc, vector<CmplValAuto>& ncs, CmplValAuto& v): _posCond(pc), _negConds(ncs), _val(v)  { }
+        };
+
+    protected:
+        vector<Part> _parts;                        ///< parts (there must be not more than one part with matching conditions)
+
+        bool _binary;                               ///< flag whether all parts of this formula can be used as boolean value
+        bool _optRow;                               ///< flag whether this formula is suitable as constraint
+
+    public:
+        /**
+         * copy constructor
+         * @param f			source formula
+         */
+        inline ValFormulaCond(ValFormulaCond *f): ValFormula(f->syntaxElem()), _parts(f->_parts), _binary(f->_binary), _optRow(f->_optRow)		{ }
+
+        /**
+         * constructor
+         * @param se        id of syntax element in the cmpl text creating this formula value
+         */
+        inline ValFormulaCond(unsigned se): ValFormula(se), _parts(), _binary(false), _optRow(false)         { }
+
+
+        /**
+         * get whether this formula is suitable for optimization row (linear or non-linear)
+         * @param obj			true: as objective / false: as constraint
+         * @return
+         */
+        bool canOptRow(bool obj) const override		{ return (_optRow && !obj); }
+
+        /**
+         * set model properties from this constraint
+         * @param prop          properties of optimization model
+         */
+        //void setModelProperties(OptModel::Properties& prop) const override;
+
+        /**
+         * get whether this formula is an expression with boolean value
+         */
+        bool isBool() const override                { return _binary; }
+
+        /**
+         * return whether this formula can be expressed by a single binary variable (only implemented for formulas with isBool() == true)
+         * @param neg           return if the binary variable negated
+         * @return              binary variable / NULL: other formula
+         */
+        OptVar* asSingleBin(bool& neg) override     { return NULL; }
+
+        /**
+         * get count of direct parts of the formula
+         */
+        unsigned partCount() const override         { return _parts.size(); }
+
+        /**
+         * get direct part
+         * @param i     number of part
+         * @return
+         */
+        CmplVal *getPart(unsigned i) override       { return (i < _parts.size() ? &(_parts[i]._val) : NULL); }
+
+        /**
+         * write contents of the object to a stream
+         * @param modp			calling module
+         * @param mode			mode for output: 0=direct; 1=part of other value
+         */
+        void write(ostream& ostr, ModuleBase *modp, int mode = 0) const override;
+    };
 }
 
 #endif // VALFORMULA_HH

@@ -127,6 +127,10 @@ namespace cmpl
                     }
                 }
             }
+            else if (op == ICS_OPER_OR && ac == 2 && a1s && a1s->t == TP_DATA_TYPE) {
+                ValTypeUserOr::construct(&res, a1s, a2s);
+                return true;
+            }
         }
 
         if (!resultSet(ctx, resDs, mm, se, op, ac, a1, a2)) {
@@ -2785,6 +2789,47 @@ namespace cmpl
             return 99;
         else
             return 90;
+    }
+
+
+
+    /************** ValFormulaLogConOp **********/
+
+    /**
+     * insert next conditional part of the formula
+     * @param pc        condition which must be true
+     * @param ncs       conditions which must be false
+     * @param v         value
+     */
+    void ValFormulaCondOp::insPart(CmplValAuto& pc, vector<CmplValAuto>& ncs, CmplValAuto& v)
+    {
+        if (_parts.empty() || _binary)
+            _binary = (v.t == TP_BIN || v.t == TP_INT || (v.t == TP_FORMULA && v.valFormula()->isBool()));
+
+        if (_parts.empty() || _optRow)
+            _optRow = (v.t == TP_FORMULA && v.valFormula()->canOptRow(false));
+
+        if (v.t == TP_OPT_VAR) {
+            OptVar *ov = v.optVar();
+            CmplValAuto fv(TP_FORMULA, new ValFormulaVarOp(ov->syntaxElem(), ov));
+            _parts.emplace_back(pc, ncs, fv);
+        }
+        else {
+            _parts.emplace_back(pc, ncs, v);
+        }
+    }
+
+    /**
+     * merge last parts of regular constructed condition formula, because its values are equal (this is not checked here!)
+     * @param cnt       count of merges
+     */
+    void ValFormulaCondOp::mergeLast(unsigned cnt)
+    {
+        while (cnt && _parts.size() >= 2) {
+            _parts.pop_back();
+            _parts.back()._posCond.dispUnset();
+            cnt--;
+        }
     }
 
 }

@@ -249,7 +249,8 @@ namespace cmpl
 					_runningMod[modObj] = mod;
 					_data->addExecutedModules(modName, (mod->alias ? mod->name : NULL), instanceName());
 
-					modObj->run();
+                    if (!modObj->_deactivated)
+                        modObj->run();
 
 					moduleEndExtensions(modObj);
 					_runningMod.erase(modObj);

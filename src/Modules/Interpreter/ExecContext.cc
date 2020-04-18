@@ -2082,6 +2082,10 @@ namespace cmpl
         for (unsigned i = 0; i < _partCnt; i++)
             _partVarCond[i].unset();
 
+        _prvPartConds.resize(_partCnt + 1);
+        for (unsigned i = 0; i <= _partCnt; i++)
+            _prvPartConds[i] = NULL;
+
         _trueCondPart = -1;
         _mapCBRes = NULL;
     }
@@ -2091,6 +2095,11 @@ namespace cmpl
      */
     VarCondMapping::~VarCondMapping()
     {
+        for (unsigned i = 0; i <= _partCnt; i++) {
+            if (_prvPartConds[i])
+                delete _prvPartConds[i];
+        }
+
         if (_mapCBRes)
             delete _mapCBRes;
 
@@ -2137,6 +2146,18 @@ namespace cmpl
 
         if (varCond.t == TP_BIN)
             _trueCondPart = cbp;
+
+        int pbp = cbp - 1;
+        while (pbp >= 0 && !_partVarCond[pbp])
+            pbp--;
+
+        if (pbp >= 0) {
+            _prvPartConds[cbp] = new vector<CmplValAuto>(*(_prvPartConds[pbp]));
+            _prvPartConds[cbp]->emplace_back(_partVarCond[pbp]);
+        }
+        else {
+            _prvPartConds[cbp] = new vector<CmplValAuto>();
+        }
     }
 
     /**
@@ -2217,6 +2238,20 @@ namespace cmpl
      */
     void VarCondMapping::mergeAll(CmplVal& res)
     {
+        if (_trueCondPart < 0) {
+            int pbp = _partCnt - 1;
+            while (pbp >= 0 && !_partVarCond[pbp])
+                pbp--;
+
+            if (pbp >= 0) {
+                _prvPartConds[_partCnt] = new vector<CmplValAuto>(*(_prvPartConds[pbp]));
+                _prvPartConds[_partCnt]->emplace_back(_partVarCond[pbp]);
+            }
+            else {
+                _prvPartConds[_partCnt] = new vector<CmplValAuto>();
+            }
+        }
+
         // merge symbol values
         for (auto kvp : _mapVS) {
             CmplValAuto arr;
@@ -2270,6 +2305,8 @@ namespace cmpl
             pend2 = _trueCondPart - 1;
             while (pend2 > pfrom && !_partVarCond[pend2])
                 pend2--;
+
+            pend2++;
         }
 
         // check if definition set of destination array is directly given
@@ -2520,30 +2557,130 @@ namespace cmpl
      */
     void VarCondMapping::mergeVal(CmplVal& res, vector<CmplValAuto>& pvals, unsigned pfrom, unsigned pend, unsigned ptc)
     {
+        CmplValAuto& tcv = pvals[ptc];
+        unsigned cnteq = 0;
+        ValFormulaCondOp *resv = NULL;
+        OptCon *oc = (tcv.isOptRow() ? tcv.optCon() : NULL);
+
+        for (unsigned p = pfrom; p < pend; p++) {
+            if (_partVarCond[p]) {
+                CmplValAuto& pv = pvals[p];
+
+                if ((!pv.isEmpty() && pv != tcv) || (pv.isEmpty() && !tcv.isEmpty())) {
+                    cnteq = 0;
+                    if (!checkType(res, pv, oc))
+                        return;
+                    if (oc)
+                        continue;
+
+                    if (!resv) {
+                        if (!checkType(res, tcv, oc))
+                            return;
+
+                        resv = new ValFormulaCondOp(_cbContext->syntaxElem());
+                        res.set(TP_FORMULA, resv);
+
+                        if (p > pfrom && !tcv.isEmpty()) {
+                            for (unsigned pp = pfrom; pp < p; pp++) {
+                                if (_partVarCond[pp])
+                                    resv->insPart(_partVarCond[pp], *(_prvPartConds[pp]), tcv);
+                            }
+                        }
+                    }
+                }
+                else {
+                    cnteq++;
+                }
+
+                if (resv && !pv.isEmpty())
+                    resv->insPart(_partVarCond[p], *(_prvPartConds[p]), pv);
+            }
+        }
+
+        if (resv) {
+            if (!tcv.isEmpty()) {
+                CmplValAuto emp(TP_EMPTY);
+                resv->insPart(emp, *(_prvPartConds[ptc]), tcv);
+
+                if (cnteq)
+                    resv->mergeLast(cnteq);
+            }
+        }
+        else if (oc) {
+            res.dispSet((oc->objective() ? TP_OPT_OBJ : TP_OPT_CON), oc);
+        }
+        else {
+            if (!tcv.isEmpty())
+                res.copyFrom(tcv);
+            else
+                res.dispSet(TP_NULL);
+        }
+
+        //  Wert pvals[ptc] holen als Vergleichswert
+        //  Werte in pvals durchgehen, soweit betroffen:
+        //      Wenn Wert ungleich Vergleichswert:
+        //          Pruefung ob sowohl aktueller Wert nummerisch (auch TP_BIN, auch Formel) oder TP_NULL (sonst Fehler; Vergleichswert als Ersatzergebnis)
+        //          Wenn erster solcher Wert:
+        //              Auch pruefen ob Vergleichswert nummerisch (auch TP_BIN, auch Formel) oder TP_NULL (sonst Fehler; Vergleichswert als Ersatzergebnis)
+        //              ValFormulaCondOp als Ergebniswert bereitstellen
+        //              Wenn nicht bei pfrom und Wert nicht TP_NULL:
+        //                  Alle Teile vor dem aktuellen durchgehen und eintragen (ueberall selber Wert)
+        //          Wert fuer aktuellen Teil eintragen (soweit nicht TP_NULL)
+        //          Kennzeichen merken fuer Wert ungleich Vergleichswert
+        //  Wenn gar kein Wert ungleich Vergleichswert (ValFormulaCondOp nicht bereitgestellt):
+        //      Vergleichswert als Ergebnis kopieren
+        //  Sonst wenn Kennzeichen fuer letzten ungleichen Wert nicht pend-1:
+        //      Gleiche Werte hinten in ValFormulaCondOp zusammenfassen
 
         // Eigentlicher Merge:
-        //  erhaelt: pro Teil den dortigen Wert bzw. TP_NULL wenn nicht enthalten; wenn _trueCondPart < 0 dann auch aus Ausgangsarray
+        //  erhaelt: pro Teil den dortigen Wert bzw. TP_NULL wenn nicht enthalten
         //              (in mindestens 1 uebergebenem Teil existiert ein Wert, sonst gar nicht erst im Zieldefinitionsset)
         //      Teile durchgehen und pruefen (jeweils pfrom - pend-1, und zusaetzlich ptc):
         //          alle gleich (und auch kein TP_NULL): Wert ist direkt Ergebniswert
         //          sonst:
         //                  (c1: v1), (!c1 && c2: v2), (!c1 && !c2 ... && cn: vn), (!c1 && !c2 ... && !cn: tv)
         //              Teile, deren Wert TP_NULL ist, werden weggelassen
-        //              Teile, deren Wert gleich ist, werden zusammengefasst, mit soweit als moeglicher Vereinfachung der Bedingung (ohne den Inhalt der Bedingung zu betrachten)
-        //                      z.B.: v1==v2 -> (c1 || (!c1 && c2): v1)
-        //                                   -> ((c1 || !c1) && (c1 || c2): v1)
-        //                                   -> (c1 || c2: v1)
-        //                  (vielleicht der Einfachheit halber nur aufeinanderfolgende gleiche Werte betrachten)
+        //              Wenn von hinten beginnend Teile gleich sind (und nicht TP_NULL), dann zusammenfassen:
+        //                      z.B.: vn==tv -> (!c1 && !c2 ... && !cn-1: tv)
         //              Alle c muessen binaer (Formel mit Binaerkennzeichen) sein
         //              Alle v muessen numerisch (auch TP_BIN) oder Formel oder Restriktion sein
         //              Ergebnis ist Bedingungsformel
-        //                  Wird in Restriktion verpackt, wenn alle Teile v1..vn,tv Restriktion; als Teile werden dann die Formeln aus den Teilrestriktionen verwendet
-        //                  TODO: Zuweisung mit ":"
         //              Ergebnisbedingungsformel hat Kennzeichen dass binaer, wenn alle Teilwerte v1..vn,tv binaer sind
-        //              Wenn ein c eine Bedingungsformel (mit Kennzeichen binaer) ist:
-        //                  Umwandlung in logische Formel: jedes Teil (c: n) -> c && n; und alle Teile Oder-verknuepft
-        //              Wenn ein v (v1..vn,tv) eine Bedingungsformel ist:
-        //                  Alle Teile in die Ergebnisbedingungsformel uebernehmen, mit Und-Verknuepfung der bisherigen und der neuen Bedingung
+
+        //  aber abweichend fuer Objekttyp obj/con:
+        //          es darf nur einen solchen Wert geben (ausser Duplikate), sonst muss alles leer sein
+        //          dann diesen einen Wert unbedingt setzen (unabhaengig davon aus welchem Bedingungsteil)
+        //          sonst Fehler
+        //          (obj ist tatsaechlich immer Fehler, aber der wurde bereits bei der Generierung gemeldet)
+
+    }
+
+    /**
+     * check whether value has valid type for merge
+     * @param res       set this to replacement value if type is invalid
+     * @param v         value to check
+     * @param oc        optimization constraint or objective if found in values / NULL: no one
+     * @return          true if value has valid type
+     */
+    bool VarCondMapping::checkType(CmplVal& res, CmplVal& v, OptCon *&oc)
+    {
+        if (oc) {
+            if (!v.isOptRow() || v.optCon() != oc) {
+                _execContext->valueError("constraint must be unique in conditional expression", v, _cbContext->syntaxElem());
+                res.dispSet((oc->objective() ? TP_OPT_OBJ : TP_OPT_CON), oc);
+                return false;
+            }
+        }
+        else if (v.isOptRow()) {
+            oc = v.optCon();
+        }
+        else if (!v.isScalarNumber() && v.t != TP_FORMULA && v.t != TP_OPT_VAR && !v.isEmpty()) {
+            _execContext->valueError("value has not a valid type for a conditional expression", v, _cbContext->syntaxElem());
+            res.copyFrom(v);
+            return false;
+        }
+
+        return true;
     }
 }
 

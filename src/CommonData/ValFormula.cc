@@ -625,5 +625,68 @@ namespace cmpl
         return NULL;
     }
 
+    /**
+     * write contents of the object to a stream
+     * @param modp			calling module
+     * @param mode			mode for output: 0=direct; 1=part of other value
+     */
+    void ValFormulaLogCon::write(ostream& ostr, ModuleBase *modp, int mode) const
+    {
+        ostr << "<f-log: ";
+
+        if (_logNeg)
+            ostr << "!(";
+
+        for (unsigned i = 0; i < _formulas.size(); i++) {
+            if (i > 0)
+                ostr << (_logOr ? " || " : " && ");
+            _formulas[i].write(ostr, modp, 1);
+        }
+
+        if (_logNeg)
+            ostr << ")";
+
+        ostr << '>';
+    }
+
+
+
+    /************** ValFormulaCond **********/
+    /**
+     * write contents of the object to a stream
+     * @param modp			calling module
+     * @param mode			mode for output: 0=direct; 1=part of other value
+     */
+    void ValFormulaCond::write(ostream& ostr, ModuleBase *modp, int mode) const
+    {
+        ostr << "<f-cond: ";
+
+        for (unsigned i = 0; i < _parts.size(); i++) {
+            if (i > 0)
+                ostr << ", ";
+
+            const Part& p = _parts[i];
+            ostr << '(';
+
+            if (p._posCond)
+                p._posCond.write(ostr, modp, 1);
+
+            for (unsigned n = 0; n < p._negConds.size(); n++) {
+                if (n > 0 || p._posCond)
+                    ostr << " && ";
+
+                ostr << '!';
+                p._negConds[n].write(ostr, modp, 1);
+            }
+
+            ostr << " -> ";
+            p._val.write(ostr, modp, 1);
+
+            ostr << ')';
+        }
+
+        ostr << '>';
+    }
+
 }
 

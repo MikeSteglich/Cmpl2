@@ -286,12 +286,12 @@ namespace cmpl
          * @param oa			other argument of the operation
          * @return				priority level to call execution of the operation at this instead of the other argument (at least 2), or 0 if the formula doesn't implement the operation
          */
-        virtual unsigned formulaOperPrio(unsigned short op, bool fa, CmplVal *oa);
+        unsigned formulaOperPrio(unsigned short op, bool fa, CmplVal *oa) override;
 
-        virtual void negF(ExecContext *ctx, CmplVal *res, unsigned se);									///< negation of formula
-        virtual void plusF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2);					///< addition for formula
-        virtual void minusF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2, bool rev);		///< minus for formula
-        virtual void multF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2, bool noReuseArg = false);	///< multiplication for formula
+        void negF(ExecContext *ctx, CmplVal *res, unsigned se) override;                                        ///< negation of formula
+        void plusF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2) override;                          ///< addition for formula
+        void minusF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2, bool rev) override;               ///< minus for formula
+        void multF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2, bool noReuseArg = false) override;	///< multiplication for formula
 
     };
 
@@ -345,12 +345,12 @@ namespace cmpl
          * @param oa			other argument of the operation
          * @return				priority level to call execution of the operation at this instead of the other argument (at least 2), or 0 if the formula doesn't implement the operation
          */
-        virtual unsigned formulaOperPrio(unsigned short op, bool fa, CmplVal *oa);
+        unsigned formulaOperPrio(unsigned short op, bool fa, CmplVal *oa) override;
 
-        virtual void negF(ExecContext *ctx, CmplVal *res, unsigned se);									///< negation of formula
-        virtual void plusF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2);					///< addition for formula
-        virtual void minusF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2, bool rev);		///< minus for formula
-        virtual void multF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2, bool noReuseArg = false);	///< multiplication for formula
+        void negF(ExecContext *ctx, CmplVal *res, unsigned se) override;                                        ///< negation of formula
+        void plusF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2) override;                          ///< addition for formula
+        void minusF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2, bool rev) override;               ///< minus for formula
+        void multF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2, bool noReuseArg = false) override;	///< multiplication for formula
 
     };
 
@@ -404,12 +404,12 @@ namespace cmpl
          * @param oa			other argument of the operation
          * @return				priority level to call execution of the operation at this instead of the other argument (at least 2), or 0 if the formula doesn't implement the operation
          */
-        virtual unsigned formulaOperPrio(unsigned short op, bool fa, CmplVal *oa);
+        unsigned formulaOperPrio(unsigned short op, bool fa, CmplVal *oa) override;
 
-        virtual void negF(ExecContext *ctx, CmplVal *res, unsigned se);									///< negation of formula
-        virtual void plusF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2);					///< addition for formula
-        virtual void minusF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2, bool rev);		///< minus for formula
-        virtual void multF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2, bool noReuseArg = false);	///< multiplication for formula
+        void negF(ExecContext *ctx, CmplVal *res, unsigned se) override;                                        ///< negation of formula
+        void plusF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2) override;                          ///< addition for formula
+        void minusF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2, bool rev) override;               ///< minus for formula
+        void multF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2, bool noReuseArg = false) override;	///< multiplication for formula
 
         /**
          * add or substract of formulas
@@ -498,7 +498,7 @@ namespace cmpl
          * @param res			store for result value
          * @param se			syntax element id of operation
          */
-        virtual void notF(ExecContext *ctx, CmplVal *res, unsigned se);
+        void notF(ExecContext *ctx, CmplVal *res, unsigned se) override;
 
         /**
          * get priority of calling the binary operation at this formula object
@@ -507,7 +507,7 @@ namespace cmpl
          * @param oa			other argument of the operation
          * @return				priority level to call execution of the operation at this instead of the other argument (at least 2), or 0 if the formula doesn't implement the operation
          */
-        virtual unsigned formulaOperPrio(unsigned short op, bool fa, CmplVal *oa);
+        unsigned formulaOperPrio(unsigned short op, bool fa, CmplVal *oa) override;
     };
 
 
@@ -536,7 +536,7 @@ namespace cmpl
          * @param modp			calling module
          * @param mode			mode for output: 0=direct; 1=part of other value
          */
-        virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const override     { ostr << "<f-cmp: (continue)>"; }
+        void write(ostream& ostr, ModuleBase *modp, int mode = 0) const override     { ostr << "<f-cmp: (continue)>"; }
 
 
         /************** operations **********/
@@ -548,9 +548,9 @@ namespace cmpl
          * @param oa			other argument of the operation
          * @return				priority level to call execution of the operation at this instead of the other argument (at least 2), or 0 if the formula doesn't implement the operation
          */
-        virtual unsigned formulaOperPrio(unsigned short op, bool fa, CmplVal *oa);
+        unsigned formulaOperPrio(unsigned short op, bool fa, CmplVal *oa) override;
 
-        virtual void compF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2, bool ge, bool le, bool neg);	///< compare for formula
+        void compF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2, bool ge, bool le, bool neg) override;	///< compare for formula
 
         //TODO
     };
@@ -577,7 +577,7 @@ namespace cmpl
          * @param oa			other argument of the operation
          * @return				priority level to call execution of the operation at this instead of the other argument (at least 2), or 0 if the formula doesn't implement the operation
          */
-        virtual unsigned formulaOperPrio(unsigned short op, bool fa, CmplVal *oa);
+        unsigned formulaOperPrio(unsigned short op, bool fa, CmplVal *oa) override;
 
         //TODO
     };
@@ -629,7 +629,7 @@ namespace cmpl
          * @param res			store for result value
          * @param se			syntax element id of operation
          */
-        virtual void notF(ExecContext *ctx, CmplVal *res, unsigned se);
+        void notF(ExecContext *ctx, CmplVal *res, unsigned se) override;
 
         /**
          * logical And or Or for formula
@@ -639,7 +639,7 @@ namespace cmpl
          * @param a2			argument two
          * @param logOr			logical Or or logical And
          */
-        virtual void logAndOrF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2, bool logOr);
+        void logAndOrF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2, bool logOr) override;
 
         /**
          * get priority of calling the binary operation at this formula object
@@ -648,7 +648,56 @@ namespace cmpl
          * @param oa			other argument of the operation
          * @return				priority level to call execution of the operation at this instead of the other argument (at least 2), or 0 if the formula doesn't implement the operation
          */
-        virtual unsigned formulaOperPrio(unsigned short op, bool fa, CmplVal *oa);
+        unsigned formulaOperPrio(unsigned short op, bool fa, CmplVal *oa) override;
+    };
+
+
+    /**
+     * formula of a conditional value
+     */
+    class ValFormulaCondOp : public ValFormulaCond, public OperationBase
+    {
+    public:
+        /**
+         * copy constructor
+         * @param f			source formula
+         */
+        inline ValFormulaCondOp(ValFormulaCond *f): ValFormulaCond(f)			{ }
+
+        /**
+         * constructor
+         * @param se        id of syntax element in the cmpl text creating this formula value
+         */
+        inline ValFormulaCondOp(unsigned se): ValFormulaCond(se)                { }
+
+
+        /************** operations **********/
+    public:
+        /**
+         * insert next conditional part of the formula
+         * @param pc        condition which must be true
+         * @param ncs       conditions which must be false
+         * @param v         value
+         */
+        void insPart(CmplValAuto& pc, vector<CmplValAuto>& ncs, CmplValAuto& v);
+
+        /**
+         * merge last parts of regular constructed condition formula, because its values are equal (this is not checked here!)
+         * @param cnt       count of merges
+         */
+        void mergeLast(unsigned cnt);
+
+        //TODO
+
+
+        /**
+         * get priority of calling the binary operation at this formula object
+         * @param op			operation code (binary operation)
+         * @param fa			this is the first argument of the operation
+         * @param oa			other argument of the operation
+         * @return				priority level to call execution of the operation at this instead of the other argument (at least 2), or 0 if the formula doesn't implement the operation
+         */
+        unsigned formulaOperPrio(unsigned short op, bool fa, CmplVal *oa) override       { /*TODO*/ return 0; }
     };
 }
 

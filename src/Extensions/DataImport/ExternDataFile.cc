@@ -599,7 +599,7 @@ namespace cmpl
                     }
 
                     _mod->resStream() << endl << '\t' << "assert ";
-                    if (dtp) {
+                    if (dtp || assArraySub) {
                         _mod->resStream() << "_t " << endl;
                         _mod->outStartPos(posA);
                     }

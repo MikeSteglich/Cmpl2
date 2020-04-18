@@ -1183,12 +1183,13 @@ namespace cmpl
             }
             else {
                 CmplValAuto t;
-                if (ctx->checkContainerConvSpecial(t, src, (obj ? TP_OPT_OBJ : TP_OPT_CON))) {
+                if (src.t == TP_CONTAINER && ctx->checkContainerConvSpecial(t, src, (obj ? TP_OPT_OBJ : TP_OPT_CON))) {
                     StackValue arg;
                     arg.init(se);
                     arg.val().moveFrom(t);
 
                     convertTo(ctx, res, (obj ? TP_OPT_OBJ : TP_OPT_CON), &arg, maSe, se);
+                    return;
                 }
                 else {
                     // allow binary value as pseudo constraint and numeric value as pseudo objective (to replace later by result matrix dummy row)
@@ -1196,6 +1197,19 @@ namespace cmpl
                         ctx->valueError("argument for constraint/objective creation must be a formula", src, se);
 
                     v.copyFrom(src, true, false);
+                }
+            }
+
+            VarCondMapping *vcm = ctx->curVarCondMap();
+            if (vcm) {
+                if (obj) {
+                    ctx->valueError("objective cannot be defined within a condition over optimization variables", src, se);
+                }
+                else {
+                    //TODO: Aktuelle Gesamtbedingung aus vcm (und uebergeordneten) holen
+                    //          (fuer eventuelle weitere Verwendung in vcm merken)
+                    //  ValFormulaCondOp ueber v mit dieser Bedingung erstellen, wird neues v
+
                 }
             }
 
