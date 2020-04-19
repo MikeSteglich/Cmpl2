@@ -1,6 +1,7 @@
 %arg -solver glpk
-%arg -ignoreZeros
+%arg -display=nonZeros
 %arg -solutionCsv
+
 
 parameters:
 	plants  := 1(1)3;

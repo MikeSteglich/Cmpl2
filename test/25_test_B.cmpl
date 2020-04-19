@@ -1,4 +1,4 @@
-%display var x*
+%display var=x*
 %arg -solutionAscii
 
 parameters:
@@ -35,7 +35,7 @@ objectives:
 constraints:
 
 	resaaaaaaaaa1: a[,] * x[] <= b[];
-	bb {j in defset(c): xMin[j] * y[j] <= x[j] <= xMax[j] * y[j]; }
+	{j in defset(c): bb[j]: xMin[j] * y[j] <= x[j] <= xMax[j] * y[j]; }
 	
 
 

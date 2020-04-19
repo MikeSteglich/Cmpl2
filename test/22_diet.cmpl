@@ -23,7 +23,7 @@ objectives:
 
 constraints:
 	# capacity restriction 
-	vitamin[,] * x[] >= vitMin[];
+	vit: vitamin[,] * x[] >= vitMin[];
 
 
 

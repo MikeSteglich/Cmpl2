@@ -80,9 +80,10 @@ compfile "$DATEI" mps
 #compfile "$DATEI" osil
 compfile "$DATEI" stdout
 compfile "$DATEI" stderr
-#compfile "$DATEI" cmsg
-#compfile "$DATEI" sol
-#compfile "$DATEI" csv
+compfile "$DATEI" cmsg
+compfile "$DATEI" sol
+compfile "$DATEI" csv
+compfile "$DATEI" csol
 
 
 
@@ -99,6 +100,7 @@ if [ -f "$DATEI.gsol" ] ; then rm "$DATEI.gsol" ; fi
 if [ -f "$DATEI.cfconf" ] ; then rm "$DATEI.cfconf" ; fi
 if [ -f "$DATEI.time" ] ; then rm "$DATEI.time" ; fi
 if [ -f "$DATEI.sol" ] ; then rm "$DATEI.sol" ; fi
+if [ -f "$DATEI.sol" ] ; then rm "$DATEI.csol" ; fi
 if [ -f "$DATEI.csv" ] ; then rm "$DATEI.csv" ; fi
 
 

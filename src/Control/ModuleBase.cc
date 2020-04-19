@@ -223,7 +223,7 @@ namespace cmpl
 #if PROTO
 		REG_CMDL_OPTION( OPTION_PROTO_FILE, "p", 0, 1, CMDL_OPTION_NEG_NO_ARG, true );
 #endif
-        REG_CMDL_OPTION( OPTION_SILENT ,"silent", 0, 0, CMDL_OPTION_NEG_NO_ARG, true );
+        REG_CMDL_OPTION( OPTION_SILENT ,"silent", 0, 0, CMDL_OPTION_NEG_NO_ARG, false );
         REG_CMDL_OPTION( OPTION_DEACTIVATE ,"deactivate", 0, 0, CMDL_OPTION_NEG_NO_ARG, true );
     }
 

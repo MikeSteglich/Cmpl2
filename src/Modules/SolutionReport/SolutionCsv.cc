@@ -217,7 +217,7 @@ void SolutionCsv::writeSolReport(Solution *sol, ostream& ostr) {
             ostr <<  "Solution nr.;" << i+1 << endl;
         }
         ostr <<  "Objective status;" << sol->solution(i)->status() << endl;
-        ostr <<  "Objective value ;" << sol->solution(i)->value()  << " (" << sol->objSense() << "!)" << endl;
+        ostr <<  "Objective value ;" << sol->solution(i)->value() << ";(" << sol->objSense() << "!)" << endl;
 
         if (!_ignoreVars) {
             ostr << "Variables;" <<  endl;
@@ -303,7 +303,7 @@ void SolutionCsv::writeVarValues(Solution *sol, unsigned long i, unsigned long j
         ostr << sol->solution(i)->variable(j)->lowerBound() << ";";
         ostr << sol->solution(i)->variable(j)->upperBound() << ";";
         if (sol->hasMarginal())
-            ostr <<  right<< sol->solution(i)->variable(j)->marginal() << ";";
+            ostr <<  right<< sol->solution(i)->variable(j)->marginal() ;
         else
             ostr  << "-" ;
         ostr << endl;
@@ -323,7 +323,7 @@ void SolutionCsv::writeConValues(Solution *sol, unsigned long i, unsigned long j
 
         ostr  << sol->solution(i)->constraint(j)->upperBound() << ";";
         if (sol->hasMarginal())
-            ostr << sol->solution(i)->constraint(j)->marginal() << ";";
+            ostr << sol->solution(i)->constraint(j)->marginal() ;
         else
             ostr  << "-" ;
         ostr << endl;

@@ -130,8 +130,6 @@ void SolverCplex::run()
 
         generateCmdLine(om);
 
-        cout << _solverCmdLine << endl;
-
         int ret = solve();
 
         PROTO_OUTL("SolverCplex: finished solving  and reading solution" << moduleName());

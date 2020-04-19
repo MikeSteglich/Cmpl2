@@ -1,16 +1,15 @@
 * CMPL - MPS - Export
-NAME          08_SummeNegiert.cmpl
+NAME          08_SummeNegiert
 ROWS
- N  line[1] 
- L  line[2] 
- L  line[3] 
+ N  line_1  
+ L  line_2  
+ L  line_3  
 COLUMNS
-    x[1]      line[1]            101   line[2]          40905
-    x[2]      line[1]            102   line[3]          40905
-    d         line[2]              1   line[3]              1
+    x[1]      line_1             101   line_2           40905
+    x[2]      line_1             102   line_3           40905
+    d         line_2               1   line_3               1
 RHS
-    RHS       line[2]           -203   line[3]           -203
-RANGES
+    RHS       line_2            -203   line_3            -203
 BOUNDS
  PL BOUND     x[1]    
  PL BOUND     x[2]    

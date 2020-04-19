@@ -124,8 +124,6 @@ void SolverGurobi::run()
 
         generateCmdLine();
 
-        cout << _solverCmdLine << endl;
-
         int ret = solve();
 
         PROTO_OUTL("SolverGurobi: finished solving  and reading solution" << moduleName());

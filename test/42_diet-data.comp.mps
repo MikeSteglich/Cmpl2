@@ -1,7 +1,5 @@
 * CMPL - MPS - Export
 NAME          42_diet-data
-* OBJNAME cost
-* OBJSENSE MIN
 ROWS
  N  cost    
  G  line_2  

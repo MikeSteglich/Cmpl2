@@ -379,10 +379,8 @@ namespace cmpl
 
                 if (_formatSOS != FormatExtensionNone) {
                     _mki[OutModelExtDataSOS1Key] = list<OutModelExtDataBase::Info>();
-                    //mki[OutModelExtDataSOS1::key] = list<OutModelExtDataBase::Info>();
 
                     _mki[OutModelExtDataSOS2Key] = list<OutModelExtDataBase::Info>();
-                    //mki[OutModelExtDataSOS2::key] = list<OutModelExtDataBase::Info>();
                 }
 
                 OutModelExtDataBase::getInfo(this, _mki);

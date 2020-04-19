@@ -278,10 +278,10 @@ void Solver::writeInstanceFile(string opts) {
     CmdLineOptList clOpts;
     PositionInfo pos(POSITION_TYPE_DESCR, "(internal)");
 
-    if (!_isSilent)
-        opts += _ctrl->printBuffer(" -fms %s", _instanceFileName.c_str());
-    else
-        opts += _ctrl->printBuffer(" -fms %s -silent", _instanceFileName.c_str());
+    opts += _ctrl->printBuffer(" -fms %s", _instanceFileName.c_str());
+
+    if (_isSilent)
+        opts += "  -silent";
 
     if (_integerRelaxation)
         opts += " -int-relax";

@@ -27,8 +27,8 @@ x[TUR]                  I                   2                   2               
 Constraints 
 Name                 Type            Activity         Lower bound         Upper bound            Marginal
 ---------------------------------------------------------------------------------------------------------
-line[A]                 G                1500                 700            Infinity                   -
-line[B1]                G                1330                 700            Infinity                   -
-line[B2]                G                 860                 700            Infinity                   -
-line[C]                 G                 700                 700            Infinity                   -
+vit[A]                  G                1500                 700                 inf                   -
+vit[B1]                 G                1330                 700                 inf                   -
+vit[B2]                 G                 860                 700                 inf                   -
+vit[C]                  G                 700                 700                 inf                   -
 ---------------------------------------------------------------------------------------------------------

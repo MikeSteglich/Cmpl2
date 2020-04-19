@@ -1,4 +1,0 @@
-error (module interpret: execution): indexation not implemented '[1..2, ]'; at 07_Mehrkriteriell.cmpl:17.43-49
-error (module interpret: execution): both arguments for operation must be arrays with the same definition set '<unknown object>', at '+'; at 07_Mehrkriteriell.cmpl:17.8-53
-error (module interpret: execution): indexation not implemented '[3.., ]'; at 07_Mehrkriteriell.cmpl:20.10-15
-error (module interpret: execution): indexation not implemented '[3..]'; at 07_Mehrkriteriell.cmpl:20.25-29

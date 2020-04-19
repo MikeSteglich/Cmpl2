@@ -17,5 +17,5 @@ objectives:
 	costs: sum{i in plants, j in centers : c[i,j] * x[i,j] } ->min;
 
 constraints:
-	supplies {i in plants  : sum{j in centers: x[i,j]} <= s[i];}
-	demands  {j in centers : sum{i in plants : x[i,j]} =  d[j];} 
+	{i in plants  : supplies[i]: sum{j in centers: x[i,j]} <= s[i];}
+    {j in centers : demands[j]: sum{i in plants : x[i,j]} =  d[j];} 
