@@ -98,23 +98,6 @@ scip			run cmpl with scip
 	solutionReportXml
 
 
-script			run cmpl in script mode without writing and solving the instance 	
-	compatSymbols 
-	mathFunctions
-	inputFunctions
-	classFunctions
-	externDataFile
-	boundRow
-	linearSos -warn-invalid-sos
-	linearVarProd
-	linearConstantRow
-	linearLogCon
-	precompile
-	compile -no-warn-insert-eos -compat-linenamepref -compat-cbsymbols -compat-cbh-assign
-    	interpret
-
-
-
 # checks the syntax of cmpl input, but don't execute it
 check-only		check only syntax of the cmpl input file
 	compatSymbols
