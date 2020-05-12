@@ -231,222 +231,224 @@ void SolverCplex::readSolFile(Solution* sol,  OptModel* om) {
 
         ifstream  solFile( _instanceSolName, ifstream::binary) ;
 
-        if (!solFile.is_open())
-            _ctrl->errHandler().internalError(_ctrl->printBuffer("Cannot read solution file '%s'", _instanceSolName.c_str() )  ,NULL);
+        if (solFile.is_open()) {
+            while ( getline( solFile, line) && continueReading ) {
 
+                line=StringStore::lrTrim(line);
 
-        while ( getline( solFile, line) && continueReading ) {
-
-            line=StringStore::lrTrim(line);
-
-            lineNr++;
-            if (lineNr==1) {
-                if (!StringStore::startsWith(line,"<?xml"))
-                    _ctrl->errHandler().internalError(_ctrl->printBuffer("Wrong file type for file '%s'", _instanceSolName.c_str() )  ,NULL);
-                continue;
-            }
-
-            if (lineNr==2 && !StringStore::startsWith(line,"<CPLEXSolution"))
-                _ctrl->errHandler().internalError(_ctrl->printBuffer("Wrong file type for file '%s'", _instanceSolName.c_str() )  ,NULL);
-
-            if (StringStore::startsWith(line,"<CPLEXSolutions"))
-                continue;
-
-            if (StringStore::startsWith(line,"<CPLEXSolution")) {
-                solution = new SingleSolution();
-
-                varIdx=0;
-                conIdx=0;
-
-                headerSection=false;
-                conSection=false;
-                varSection=false;
-
-                continue;
-            }
-
-            if (StringStore::startsWith(line,"</CPLEXSolution") && !StringStore::startsWith(line,"</CPLEXSolutions")) {
-                sol->setSolution(*solution);
-                delete solution;
-
-                headerSection=false;
-                conSection=false;
-                varSection=false;
-            }
-
-            if (StringStore::startsWith(line,"<header")) {
-
-                headerSection=true;
-                conSection=false;
-                varSection=false;
-                continue;
-            }
-
-            if (StringStore::startsWith(line,"<linearConstraints")) {
-
-                headerSection=false;
-                conSection=true;
-                varSection=false;
-                continue;
-            }
-
-            if (StringStore::startsWith(line,"</linearConstraints")) {
-
-                headerSection=false;
-                conSection=false;
-                varSection=false;
-                continue;
-            }
-
-            if (StringStore::startsWith(line,"<variables")) {
-                headerSection=false;
-                conSection=false;
-                varSection=true;
-                continue;
-            }
-
-            if (StringStore::startsWith(line,"</variables")) {
-                headerSection=false;
-                conSection=false;
-                varSection=false;
-                continue;
-            }
-
-            if (headerSection) {
-
-                if (StringStore::startsWith(line, "objectiveValue")) {
-                    string objValStr=readXmlVal(line);
-                    double objVal;
-                    if (!StringStore::toDouble(objValStr,objVal))
-                        _ctrl->errHandler().internalError("Internal error while reading objective function value from Cplex solution file" ,NULL);
-
-                    nrOfSolutions++;
-                    solution->setValue(objVal);
+                lineNr++;
+                if (lineNr==1) {
+                    if (!StringStore::startsWith(line,"<?xml"))
+                        _ctrl->errHandler().internalError(_ctrl->printBuffer("Wrong file type for file '%s'", _instanceSolName.c_str() )  ,NULL);
                     continue;
                 }
 
-                if (StringStore::startsWith(line, "solutionStatusString")) {
-                    string objStatus=readXmlVal(line);
-                    solution->setStatus(objStatus);
+                if (lineNr==2 && !StringStore::startsWith(line,"<CPLEXSolution"))
+                    _ctrl->errHandler().internalError(_ctrl->printBuffer("Wrong file type for file '%s'", _instanceSolName.c_str() )  ,NULL);
 
-                    if (StringStore::contains(objStatus,"infeasible") ||  StringStore::contains(objStatus,"undefined")) {
-                        sol->setNrOfSolutions(0);
-                        continueReading=false;
+                if (StringStore::startsWith(line,"<CPLEXSolutions"))
+                    continue;
+
+                if (StringStore::startsWith(line,"<CPLEXSolution")) {
+                    solution = new SingleSolution();
+
+                    varIdx=0;
+                    conIdx=0;
+
+                    headerSection=false;
+                    conSection=false;
+                    varSection=false;
+
+                    continue;
+                }
+
+                if (StringStore::startsWith(line,"</CPLEXSolution") && !StringStore::startsWith(line,"</CPLEXSolutions")) {
+                    sol->setSolution(*solution);
+                    delete solution;
+
+                    headerSection=false;
+                    conSection=false;
+                    varSection=false;
+                }
+
+                if (StringStore::startsWith(line,"<header")) {
+
+                    headerSection=true;
+                    conSection=false;
+                    varSection=false;
+                    continue;
+                }
+
+                if (StringStore::startsWith(line,"<linearConstraints")) {
+
+                    headerSection=false;
+                    conSection=true;
+                    varSection=false;
+                    continue;
+                }
+
+                if (StringStore::startsWith(line,"</linearConstraints")) {
+
+                    headerSection=false;
+                    conSection=false;
+                    varSection=false;
+                    continue;
+                }
+
+                if (StringStore::startsWith(line,"<variables")) {
+                    headerSection=false;
+                    conSection=false;
+                    varSection=true;
+                    continue;
+                }
+
+                if (StringStore::startsWith(line,"</variables")) {
+                    headerSection=false;
+                    conSection=false;
+                    varSection=false;
+                    continue;
+                }
+
+                if (headerSection) {
+
+                    if (StringStore::startsWith(line, "objectiveValue")) {
+                        string objValStr=readXmlVal(line);
+                        double objVal;
+                        if (!StringStore::toDouble(objValStr,objVal))
+                            _ctrl->errHandler().internalError("Internal error while reading objective function value from Cplex solution file" ,NULL);
+
+                        nrOfSolutions++;
+                        solution->setValue(objVal);
                         continue;
                     }
-                    continue;
-                }
 
-            }
+                    if (StringStore::startsWith(line, "solutionStatusString")) {
+                        string objStatus=readXmlVal(line);
+                        solution->setStatus(objStatus);
 
-            if (varSection) {
-
-                SolutionElement solElem;
-                solElem.setMarginal(0);
-
-                double activity=0;
-                double marginal=0;
-
-                int actPos=-1;
-                int margPos=-1;
-
-                vector<string> varXmlVals;
-                StringStore::split(line,varXmlVals);
-
-                for (unsigned i=0; i<varXmlVals.size();i++) {
-                    if (StringStore::startsWith(varXmlVals[i],"value"))
-                        actPos=i;
-                    if (StringStore::startsWith(varXmlVals[i],"reducedCost"))
-                        margPos=i;
-                }
-
-                string valStr=readXmlVal(varXmlVals[actPos]);
-                if (!StringStore::toDouble(valStr,activity))
-                    _ctrl->errHandler().internalError("Internal error while reading activity from Cplex solution file" ,NULL);
-                solElem.setActivity(activity);
-
-                if (!om->isInteger() || margPos>-1) {
-                    string valStr=readXmlVal(varXmlVals[margPos]);
-                    if (!StringStore::toDouble(valStr,marginal))
-                        _ctrl->errHandler().internalError("Internal error while reading marginal from Cplex solution file" ,NULL);
-                    solElem.setMarginal(marginal);
-                }
-
-                solElem.setModelElement(sol->modelVariable(varIdx));
-                if (sol->modelVariable(varIdx)->type()!="C") {
-                    activity=round(activity);
-                    solElem.setActivity(activity);
-                }
-
-                solution->setVariable(solElem);
-                varIdx++;
-
-                continue;
-            }
-
-            if (conSection) {
-
-                SolutionElement solElem;
-                solElem.setMarginal(0);
-                solElem.setModelElement(sol->modelConstraint(conIdx));
-
-                double activity=0;
-                double slack=0;
-                double marginal=0;
-
-                int actPos=-1;
-                int margPos=-1;
-
-                vector<string> conXmlVals;
-                StringStore::split(line,conXmlVals);
-
-                for (unsigned i=0; i<conXmlVals.size();i++) {
-                    if (StringStore::startsWith(conXmlVals[i],"slack"))
-                        actPos=i;
-                    if (StringStore::startsWith(conXmlVals[i],"dual"))
-                        margPos=i;
-                }
-
-                string valStr=readXmlVal(conXmlVals[actPos]);
-                if (!StringStore::toDouble(valStr,slack))
-                    _ctrl->errHandler().internalError("Internal error while reading activity from Cplex solution file" ,NULL);
-
-                if (slack>0) {
-                    activity=solElem.upperBound()-slack;
-                } else if (slack<0) {
-                    if (solElem.type()=="N")
-                        activity=slack * -1;
-                    else
-                        activity=solElem.lowerBound()+slack * -1;
-                } else {
-                    if (solElem.upperBound()!=inf) {
-                        activity=solElem.upperBound();
-                    } else  if (solElem.lowerBound()!=-inf) {
-                        activity=solElem.lowerBound();
+                        if (StringStore::contains(objStatus,"infeasible") ||  StringStore::contains(objStatus,"undefined")) {
+                            sol->setNrOfSolutions(0);
+                            continueReading=false;
+                            continue;
+                        }
+                        continue;
                     }
 
                 }
 
-                solElem.setActivity(activity);
+                if (varSection) {
 
-                if (!om->isInteger()|| margPos>-1) {
-                    string valStr=readXmlVal(conXmlVals[margPos]);
-                    if (!StringStore::toDouble(valStr,marginal))
-                        _ctrl->errHandler().internalError("Internal error while reading marginal from Cplex solution file" ,NULL);
-                    solElem.setMarginal(marginal);
+                    SolutionElement solElem;
+                    solElem.setMarginal(0);
+
+                    double activity=0;
+                    double marginal=0;
+
+                    int actPos=-1;
+                    int margPos=-1;
+
+                    vector<string> varXmlVals;
+                    StringStore::split(line,varXmlVals);
+
+                    for (unsigned i=0; i<varXmlVals.size();i++) {
+                        if (StringStore::startsWith(varXmlVals[i],"value"))
+                            actPos=i;
+                        if (StringStore::startsWith(varXmlVals[i],"reducedCost"))
+                            margPos=i;
+                    }
+
+                    string valStr=readXmlVal(varXmlVals[actPos]);
+                    if (!StringStore::toDouble(valStr,activity))
+                        _ctrl->errHandler().internalError("Internal error while reading activity from Cplex solution file" ,NULL);
+                    solElem.setActivity(activity);
+
+                    if (!om->isInteger() || margPos>-1) {
+                        string valStr=readXmlVal(varXmlVals[margPos]);
+                        if (!StringStore::toDouble(valStr,marginal))
+                            _ctrl->errHandler().internalError("Internal error while reading marginal from Cplex solution file" ,NULL);
+                        solElem.setMarginal(marginal);
+                    }
+
+                    solElem.setModelElement(sol->modelVariable(varIdx));
+                    if (sol->modelVariable(varIdx)->type()!="C") {
+                        activity=round(activity);
+                        solElem.setActivity(activity);
+                    }
+
+                    solution->setVariable(solElem);
+                    varIdx++;
+
+                    continue;
                 }
 
-                solution->setConstraint(solElem);
-                conIdx++;
-                continue;
+                if (conSection) {
+
+                    SolutionElement solElem;
+                    solElem.setMarginal(0);
+                    solElem.setModelElement(sol->modelConstraint(conIdx));
+
+                    double activity=0;
+                    double slack=0;
+                    double marginal=0;
+
+                    int actPos=-1;
+                    int margPos=-1;
+
+                    vector<string> conXmlVals;
+                    StringStore::split(line,conXmlVals);
+
+                    for (unsigned i=0; i<conXmlVals.size();i++) {
+                        if (StringStore::startsWith(conXmlVals[i],"slack"))
+                            actPos=i;
+                        if (StringStore::startsWith(conXmlVals[i],"dual"))
+                            margPos=i;
+                    }
+
+                    string valStr=readXmlVal(conXmlVals[actPos]);
+                    if (!StringStore::toDouble(valStr,slack))
+                        _ctrl->errHandler().internalError("Internal error while reading activity from Cplex solution file" ,NULL);
+
+                    if (slack>0) {
+                        activity=solElem.upperBound()-slack;
+                    } else if (slack<0) {
+                        if (solElem.type()=="N")
+                            activity=slack * -1;
+                        else
+                            activity=solElem.lowerBound()+slack * -1;
+                    } else {
+                        if (solElem.upperBound()!=inf) {
+                            activity=solElem.upperBound();
+                        } else  if (solElem.lowerBound()!=-inf) {
+                            activity=solElem.lowerBound();
+                        }
+
+                    }
+
+                    solElem.setActivity(activity);
+
+                    if (!om->isInteger()|| margPos>-1) {
+                        string valStr=readXmlVal(conXmlVals[margPos]);
+                        if (!StringStore::toDouble(valStr,marginal))
+                            _ctrl->errHandler().internalError("Internal error while reading marginal from Cplex solution file" ,NULL);
+                        solElem.setMarginal(marginal);
+                    }
+
+                    solution->setConstraint(solElem);
+                    conIdx++;
+                    continue;
+                }
             }
+            sol->setStatus("normal");
+        }
+        else {
+            sol->setStatus("noSolution");
         }
 
-    }catch (FileException& e) {
-        _ctrl->errHandler().internalError(_ctrl->printBuffer("%s: solution file '%s'", e.what(), _instanceSolName.c_str()) ,&e);
-    }
+        }catch (FileException& e) {
+            _ctrl->errHandler().internalError(_ctrl->printBuffer("%s: solution file '%s'", e.what(), _instanceSolName.c_str()) ,&e);
+        }
 
-    sol->setStatus("normal");
+
     sol->setNrOfSolutions(nrOfSolutions);
 }
 
