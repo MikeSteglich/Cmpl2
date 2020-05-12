@@ -204,7 +204,7 @@ namespace cmpl
 
         if (!_isSilent) {
             version(cout);
-            CmplOutput(cout, "Compiling and interpreting Cmpl code");
+            CmplOutput(cout, "Interpreting Cmpl code");
         }
 
 		// iterating over modules

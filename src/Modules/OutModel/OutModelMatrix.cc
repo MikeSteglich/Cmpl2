@@ -241,7 +241,8 @@ void OutModelMatrix::writeMatrix(OptModel *om, ostream& ostr)
 
     PROTO_OUTL("write matrix");
     ostr << "CMPL - matrix export " << endl;
-    ostr << "NAME " << modp()->data()->cmplFileBase() << endl <<endl;
+    string prob = string(modp()->data()->cmplFileBase());
+    ostr << "NAME " << StringStore::modelName(prob) << ".cmpl" << endl <<endl;
 
 
     ostr << setw(20) << left << "Variable name" << setw(4) << "";

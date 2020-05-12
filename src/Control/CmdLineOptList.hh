@@ -34,6 +34,7 @@
 
 #include <string>
 #include <vector>
+#include <cstdlib>
 
 #include "LocationInfo.hh"
 #include "MainData.hh"
@@ -292,7 +293,15 @@ namespace cmpl
         /**
          * full name of executed binary / empty when not set or not applicable here
          */
-        string& binFullName()                   { return _binFullName; }
+        string& binFullName()   {
+
+            char *cmplBin;
+            cmplBin=getenv("CMPLBINARY");
+
+            if (cmplBin!=NULL)
+                _binFullName=cmplBin;
+
+            return _binFullName;     }
 
 
 	private:

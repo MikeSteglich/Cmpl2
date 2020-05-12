@@ -274,6 +274,15 @@ namespace cmpl
         static void  cleanDoubleQuotes(string &str);
 
         /**
+        * @brief returns the name of a model
+        *
+        * @param probName
+        * @return model name w/o extension
+        */
+        static string modelName(const string &probName);
+
+
+        /**
          * encodes xml expressions in a string
          * @return			encoded string
          */

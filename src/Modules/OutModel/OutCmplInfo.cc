@@ -162,7 +162,7 @@ void OutCmplInfo::run()
     _outCmplInfo->setFile(_data, IO_MODE_FILE, &fName , IO_FILE_STANDARD_CMPLINFO, true);
 
 
-     //  if (_matrixOut || _statOut || _varProdStatOut) {
+    //  if (_matrixOut || _statOut || _varProdStatOut) {
 
     if (_outCmplInfo) {
         // get model data
@@ -222,6 +222,7 @@ void OutCmplInfo::writeCmplInfo(OptModel *om, FileOutput *file)
 void OutCmplInfo::writeCmplInfo(OptModel *om, ostream& ostr)
 {
 
+
     PROTO_OUTL("write cmplInfo");
 
     ostr << "<?xml version=\"1.0\" encoding=\"UTF-8\"?> " << endl ;
@@ -262,10 +263,13 @@ void OutCmplInfo::writeCmplInfo(OptModel *om, ostream& ostr)
 
     if (_matrixOut) {
         ostr << "\t<matrix file=\"" ;
-        if (_matrixFileName.empty())
-            ostr <<  modp()->data()->cmplFileBase() << ".mat" ;
-        else
+        if (_matrixFileName.empty()) {
+            string prob = string(modp()->data()->cmplFileBase());
+            ostr <<  StringStore::modelName(prob+".cmpl") << ".mat" ;
+        }
+        else {
             ostr << _matrixFileName;
+        }
         ostr << "\">" << endl ;
 
         if (om->isLinearModel()) {

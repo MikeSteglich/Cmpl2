@@ -100,7 +100,7 @@ void SolverScip::run()
 {
     GET_DATA(OptModel,om);
 
-    if (_solverName=="SCIP" && !om->exportOnly()) {
+    if (_solverName=="SCIP" && !om->exportOnly()  && om->cols().size()>0 ) {
         _ctrl->errHandler().setExecStep("run");
 
         if (!om->isLinearModel())
@@ -123,7 +123,7 @@ void SolverScip::run()
              _ctrl->errHandler().error(ERROR_LVL_WARN,_ctrl->printBuffer("Warning: Scip runs only (M)ILP problems, marginals are not available in solution") , loc ) ;
         }
 
-        string probName = string( modp()->data()->cmplFileBase() )+".cmpl";
+        string probName = StringStore::modelName(string( modp()->data()->cmplFileBase() ))+".cmpl";
         sol->prepareSolutionData(probName, _solverName, _integerRelaxation, _data,this);
 
         generateCmdLine();

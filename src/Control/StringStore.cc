@@ -286,6 +286,37 @@ namespace cmpl
 
 
     /**
+    * @brief returns the name of a model
+    *
+    * @param probName
+    * @return model name w/o extension
+    */
+    string StringStore::modelName(const string &probName)
+    {
+        size_t t;
+        string str = replaceAll(probName, "\\", "/");
+        string str1 = "";
+
+        t = str.find_last_of("/");
+        if (t != string::npos)
+            str1 = str.substr(t + 1);
+        else
+            str1 = str;
+
+        t = str1.find(".cmpl");
+        if (t != string::npos)
+            return str1.substr(0, t);
+        else
+        {
+            return str1;
+        }
+
+    }
+
+
+
+
+    /**
      * encodes xml expressions in a string
      * @return			encoded string
      */

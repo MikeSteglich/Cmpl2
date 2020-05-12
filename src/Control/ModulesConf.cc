@@ -72,6 +72,7 @@ namespace cmpl
 		_locConf = loc;
 
 		try {
+
 			FileInput inFile;
             istream *inStr = NULL;
             char dirSepChar = (_ctrl->binFullName() ? FileBase::getDirSepChar(_ctrl->binFullName()->c_str()) : '\0');
