@@ -13,9 +13,9 @@ if [ "$r0" = 0 -o "$r1" = 0 ]; then
 
 	./test-cmpl 01_Standardmodell.cmpl -m -silent
 	./test-cmpl 02_Standardmodell.cmpl -threads 4 -m -silent
-	./test-cmpl 03_Primzahlen.cmpl -silent -script
-	./test-cmpl 04_Threads.cmpl -silent -script
-	./test-cmpl 05_Fibonacci.cmpl -silent -script
+	./test-cmpl 03_Primzahlen.cmpl -silent
+	./test-cmpl 04_Threads.cmpl -silent
+	./test-cmpl 05_Fibonacci.cmpl -silent 
 	./test-cmpl 06_SOS-Linear.cmpl -solver=cbc -fm -silent
 	./test-cmpl 06a_SOS-Native.cmpl -solver cplex -fm -silent
 	./test-cmpl 07_Variablenprodukte.cmpl -var-prod-linear 3 -solver cbc -fm -silent
