@@ -1,6 +1,0 @@
-error (module interpret: execution): argument for variable creation must be a data type '<f-lc:  + 10*<var#1> + 12*<var#2> + -1.3*<var#3> + -1.5*<var#5> + -1.3*<var#4> + -1.5*<var#6>>', at '+'; at 09_Beispiel_Steglich.cmpl:75.3-76.72
-error (module interpret: execution): argument for variable creation must be a data type '<f-cmp: <f-lc:  + <var#1> + <var#2>> <= 40>', at '<='; at 09_Beispiel_Steglich.cmpl:81.3-19
-error (module interpret: execution): argument for variable creation must be a data type '<f-cmp: <f-lc:  + 1.2*<var#1> + 1.8*<var#2>> <= 60>', at '<='; at 09_Beispiel_Steglich.cmpl:81.3-19
-error (module interpret: execution): argument for variable creation must be a data type '<f-cmp: <f-lc:  + 1.4*<var#1> + 1.3*<var#2>> <= 70>', at '<='; at 09_Beispiel_Steglich.cmpl:81.3-19
-error (module interpret: execution): end value for algorithmic set must be a scalar integer value '<predefined function 'dim'>', at 'dim'; at 09_Beispiel_Steglich.cmpl:86.25-27
-fatal error (module interpret: execution): internal error: unhandled function call 'set()'; at 09_Beispiel_Steglich.cmpl:86.21-27

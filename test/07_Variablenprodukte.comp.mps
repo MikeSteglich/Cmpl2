@@ -2,83 +2,80 @@
 NAME 07_Variablenprodukte
 * OBJNAME p_bin
 * OBJSENSE MAX
-* OBJNAME p_int
-* OBJSENSE MAX
-* OBJNAME p_real
-* OBJSENSE MAX
 ROWS
  N p_bin
- N p_int
- N p_real
- L line_4
- L line_5
- G line_6
- E line_7
- L line_8
- L line_9
- G line_10
- L line_11
- L line_12
- G line_13
- L line_14
- L line_15
- G line_16
- L line_17
- L line_18
- G line_19
- E line_20
- E line_21
- E line_22
- L line_23
- L line_24
- G line_25
- E line_26
+ G p_int
+ G p_real
+ L __line4
+ L __line5
+ G __line6
+ E __line7
+ L __line8
+ L __line9
+ G __line10
+ L __line11
+ L __line12
+ G __line13
+ L __line14
+ L __line15
+ G __line16
+ L __line17
+ L __line18
+ G __line19
+ E __line20
+ E __line21
+ E __line22
+ L __line23
+ L __line24
+ G __line25
+ E __line26
 COLUMNS
- by line_5 -1 line_6 -1
- iy line_9 -1 line_10 -1
- iy line_12 -1 line_13 -1
- iy line_15 -1 line_16 -1
- iy line_18 -1 line_19 -1
- rx line_21 -1 line_26 -5.000000
- ry line_22 -1
- bx_by p_bin 1 line_4 1
- bx_by line_5 1 line_6 1
- ix_iy p_int 1 line_20 -1
- ix_b_iy[1] line_8 1 line_9 1
- ix_b_iy[1] line_10 1 line_20 1
- ix_b_iy[2] line_11 1 line_12 1
- ix_b_iy[2] line_13 1 line_20 2
- ix_b_iy[3] line_14 1 line_15 1
- ix_b_iy[3] line_16 1 line_20 4
- ix_b_iy[4] line_17 1 line_18 1
- ix_b_iy[4] line_19 1 line_20 8
- rx_n line_21 10.000000 line_23 -1
- rx_n line_25 -1
- ry_n line_22 20.000000 line_24 -1
- ry_n line_25 -1
- rx_ry_n line_23 1 line_24 1
- rx_ry_n line_25 1 line_26 -200.000000
- rx_ry p_real 1 line_26 1
+ by __line5 -1 __line6 -1
+ iy __line9 -1 __line10 -1
+ iy __line12 -1 __line13 -1
+ iy __line15 -1 __line16 -1
+ iy __line18 -1 __line19 -1
+ rx __line21 -1 __line26 -5.000000
+ ry __line22 -1
+ __bx_by p_bin 1 __line4 1
+ __bx_by __line5 1 __line6 1
+ __ix_iy p_int 1 __line20 -1
+ __ix_b_iy[1] __line8 1 __line9 1
+ __ix_b_iy[1] __line10 1 __line20 1
+ __ix_b_iy[2] __line11 1 __line12 1
+ __ix_b_iy[2] __line13 1 __line20 2
+ __ix_b_iy[3] __line14 1 __line15 1
+ __ix_b_iy[3] __line16 1 __line20 4
+ __ix_b_iy[4] __line17 1 __line18 1
+ __ix_b_iy[4] __line19 1 __line20 8
+ __rx_n __line21 10.000000 __line23 -1
+ __rx_n __line25 -1
+ __ry_n __line22 20.000000 __line24 -1
+ __ry_n __line25 -1
+ __rx_ry_n __line23 1 __line24 1
+ __rx_ry_n __line25 1 __line26 -200.000000
+ __rx_ry p_real 1 __line26 1
  GVANF 'MARKER' 'INTORG'
- bx line_4 -25.000000 line_5 -5.000000
- bx line_6 -25.000000
- ix line_7 -1
- ix_b[1] line_7 1 line_8 -25.000000
- ix_b[1] line_9 -5.000000 line_10 -25.000000
- ix_b[2] line_7 2 line_11 -25.000000
- ix_b[2] line_12 -5.000000 line_13 -25.000000
- ix_b[3] line_7 4 line_14 -25.000000
- ix_b[3] line_15 -5.000000 line_16 -25.000000
- ix_b[4] line_7 8 line_17 -25.000000
- ix_b[4] line_18 -5.000000 line_19 -25.000000
+ bx __line4 -25.000000 __line5 -5.000000
+ bx __line6 -25.000000
+ ix __line7 -1
+ __ix_b[1] __line7 1 __line8 -25.000000
+ __ix_b[1] __line9 -5.000000 __line10 -25.000000
+ __ix_b[2] __line7 2 __line11 -25.000000
+ __ix_b[2] __line12 -5.000000 __line13 -25.000000
+ __ix_b[3] __line7 4 __line14 -25.000000
+ __ix_b[3] __line15 -5.000000 __line16 -25.000000
+ __ix_b[4] __line7 8 __line17 -25.000000
+ __ix_b[4] __line18 -5.000000 __line19 -25.000000
  GVEND 'MARKER' 'INTEND'
 RHS
- RHS line_5 -5.000000 line_6 -25.000000
- RHS line_9 -5.000000 line_10 -25.000000
- RHS line_12 -5.000000 line_13 -25.000000
- RHS line_15 -5.000000 line_16 -25.000000
- RHS line_18 -5.000000 line_19 -25.000000
- RHS line_22 -5.000000 line_25 -1
+ RHS p_int 2.22507e-308 __line5 -5.000000
+ RHS __line6 -25.000000 __line9 -5.000000
+ RHS __line10 -25.000000 __line12 -5.000000
+ RHS __line13 -25.000000 __line15 -5.000000
+ RHS __line16 -25.000000 __line18 -5.000000
+ RHS __line19 -25.000000 __line22 -5.000000
+ RHS __line25 -1
 BOUNDS
  UP BOUND bx 1
  LO BOUND by 5.000000
@@ -89,18 +86,18 @@ BOUNDS
  UP BOUND rx 10.000000
  LO BOUND ry 5.000000
  UP BOUND ry 25.000000
- UP BOUND bx_by 25.000000
- UP BOUND ix_b[1] 1
- UP BOUND ix_b[2] 1
- UP BOUND ix_b[3] 1
- UP BOUND ix_b[4] 1
- UP BOUND ix_iy 250.000000
- UP BOUND ix_b_iy[1] 25.000000
- UP BOUND ix_b_iy[2] 25.000000
- UP BOUND ix_b_iy[3] 25.000000
- UP BOUND ix_b_iy[4] 25.000000
- UP BOUND rx_n 1
- UP BOUND ry_n 1
- UP BOUND rx_ry_n 1
- UP BOUND rx_ry 250.000000
+ UP BOUND __bx_by 25.000000
+ UP BOUND __ix_b[1] 1
+ UP BOUND __ix_b[2] 1
+ UP BOUND __ix_b[3] 1
+ UP BOUND __ix_b[4] 1
+ UP BOUND __ix_iy 250.000000
+ UP BOUND __ix_b_iy[1] 25.000000
+ UP BOUND __ix_b_iy[2] 25.000000
+ UP BOUND __ix_b_iy[3] 25.000000
+ UP BOUND __ix_b_iy[4] 25.000000
+ UP BOUND __rx_n 1
+ UP BOUND __ry_n 1
+ UP BOUND __rx_ry_n 1
+ UP BOUND __rx_ry 250.000000
 ENDATA

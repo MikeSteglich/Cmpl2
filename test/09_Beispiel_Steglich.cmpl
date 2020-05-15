@@ -1,4 +1,3 @@
-%arg -gn
 //
 // Produktionsprogrammplanung unter Einbeziehung von Lernkurveneffekten
 //
@@ -43,11 +42,6 @@ const:
  		(((1.6, 1.2), (2.1, 1.8, 1.7)),
  		 ((2.5, 2.2), (3.2, 2.8, 2.6)));
 
-echo( "QQQ");
-
-%include a/test.gen
-
-echo("XXX");
 
 %include 09_Include.gen
 
@@ -71,19 +65,19 @@ echo("XXX");
  
  
  // Zielfunktion
- objective:
+ objectives:
  	sum{n in 1(1)Produkte: (Absatzpreis[n] - Stueckkosten[n]) * x[n]}
  		+ sum{n in 1(1)Produkte, k in 1(1)Plaetze: -Kostensatz[k] * rkn[k,n]};
  	
  // Restriktionen
- constraint:
+ constraints:
  	// Basisproblem �ber Produktionsfaktoren
  	A[,] * x[] <= B[];
  
  	// Berechnung der rkn
  	RS {k in 1(1)Plaetze, n in 1(1)Produkte:
  		//RS$k$x$n$:
-			rkn[k,n] = sum{i=1(1)dim(xniMax[n,]): tkni[k,n,i] * xni[n,i]};
+			rkn[k,n] = sum{i in 1(1)(dim(xniMax[n,])): tkni[k,n,i] * xni[n,i]};
  	}
  
  	// Beschr�nkung der verf�gbaren Zeitkapazit�t
@@ -93,9 +87,9 @@ echo("XXX");
  
  	// Bedingung f�r Reihenfolge der Linearisierungsintervalle
  	{n in 1(1)Produkte:
- 		x[n] = sum{i in 1(1)dim(xniMax[n,]): xni[n,i]};
+ 		x[n] = sum{i in 1(1)(dim(xniMax[n,])): xni[n,i]};
  
- 		{i in 1(1)dim(xniMax[n,]):
+ 		{i in 1(1)(dim(xniMax[n,])):
  			{i < dim(xniMax[n,]): xni[n,i] >= y[n,i] * xniMax[n,i]; }
  			{i > 1:               xni[n,i] <= y[n,i-1] * xniMax[n,i]; }
  		}
@@ -104,4 +98,4 @@ echo("XXX");
  	// Schranken
  	0 <= x[] <= xMax[];
  	{n in 1(1)Produkte: 0 <= xni[n,] <= xniMax[n,]; }
-	
+

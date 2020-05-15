@@ -1,8 +1,8 @@
 * CMPL - MPS - Export
-NAME          07_Mehrkriteriell.cmpl
+NAME          07_Mehrkriteriell
 ROWS
  N  Ziel[1] 
- G  Ziel[2] 
+ N  Ziel[2] 
  L  Restr[3]
  L  Restr[4]
  L  Restr[5]
@@ -18,12 +18,11 @@ COLUMNS
     x[2]      Restr[5]             8
     GVEND     'MARKER'                 'INTEND'
 RHS
-    RHS       Ziel[2]          1e-12   Restr[3]     16.500000
-    RHS       Restr[4]      6.500000   Restr[5]            40
-RANGES
+    RHS       Restr[3]     16.500000   Restr[4]      6.500000
+    RHS       Restr[5]            40
 BOUNDS
- UP BOUND     Wunschpk            15
- UP BOUND     Wichtung             0
+ UP BOUND     Wunschpk     15.000000
+ UP BOUND     Wichtung      0.000000
  UP BOUND     x[1]                 7
  UP BOUND     x[2]                 7
 ENDATA

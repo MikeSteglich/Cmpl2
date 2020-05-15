@@ -22,7 +22,7 @@ if [ "$r0" = 0 -o "$r1" = 0 ]; then
 	./test-cmpl 07a_Variablenprodukte-Native.cmpl -solver=cplex -fm -silent
 	./test-cmpl 07_Mehrkriteriell.cmpl -m 07_Mehrkriteriell.mps -silent 
 	./test-cmpl 08_SummeNegiert.cmpl -m 08_SummeNegiert.mps -silent
-	./test-cmpl 09_Beispiel_Steglich.cmpl -ca -fm 09_Beispiel_Steglich.mps  -silent
+	./test-cmpl 09_Beispiel_Steglich.cmpl -fm 09_Beispiel_Steglich.mps  -silent
 	./test-cmpl 10_Beispiel_Rost.cmpl -m 10_Beispiel_Rost.mps -silent
 
 	./test-cmpl 22_diet.cmpl -silent 

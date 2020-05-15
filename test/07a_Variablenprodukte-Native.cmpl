@@ -1,5 +1,9 @@
 
+
 // test for products of optimization variables
+
+// linearization only for product with binary variable
+%var-prod-linear 1
 
 par:
 	XU := 0;
