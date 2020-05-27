@@ -627,7 +627,14 @@ namespace cmpl
                             ostr << ' ' << left << "RHS" << ' ' << rowNames[i] << ' ' << right << minVal;
                         else
                             ostr << "    " << setw(8) << left << "RHS" << "  " << setw(8) << rowNames[i] << "  " << setw(12) << right << minVal;
+                    } else {
+                        fs = true;
+                        if (fm)
+                            ostr << ' ' << left << rowNames[i] << ' ' << right <<  minVal << endl;
+                        else
+                            ostr <<  "   " << setw(8) << left << rowNames[i] << "  " << setw(12) << right <<  minVal << endl;
                     }
+
                }
 
                 if (!rhs->isNumNull()) {
