@@ -20,7 +20,7 @@ COLUMNS
  bx __line6 -25.000000
  GVEND 'MARKER' 'INTEND'
 RHS
- RHS p_int 2.22507e-308 p_real 2.22507e-308
+ RHS p_int -1.79769e+308 p_real -1.79769e+308
  RHS __line5 -5.000000 __line6 -25.000000
 BOUNDS
  UP BOUND bx 1

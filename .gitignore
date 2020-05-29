@@ -18,3 +18,6 @@ cmpl-Entwicklung.odt
 *.user
 *.user
 bin/cmpl
+*.user
+*.user
+cmpl2.creator.user

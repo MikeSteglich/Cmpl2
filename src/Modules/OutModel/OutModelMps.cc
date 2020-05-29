@@ -484,7 +484,7 @@ namespace cmpl
         const char addConUVMode = 'E';
         bool hasAddConUV = false;
 
-        double minVal = std::numeric_limits<double>::min();
+        double minVal = - std::numeric_limits<double>::max();
 
         // write mps
         PROTO_OUTL("write mps");
@@ -541,7 +541,7 @@ namespace cmpl
         for (unsigned long i = 0; i < rowCnt; i++, mode++) {
             char m = *mode;
             if (m) {
-                if (m == '+' || m == '-')
+                if (m == '+' || m == '-' || m == 'N')
                     if (i==om->objIdx())
                         m = 'N';
                     else
@@ -620,7 +620,7 @@ namespace cmpl
             if (*mode) {
 
                // handling of non activated obj functions
-               if ( (*mode == '+' || *mode == '-') && i!=om->objIdx() ) {
+               if ( (*mode == '+' || *mode == '-' || *mode == 'N') && i!=om->objIdx() ) {
                     if (fs) {
                         fs = false;
                         if (fm)

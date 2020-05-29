@@ -69,7 +69,7 @@ COLUMNS
  __ix_b[4] __line18 -5.000000 __line19 -25.000000
  GVEND 'MARKER' 'INTEND'
 RHS
- RHS p_int 2.22507e-308 p_real 2.22507e-308
+ RHS p_int -1.79769e+308 p_real -1.79769e+308
  RHS __line5 -5.000000 __line6 -25.000000
  RHS __line9 -5.000000 __line10 -25.000000
  RHS __line12 -5.000000 __line13 -25.000000

@@ -2,7 +2,7 @@
 NAME          07_Mehrkriteriell
 ROWS
  N  Ziel[1] 
- N  Ziel[2] 
+ G  Ziel[2] 
  L  Restr[3]
  L  Restr[4]
  L  Restr[5]
@@ -18,8 +18,8 @@ COLUMNS
     x[2]      Restr[5]             8
     GVEND     'MARKER'                 'INTEND'
 RHS
-    RHS       Restr[3]     16.500000   Restr[4]      6.500000
-    RHS       Restr[5]            40
+    RHS       Ziel[2]   -1.79769e+308   Restr[3]     16.500000
+    RHS       Restr[4]      6.500000   Restr[5]            40
 BOUNDS
  UP BOUND     Wunschpk     15.000000
  UP BOUND     Wichtung      0.000000
