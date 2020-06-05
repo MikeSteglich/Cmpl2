@@ -477,17 +477,17 @@ namespace cmpl
          * @param se        id of syntax element in the cmpl text creating this formula value
          * @param f			source formula
          */
-        inline ValFormulaCompareOp(unsigned se, ValFormulaCompare *f, bool ge, bool le, bool neg): ValFormulaCompare(se, f, ge, le, neg)                { }
+        inline ValFormulaCompareOp(unsigned se, ValFormulaCompare *f, bool ge, bool le, bool neg, bool ag = false): ValFormulaCompare(se, f, ge, le, neg, ag)                { }
 
         /**
          * constructor
          */
-        inline ValFormulaCompareOp(unsigned se, CmplVal *ls, CmplVal *rs, bool ge, bool le, bool neg): ValFormulaCompare(se, ls, rs, ge, le, neg)		{ }
+        inline ValFormulaCompareOp(unsigned se, CmplVal *ls, CmplVal *rs, bool ge, bool le, bool neg, bool ag = false): ValFormulaCompare(se, ls, rs, ge, le, neg, ag)		{ }
 
         /**
          * constructor
          */
-        inline ValFormulaCompareOp(unsigned se, ValFormula *ls, CmplVal *rs, bool ge, bool le, bool neg): ValFormulaCompare(se, ls, rs, ge, le, neg)	{ }
+        inline ValFormulaCompareOp(unsigned se, ValFormula *ls, CmplVal *rs, bool ge, bool le, bool neg, bool ag = false): ValFormulaCompare(se, ls, rs, ge, le, neg, ag)	{ }
 
 
         /************** operations **********/

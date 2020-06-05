@@ -57,11 +57,13 @@ namespace cmpl
     {
         RemodelBaseMod::init(ctrl, data, name);
 
-        _attachNameConAnd = data->globStrings()->storeInd("a");
-        _attachNameConOr = data->globStrings()->storeInd("o");
-        _attachNameVarOr = data->globStrings()->storeInd("b");
-        _attachNameConDltNeg = data->globStrings()->storeInd("n");
-        _attachNameVarDltNeg = data->globStrings()->storeInd("d");
+        _nameSep = 0;
+
+        _attachNameConAnd = 0;  //data->globStrings()->storeInd("_a");
+        _attachNameConOr = data->globStrings()->storeInd("_o");
+        _attachNameVarOr = data->globStrings()->storeInd("_b");
+        _attachNameConDltNeg = data->globStrings()->storeInd("_n");
+        _attachNameVarDltNeg = data->globStrings()->storeInd("_d");
     }
 
     /**

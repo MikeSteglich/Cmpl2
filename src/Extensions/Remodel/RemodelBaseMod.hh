@@ -57,7 +57,7 @@ namespace cmpl
 
         /************** command line options **********/
 
-    private:
+    protected:
         unsigned _maxThreads;       ///< max number of worker threads (0: no threading)
         realType _bigM;             ///< huge number used for linearization
 

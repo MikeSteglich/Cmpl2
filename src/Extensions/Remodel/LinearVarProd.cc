@@ -422,7 +422,7 @@ namespace cmpl
 
                     // create constraint for product
                     CmplValAuto f2lb1(TP_FORMULA, new ValFormulaVarOp(se, f2, lb));
-                    CmplValAuto fc(TP_FORMULA, new ValFormulaCompareOp(se, &f2lb1, &pvf, true, true, false));
+                    CmplValAuto fc(TP_FORMULA, new ValFormulaCompareOp(se, &f2lb1, &pvf, true, true, false, true));
                     newOptCon(modp, om, NULL, se, fc);
 
                     return pv;
@@ -456,7 +456,7 @@ namespace cmpl
         CmplValAuto vvpf(TP_FORMULA, new ValFormulaVarProdOp(se, v1, v2));
 
         // prod = v1*v2
-        CmplValAuto f(TP_FORMULA, new ValFormulaCompareOp(se, &pvf, &vvpf, true, true, false));
+        CmplValAuto f(TP_FORMULA, new ValFormulaCompareOp(se, &pvf, &vvpf, true, true, false, true));
         newOptCon(modp, om, NULL, se, f);
 
         return pv;
@@ -492,7 +492,7 @@ namespace cmpl
         }
         else if (lbr < 0) {
             // prod >= lb*v1
-            CmplValAuto f(TP_FORMULA, new ValFormulaCompareOp(se, &pvf, &v1lb, true, false, false));
+            CmplValAuto f(TP_FORMULA, new ValFormulaCompareOp(se, &pvf, &v1lb, true, false, false, true));
             newOptCon(modp, om, NULL, se, f);
         }
 
@@ -502,7 +502,7 @@ namespace cmpl
         }
         else if (ubr > 0) {
             // prod <= ub*v1
-            CmplValAuto f(TP_FORMULA, new ValFormulaCompareOp(se, &pvf, &v1ub, false, true, false));
+            CmplValAuto f(TP_FORMULA, new ValFormulaCompareOp(se, &pvf, &v1ub, false, true, false, true));
             newOptCon(modp, om, NULL, se, f);
         }
 
@@ -512,14 +512,14 @@ namespace cmpl
         CmplValAuto rhs1(TP_FORMULA, new ValFormulaVarOp(se, v2));
         OperationBase::addTo(modp->baseExecCtx(), &rhs1, se, &v1lb);
         OperationBase::addTo(modp->baseExecCtx(), &rhs1, se, (lb ? &lb : &vBigM), (bool)lb);
-        CmplValAuto f1(TP_FORMULA, new ValFormulaCompareOp(se, &pvf, &rhs1, false, true, false));
+        CmplValAuto f1(TP_FORMULA, new ValFormulaCompareOp(se, &pvf, &rhs1, false, true, false, true));
         newOptCon(modp, om, NULL, se, f1);
 
         // prod >= v2 + ub*(v1 - 1)
         CmplValAuto rhs2(TP_FORMULA, new ValFormulaVarOp(se, v2));
         OperationBase::addTo(modp->baseExecCtx(), &rhs2, se, &v1ub);
         OperationBase::addTo(modp->baseExecCtx(), &rhs2, se, (ub ? &ub : &vBigM), true);
-        CmplValAuto f2(TP_FORMULA, new ValFormulaCompareOp(se, &pvf, &rhs2, true, false, false));
+        CmplValAuto f2(TP_FORMULA, new ValFormulaCompareOp(se, &pvf, &rhs2, true, false, false, true));
         newOptCon(modp, om, NULL, se, f2);
 
         return pv;
@@ -560,7 +560,7 @@ namespace cmpl
             OperationBase::addTo(modp->baseExecCtx(), &f, se, &bprf);
         }
 
-        CmplValAuto fc(TP_FORMULA, new ValFormulaCompareOp(se, &f, &pvf, true, true, false));
+        CmplValAuto fc(TP_FORMULA, new ValFormulaCompareOp(se, &f, &pvf, true, true, false, true));
         newOptCon(modp, om, NULL, se, fc);
 
         return pv;
@@ -610,7 +610,7 @@ namespace cmpl
                 }
 
                 CmplValAuto v1f(TP_FORMULA, new ValFormulaVarOp(se, v1));
-                CmplValAuto fc(TP_FORMULA, new ValFormulaCompareOp(se, &f, &v1f, true, true, false));
+                CmplValAuto fc(TP_FORMULA, new ValFormulaCompareOp(se, &f, &v1f, true, true, false, true));
                 OptCon *oc = newOptCon(modp, om, NULL, se, fc);
                 decomp.oc = oc->id();
             }
@@ -683,7 +683,7 @@ namespace cmpl
                     OperationBase::addTo(modp->baseExecCtx(), &f, se, &lb);
 
                     CmplValAuto vsf(TP_FORMULA, new ValFormulaVarOp(se, vs));
-                    CmplValAuto fc(TP_FORMULA, new ValFormulaCompareOp(se, &f, &vsf, true, true, false));
+                    CmplValAuto fc(TP_FORMULA, new ValFormulaCompareOp(se, &f, &vsf, true, true, false, true));
                     newOptCon(modp, om, NULL, se, fc);
                 }
 
@@ -706,10 +706,10 @@ namespace cmpl
         CmplValAuto v1nf(TP_FORMULA, new ValFormulaVarOp(se, vn1));
         CmplValAuto v2nf(TP_FORMULA, new ValFormulaVarOp(se, vn2));
 
-        CmplValAuto fcn1(TP_FORMULA, new ValFormulaCompareOp(se, &vpnf, &v1nf, false, true, false));
+        CmplValAuto fcn1(TP_FORMULA, new ValFormulaCompareOp(se, &vpnf, &v1nf, false, true, false, true));
         newOptCon(modp, om, NULL, se, fcn1);
 
-        CmplValAuto fcn2(TP_FORMULA, new ValFormulaCompareOp(se, &vpnf, &v2nf, false, true, false));
+        CmplValAuto fcn2(TP_FORMULA, new ValFormulaCompareOp(se, &vpnf, &v2nf, false, true, false, true));
         newOptCon(modp, om, NULL, se, fcn2);
 
         CmplValAuto fn(TP_FORMULA, new ValFormulaLinearCombOp(se));
@@ -717,7 +717,7 @@ namespace cmpl
         OperationBase::addTo(modp->baseExecCtx(), &fn, se, &v2nf);
         OperationBase::addTo(modp->baseExecCtx(), &fn, se, &val1, true);
 
-        CmplValAuto fcn3(TP_FORMULA, new ValFormulaCompareOp(se, &vpnf, &fn, true, false, false));
+        CmplValAuto fcn3(TP_FORMULA, new ValFormulaCompareOp(se, &vpnf, &fn, true, false, false, true));
         newOptCon(modp, om, NULL, se, fcn3);
 
         // de-normalization of normalized product
@@ -744,7 +744,7 @@ namespace cmpl
             OperationBase::addTo(modp->baseExecCtx(), &fp, se, &lblb, true);
 
             CmplValAuto vpf(TP_FORMULA, new ValFormulaVarOp(se, vp));
-            CmplValAuto fcp(TP_FORMULA, new ValFormulaCompareOp(se, &vpf, &fp, true, true, false));
+            CmplValAuto fcp(TP_FORMULA, new ValFormulaCompareOp(se, &vpf, &fp, true, true, false, true));
             newOptCon(modp, om, NULL, se, fcp);
 
             // insert also product variable and normalized product variable in cache

@@ -639,28 +639,30 @@ namespace cmpl
         bool _compLe;						///< check for left side lesser or equal right side
         bool _compNeg;						///< negate comparison
 
+        bool _autogen;                      ///< automatically generated within linearization
+
     public:
         /**
          * copy constructor
          * @param f			source formula
          */
-        inline ValFormulaCompare(ValFormulaCompare *f): ValFormula(f->syntaxElem()), _leftSide(f->_leftSide), _rightSide(f->_rightSide), _compGe(f->_compGe), _compLe(f->_compLe), _compNeg(f->_compNeg)     { }
+        inline ValFormulaCompare(ValFormulaCompare *f): ValFormula(f->syntaxElem()), _leftSide(f->_leftSide), _rightSide(f->_rightSide), _compGe(f->_compGe), _compLe(f->_compLe), _compNeg(f->_compNeg), _autogen(f->_autogen)             { }
 
         /**
          * constructor
          * @param f			source formula
          */
-        inline ValFormulaCompare(unsigned se, ValFormulaCompare *f, bool ge, bool le, bool neg): ValFormula(se), _leftSide(f->_leftSide), _rightSide(f->_rightSide), _compGe(ge), _compLe(le), _compNeg(neg) { }
+        inline ValFormulaCompare(unsigned se, ValFormulaCompare *f, bool ge, bool le, bool neg, bool ag = false): ValFormula(se), _leftSide(f->_leftSide), _rightSide(f->_rightSide), _compGe(ge), _compLe(le), _compNeg(neg), _autogen(ag) { }
 
         /**
          * constructor
          */
-        inline ValFormulaCompare(unsigned se, CmplVal *ls, CmplVal *rs, bool ge, bool le, bool neg): ValFormula(se), _leftSide(ls), _rightSide(rs), _compGe(ge), _compLe(le), _compNeg(neg)                  { checkSwapSides(); }
+        inline ValFormulaCompare(unsigned se, CmplVal *ls, CmplVal *rs, bool ge, bool le, bool neg, bool ag = false): ValFormula(se), _leftSide(ls), _rightSide(rs), _compGe(ge), _compLe(le), _compNeg(neg), _autogen(ag)                  { checkSwapSides(); }
 
         /**
          * constructor
          */
-        inline ValFormulaCompare(unsigned se, ValFormula *ls, CmplVal *rs, bool ge, bool le, bool neg): ValFormula(se), _leftSide(TP_FORMULA, ls), _rightSide(rs), _compGe(ge), _compLe(le), _compNeg(neg)   { checkSwapSides(); }
+        inline ValFormulaCompare(unsigned se, ValFormula *ls, CmplVal *rs, bool ge, bool le, bool neg, bool ag = false): ValFormula(se), _leftSide(TP_FORMULA, ls), _rightSide(rs), _compGe(ge), _compLe(le), _compNeg(neg), _autogen(ag)   { checkSwapSides(); }
 
         /**
          * destructor
@@ -772,6 +774,10 @@ namespace cmpl
          */
         inline bool isNeg() const                   { return _compNeg; }
 
+        /**
+         * get whether automatically generated within linearization
+         */
+        inline bool autogen() const                 { return _autogen; }
     };
 
 

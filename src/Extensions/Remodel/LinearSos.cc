@@ -603,7 +603,7 @@ namespace cmpl
         }
 
         CmplVal rhs(TP_INT, (intType)maxSOSCount);
-        CmplValAuto f(TP_FORMULA, new ValFormulaCompareOp(sos->syntaxElem, &lc, &rhs, false, true, false));
+        CmplValAuto f(TP_FORMULA, new ValFormulaCompareOp(sos->syntaxElem, &lc, &rhs, false, true, false, true));
 
         CmplValAuto tpl;
         string nms = (sos->name ? modp->data()->globStrings()->at(sos->name) : getBaseNameTuple(modp, fv, tpl, true, true, _attachNameConSos));
@@ -661,7 +661,7 @@ namespace cmpl
             OperationBase::plus(modp->baseExecCtx(), &lc, src->syntaxElem(), &t1, &t2);
 
             CmplVal rhs(TP_INT, (intType)0);
-            CmplValAuto f(TP_FORMULA, new ValFormulaCompareOp(se, &lc, &rhs, upp, !upp, false));
+            CmplValAuto f(TP_FORMULA, new ValFormulaCompareOp(se, &lc, &rhs, upp, !upp, false, true));
             newOptCon(modp, om, NULL, src->syntaxElem(), f);
 
             bvid = bv->id() + 1;
@@ -738,7 +738,7 @@ namespace cmpl
             info.varOrder = bv->id() + 1;
 
             CmplValAuto vbv(TP_FORMULA, new ValFormulaVarOp(sos->syntaxElem, bv));
-            CmplValAuto f(TP_FORMULA, new ValFormulaCompareOp(sos->syntaxElem, &lc, &vbv, false, true, false));
+            CmplValAuto f(TP_FORMULA, new ValFormulaCompareOp(sos->syntaxElem, &lc, &vbv, false, true, false, true));
             newOptCon(modp, om, NULL, sos->syntaxElem, f);
 
             OperationBase::addTo(modp->baseExecCtx(), &sos2, sos->syntaxElem, &vbv);
@@ -747,7 +747,7 @@ namespace cmpl
 
         // constraint for only one positive difference in SOS2
         CmplVal rhs(TP_INT, (intType)1);
-        CmplValAuto f(TP_FORMULA, new ValFormulaCompareOp(sos->syntaxElem, &sos2, &rhs, false, true, false));
+        CmplValAuto f(TP_FORMULA, new ValFormulaCompareOp(sos->syntaxElem, &sos2, &rhs, false, true, false, true));
 
         CmplValAuto tpl;
         string nms;
@@ -794,7 +794,7 @@ namespace cmpl
 
                 CmplValAuto vbv(TP_FORMULA, new ValFormulaVarOp(sos->syntaxElem, v));
                 CmplVal rhs(TP_INT, (intType)0);
-                CmplValAuto f(TP_FORMULA, new ValFormulaCompareOp(sos->syntaxElem, &vbv, &rhs, true, true, false));
+                CmplValAuto f(TP_FORMULA, new ValFormulaCompareOp(sos->syntaxElem, &vbv, &rhs, true, true, false, true));
 
                 newOptCon(modp, om, NULL, sos->syntaxElem, f);
             }
@@ -811,7 +811,7 @@ namespace cmpl
             // add constraint for fixing the new variable to -1 for no valid solution
             CmplValAuto vbv(TP_FORMULA, new ValFormulaVarOp(sos->syntaxElem, v));
             CmplVal rhs(TP_INT, (intType)-1);
-            CmplValAuto f(TP_FORMULA, new ValFormulaCompareOp(sos->syntaxElem, &vbv, &rhs, true, true, false));
+            CmplValAuto f(TP_FORMULA, new ValFormulaCompareOp(sos->syntaxElem, &vbv, &rhs, true, true, false, true));
 
             CmplValAuto tplc;
             string nmc;

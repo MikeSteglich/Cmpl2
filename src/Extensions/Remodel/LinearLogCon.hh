@@ -79,6 +79,8 @@ namespace cmpl
 
         RemodelCache<unordered_map<ValFormula *, OptVar *>> _linOrCache;    ///< cache for linearizations of logical Or
 
+        const bool _frstReplOC = false;     ///< first generated constraint replace original constraint
+
 	public:
         /**
          * constructor

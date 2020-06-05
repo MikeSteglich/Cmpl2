@@ -232,8 +232,7 @@ namespace cmpl
 		PositionInfo pos(POSITION_TYPE_WORDARR, "command line");
 		SingleOption *sa = NULL;
 
-        if (argc > 0)
-            _binFullName = argv[0];
+        fillBinFullName(argc > 0 ? argv[0] : NULL);
 
 		for (int i = 1; i < argc; i++) {
 			string arg = argv[i];
@@ -249,6 +248,21 @@ namespace cmpl
             }
 		}
 	}
+
+    /**
+     * fill full name of executed binary
+     * @param arg       name of executed binary as given in first command line argument of main function / NULL: no such
+     */
+    void CmdLineOptList::fillBinFullName(char *arg)
+    {
+        if (arg)
+            _binFullName = arg;
+
+        // use enviroment CMPLBINARY instead, if given and arg doesn't contain a path
+        char *cmplBin = getenv("CMPLBINARY");
+        if (cmplBin && (!arg || _binFullName.find_first_of("/\\") == string::npos))
+            _binFullName = cmplBin;
+    }
 
 	/**
 	 * add a new option to this

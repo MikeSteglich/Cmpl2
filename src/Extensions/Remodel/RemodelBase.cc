@@ -295,7 +295,7 @@ namespace cmpl
 
             OptCon *c = new OptCon(om, f, false, se);
 
-            unsigned nmi = addStorePrefixString(modp, nm, om->rows().size(), true);
+            unsigned nmi = addStorePrefixString(modp, nm, om->rows().size(), true, &f);
             if (nmi) {
                 CmplVal cn(TP_STR, (intType)nmi);
                 if (tpl && *tpl) {
@@ -321,13 +321,20 @@ namespace cmpl
      * @param nm        name without prefix / NULL: no one
      * @param cur       current number to use if no name
      * @param lc        true: constraint / false: variable
+     * @param f         formula for new constraint: if given then add prefix string only if formula is auto generated
      * @return          index number of result name / 0: no one
      */
-    unsigned RemodelBase::addStorePrefixString(Interpreter *modp, string *nm, unsigned long cur, bool lc)
+    unsigned RemodelBase::addStorePrefixString(Interpreter *modp, string *nm, unsigned long cur, bool lc, CmplVal *f)
     {
         unsigned nmi = 0;
 
-        if (_namePref) {
+        if (_namePref && f && f->t == TP_FORMULA) {
+            ValFormulaCompare *fc = dynamic_cast<ValFormulaCompare *>(f->valFormula());
+            if (fc && fc->autogen())
+                f = NULL;
+        }
+
+        if (_namePref && !f) {
             string n(modp->data()->globStrings()->at(_namePref));
             if (nm && !nm->empty()) {
                 if (nm->find(n) == 0)

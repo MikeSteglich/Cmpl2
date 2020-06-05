@@ -268,6 +268,12 @@ namespace cmpl
 		 */
 		void fillFromMain(int argc, char *argv[]);
 
+        /**
+         * fill full name of executed binary
+         * @param arg       name of executed binary as given in first command line argument of main function / NULL: no such
+         */
+        void fillBinFullName(char *arg = NULL);
+
 		/**
 		 * add a new option to this
 		 * @param opt		option string, the option can have several args separated by spaces
@@ -293,15 +299,7 @@ namespace cmpl
         /**
          * full name of executed binary / empty when not set or not applicable here
          */
-        string& binFullName()   {
-
-            char *cmplBin;
-            cmplBin=getenv("CMPLBINARY");
-
-            if (cmplBin!=NULL)
-                _binFullName=cmplBin;
-
-            return _binFullName;     }
+        string& binFullName()               { if (_binFullName.empty()) fillBinFullName(); return _binFullName; }
 
 
 	private:

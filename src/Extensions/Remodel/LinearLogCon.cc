@@ -152,7 +152,7 @@ namespace cmpl
 
                     CmplValAuto res;
                     if (remodelRec(modp, om, oc, rv, false, name, tpl, res)) {
-                        if (formulaToCon(modp, om, oc, res, name, tpl, true)) {
+                        if (formulaToCon(modp, om, oc, res, name, tpl, _frstReplOC) || !_frstReplOC) {
                             // delete original constraint
                             oc->removeFromValueTree(&(om->rows()));
                             CmplObjBase::dispose(oc);
@@ -192,7 +192,7 @@ namespace cmpl
 
         if (fv || (fl && fl->logNeg())) {
             CmplVal rhs(TP_INT, (intType)(fv ? 1 : 0));
-            CmplValAuto f(TP_FORMULA, new ValFormulaCompareOp(oc->syntaxElem(), (fv ? &frml : &(fl->formulas()[0])), &rhs, (fv != NULL), (fv == NULL), false));
+            CmplValAuto f(TP_FORMULA, new ValFormulaCompareOp(oc->syntaxElem(), (fv ? &frml : &(fl->formulas()[0])), &rhs, (fv != NULL), (fv == NULL), false, true));
             newOptCon(modp, om, oc, oc->syntaxElem(), f, (repl ? NULL : &name), &tpl);
             return false;
         }
@@ -205,7 +205,7 @@ namespace cmpl
             CmplValAuto tp2;
             CmplVal *tpit = NULL;
 
-            if (_attachNameConAnd && !name.empty()) {
+            if (!name.empty()) {
                 nm2 = name + modp->data()->globStrings()->at(_attachNameConAnd);
                 Tuple::constructTuple(tp2, tpl, CmplVal(TP_ITUPLE_1INT, (intType)0));
                 if (tp2.useValP())
@@ -328,7 +328,7 @@ namespace cmpl
         CmplValAuto tp2;
         CmplVal *tpit = NULL;
 
-        if (_attachNameConAnd && !name.empty()) {
+        if (!name.empty()) {
             nm2 = name + modp->data()->globStrings()->at(_attachNameConAnd);
             Tuple::constructTuple(tp2, tpl, CmplVal(TP_ITUPLE_1INT, (intType)0));
             if (tp2.useValP())
@@ -370,11 +370,8 @@ namespace cmpl
         CmplVal *tpit = NULL;
 
         if (!name.empty()) {
-            if (_attachNameConOr)
-                nm2 = name + modp->data()->globStrings()->at(_attachNameConOr);
-
-            if (_attachNameVarOr)
-                nmv = name + modp->data()->globStrings()->at(_attachNameVarOr);
+            nm2 = name + modp->data()->globStrings()->at(_attachNameConOr);
+            nmv = name + modp->data()->globStrings()->at(_attachNameVarOr);
 
             Tuple::constructTuple(tp2, tpl, CmplVal(TP_ITUPLE_1INT, (intType)0));
             if (tp2.useValP())
@@ -424,8 +421,8 @@ namespace cmpl
 
         // result formula: sum of all generated binary variables must be lesser than their count
         CmplVal cnt(TP_INT, (intType)(parts.size() - 1));
-        res.set(TP_FORMULA, new ValFormulaCompareOp(oc->syntaxElem(), &resf, &cnt, false, true, false));
-        //res.set(TP_FORMULA, new ValFormulaCompareOp(oc->syntaxElem(), &resf, &cnt, true, true, false));
+        res.set(TP_FORMULA, new ValFormulaCompareOp(oc->syntaxElem(), &resf, &cnt, false, true, false, true));
+        //res.set(TP_FORMULA, new ValFormulaCompareOp(oc->syntaxElem(), &resf, &cnt, true, true, false, true));
 
         return true;
     }
@@ -442,7 +439,7 @@ namespace cmpl
      */
     void LinearLogCon::constraintForOrPart(Interpreter *modp, OptModel *om, OptCon *oc, CmplVal& frml, CmplVal& vbv, string& name, CmplVal& tpl)
     {
-        // if frml contains of other formulas connected by logical And then recursiv call for all parts
+        // if frml consists of other formulas connected by logical And then recursiv call for all parts
         ValFormulaLogCon *fl = dynamic_cast<ValFormulaLogCon *>(frml.valFormula());
         if (fl && !(fl->logOr())) {
             string nm2;
@@ -450,9 +447,7 @@ namespace cmpl
             CmplVal *tpit = NULL;
 
             if (!name.empty()) {
-                if (_attachNameConAnd)
-                    nm2 = name + modp->data()->globStrings()->at(_attachNameConAnd);
-
+                nm2 = name + modp->data()->globStrings()->at(_attachNameConAnd);
                 Tuple::constructTuple(tp2, tpl, CmplVal(TP_ITUPLE_1INT, (intType)0));
                 if (tp2.useValP())
                     tpit = tp2.tuple()->at(tp2.tuple()->rank() - 1);
@@ -472,7 +467,7 @@ namespace cmpl
         else
         {
             CmplValAuto lhs, rhs, fact;
-            bool ge;
+            bool ge, ag;
 
             ValFormulaVar *fv = dynamic_cast<ValFormulaVar *>(frml.valFormula());
             if (fv || (fl && fl->logNeg())) {
@@ -481,6 +476,7 @@ namespace cmpl
                 lhs.copyFrom((fv ? frml : fl->formulas()[0]), true, false);
                 rhs.set(TP_INT, (intType)(ge ? 1 : 0));
                 fact.set(TP_INT, (intType)(ge ? 1 : -1));
+                ag = true;
             }
             else {
                 // frml must be compare formula
@@ -489,13 +485,14 @@ namespace cmpl
                 fc->getSide(true, lhs);
                 fc->getSide(false, rhs);
                 fact.set(TP_REAL, (ge ? _bigM : -_bigM));
+                ag = fc->autogen();
             }
 
             CmplValAuto fvbv, nlhs;
             OperationBase::mult(modp->baseExecCtx(), &fvbv, oc->syntaxElem(), &vbv, &fact, true);
             OperationBase::plus(modp->baseExecCtx(), &nlhs, oc->syntaxElem(), &lhs, &fvbv);
 
-            CmplValAuto f(TP_FORMULA, new ValFormulaCompareOp(oc->syntaxElem(), &nlhs, &rhs, ge, !ge, false));
+            CmplValAuto f(TP_FORMULA, new ValFormulaCompareOp(oc->syntaxElem(), &nlhs, &rhs, ge, !ge, false, ag));
             newOptCon(modp, om, oc, oc->syntaxElem(), f, &name, &tpl);
         }
     }
@@ -516,8 +513,8 @@ namespace cmpl
         if (fc->isCompGe() && fc->isCompLe()) {
             // linearize as:  !(lhs >= rhs) || !(lhs <= rhs)
             vector<CmplVal> parts;
-            parts.push_back(CmplVal(TP_FORMULA, new ValFormulaCompareOp(oc->syntaxElem(), fc, true, false, true)));
-            parts.push_back(CmplVal(TP_FORMULA, new ValFormulaCompareOp(oc->syntaxElem(), fc, false, true, true)));
+            parts.push_back(CmplVal(TP_FORMULA, new ValFormulaCompareOp(oc->syntaxElem(), fc, true, false, true, fc->autogen())));
+            parts.push_back(CmplVal(TP_FORMULA, new ValFormulaCompareOp(oc->syntaxElem(), fc, false, true, true, fc->autogen())));
             return linearizeOr(modp, om, oc, parts, false, name, tpl, res);
         }
 
@@ -535,7 +532,7 @@ namespace cmpl
             // constraint for delta variable:  bigM*delta >= 1
             CmplVal one(TP_INT, (intType)1);
             CmplValAuto vd(TP_FORMULA, new ValFormulaVarOp(oc->syntaxElem(), delta, _bigM));
-            CmplValAuto cd(TP_FORMULA, new ValFormulaCompareOp(oc->syntaxElem(), &vd, &one, true, false, false));
+            CmplValAuto cd(TP_FORMULA, new ValFormulaCompareOp(oc->syntaxElem(), &vd, &one, true, false, false, true));
 
             if (_attachNameConDltNeg && !name.empty())
                 nm = name + modp->data()->globStrings()->at(_attachNameConDltNeg);
@@ -552,7 +549,7 @@ namespace cmpl
             CmplValAuto dt(TP_FORMULA, new ValFormulaVarOp(oc->syntaxElem(), delta, (intType)(ge ? 1 : -1)));
             OperationBase::plus(modp->baseExecCtx(), &nlhs, oc->syntaxElem(), &lhs, &dt);
 
-            res.set(TP_FORMULA, new ValFormulaCompareOp(oc->syntaxElem(), &nlhs, &rhs, !ge, ge, false));
+            res.set(TP_FORMULA, new ValFormulaCompareOp(oc->syntaxElem(), &nlhs, &rhs, !ge, ge, false, fc->autogen()));
             return true;
         }
     }

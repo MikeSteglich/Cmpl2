@@ -221,9 +221,10 @@ namespace cmpl
          * @param nm        name without prefix / NULL: no one
          * @param cur       current number to use if no name
          * @param lc        true: constraint / false: variable
+         * @param f         formula for new constraint: if given then add prefix string only if formula is auto generated
          * @return          index number of result name / 0: no one
          */
-        unsigned addStorePrefixString(Interpreter *modp, string *nm, unsigned long cur, bool lc);
+        unsigned addStorePrefixString(Interpreter *modp, string *nm, unsigned long cur, bool lc, CmplVal *f = NULL);
 
         /**
          * get base name and tuple of a source variable or constraint
