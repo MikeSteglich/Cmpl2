@@ -28,7 +28,7 @@ if [ "$r0" = 0 -o "$r1" = 0 ]; then
 	./test-cmpl 22_diet.cmpl -silent 
     ./test-cmpl 23_production-mix.cmpl -silent 
     ./test-cmpl 24_test.cmpl -silent 
-    ./test-cmpl 25_test_B.cmpl -silent -display generatedElements
+    ./test-cmpl 25_test_B.cmpl -silent
     ./test-cmpl 26_transportation.cmpl -silent 
     ./test-cmpl 27_transportation_B.cmpl -silent 
 
@@ -68,7 +68,7 @@ if [ "$r0" = 0 -o "$r1" = 0 ]; then
 	if [ "$isCplex" = 1 ]; then 
         ./test-cmpl transport-foster-single-source.cmpl  -solver cplex -display solutionPool -silent -solutionAscii -display nonZeros
     	./test-cmpl covering-location-cplex-solutionpool.cmpl  -solver cplex -display solutionPool -silent -solution
-        ./test-cmpl tsp-poland.cmpl -solver cplex -silent -solutionCsv -opt cplex mip/tolerances/mipgap=0.1 -display nonZeros
+        #./test-cmpl tsp-poland.cmpl -solver cplex -silent -solutionCsv -opt cplex mip/tolerances/mipgap=0.1 -display nonZeros
     fi
 
 

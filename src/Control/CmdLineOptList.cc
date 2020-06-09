@@ -258,8 +258,8 @@ namespace cmpl
         if (arg)
             _binFullName = arg;
 
-        // use enviroment CMPLBINARY instead, if given and arg doesn't contain a path
-        char *cmplBin = getenv("CMPLBINARY");
+        // use enviroment CMPLHOME instead, if given and arg doesn't contain a path
+        char *cmplBin = getenv("CMPLHOME");
         if (cmplBin && (!arg || _binFullName.find_first_of("/\\") == string::npos))
             _binFullName = cmplBin;
     }

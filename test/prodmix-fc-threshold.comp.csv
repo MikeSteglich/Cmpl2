@@ -17,5 +17,7 @@ Constraints
 Name;Type;Activity;Lower bound;Upper bound;Marginal
 maschine[1];L;1410;-inf;2000;-
 maschine[2];L;2000;-inf;2000;-
-y_x[1];L;-14;-inf;0;-
-y_x[2];L;0;-inf;0;-
+y_x[1,1];L;-14;-inf;0;-
+y_x[1,2];G;6;0;inf;-
+y_x[2,1];L;0;-inf;0;-
+y_x[2,2];G;30;0;inf;-

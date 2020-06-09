@@ -1,5 +1,4 @@
 %display var=x*
-%display generatedElements
 
 parameters:
 	rows:=1(1)2;
