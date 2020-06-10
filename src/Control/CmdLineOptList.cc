@@ -260,8 +260,14 @@ namespace cmpl
 
         // use enviroment CMPLHOME instead, if given and arg doesn't contain a path
         char *cmplBin = getenv("CMPLHOME");
-        if (cmplBin && (!arg || _binFullName.find_first_of("/\\") == string::npos))
+        if (cmplBin && (!arg || _binFullName.find_first_of("/\\") == string::npos)) {
             _binFullName = cmplBin;
+            if (StringStore::contains(cmplBin,"/")) {
+                _binFullName+="bin/cmpl";
+            } else {
+                _binFullName+="bin\\cmpl.exe";
+            }
+        }
     }
 
 	/**
