@@ -3,7 +3,7 @@
 test -s ../bin/cmpl; r0=$?
 test -s ../bin/cmpl.exe; r1=$?
 
-isGurobi=1
+isGurobi=0
 isCplex=1
 isScip=1
 

@@ -251,7 +251,6 @@ void Solution::prepareSolutionData(string probName, string solver,  bool intRela
     for (unsigned long i = 0; i < colCnt; i++) {
         OptVar *ov = dynamic_cast<OptVar *>(om->cols()[i]);
         if (ov) {
-            ModelElement modElem;
 
             if (ov->usedByCon() == 1) {
                 _nrOfVariables++;
@@ -261,6 +260,7 @@ void Solution::prepareSolutionData(string probName, string solver,  bool intRela
                     _nrOfIntegerVariables++;
                 }
                 else {
+                    ModelElement modElem;
                     modElem.setName(colNames[i]);
                     modElem.setType("C");
 
@@ -289,31 +289,33 @@ void Solution::prepareSolutionData(string probName, string solver,  bool intRela
         for (unsigned long i = 0; i < colCnt; i++) {
             OptVar *ov = dynamic_cast<OptVar *>(om->cols()[i]);
             if (ov && ov->intVar()) {
-                ModelElement modElem;
-                modElem.setName(colNames[i]);
+                if (ov->usedByCon() == 1) {
+                    ModelElement modElem;
+                    modElem.setName(colNames[i]);
 
-                if (!integerRelaxation) {
-                    if (ov->binVar())
-                        modElem.setType("B");
-                    else
-                        modElem.setType("I");
-                } else {
-                    modElem.setType("C");
+                    if (!integerRelaxation) {
+                        if (ov->binVar())
+                            modElem.setType("B");
+                        else
+                            modElem.setType("I");
+                    } else {
+                        modElem.setType("C");
+                    }
+
+                    double lowerBound=0;
+                    double upperBound=0;
+
+                    getVarBounds(ov,lowerBound,upperBound);
+
+                    modElem.setLowerBound( lowerBound);
+                    modElem.setUpperBound( upperBound );
+
+                    _colNameMap[colNames[i] ] = mpsIdx;
+                    _colIdxMap[i]=mpsIdx;
+                    // _colSolIdxMap[mpsIdx]=i;
+                    mpsIdx++;
+                    _modVariables.push_back(modElem);
                 }
-
-                double lowerBound=0;
-                double upperBound=0;
-
-                getVarBounds(ov,lowerBound,upperBound);
-
-                modElem.setLowerBound( lowerBound);
-                modElem.setUpperBound( upperBound );
-
-                _colNameMap[colNames[i] ] = mpsIdx;
-                _colIdxMap[i]=mpsIdx;
-                // _colSolIdxMap[mpsIdx]=i;
-                mpsIdx++;
-                _modVariables.push_back(modElem);
             }
         }
     }
