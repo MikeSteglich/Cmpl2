@@ -2166,6 +2166,7 @@ namespace cmpl
     void VarCondMapping::endPart()
     {
         _curCBPart = -1;
+        _curFullCond.dispUnset();
     }
 
 
@@ -2330,7 +2331,7 @@ namespace cmpl
                 }
             }
 
-            if (chg && _trueCondPart < 0 && dds) {
+            if (dds && _trueCondPart < 0 && chg && chg->baseVS()->values()) {
                 CmplVal& ds2 = chg->baseVS()->values()->defset();
                 if (ds2 != dds)
                     dds.dispUnset();
@@ -2358,7 +2359,7 @@ namespace cmpl
                 }
 
                 if (chg && _trueCondPart < 0)
-                    pvals[_partCnt].copyFrom(chg->baseVS()->values()->at(0));
+                    pvals[_partCnt].copyFrom((chg->baseVS()->values() ? chg->baseVS()->values()->at(0) : &vnull));
 
                 mergeVal(res, pvals, pfrom, pend2, ptc);
             }
@@ -2376,7 +2377,7 @@ namespace cmpl
                     }
 
                     if (chg && _trueCondPart < 0)
-                        pvals[_partCnt].copyFrom(chg->baseVS()->values()->at(i));
+                        pvals[_partCnt].copyFrom((chg->baseVS()->values() ? chg->baseVS()->values()->at(i) : &vnull));
 
                     mergeVal(*(arr->at(i)), pvals, pfrom, pend2, ptc);
                 }
@@ -2399,7 +2400,7 @@ namespace cmpl
 
             CmplVal *iset;
             bool useChgFlags, useInd;
-            bool useSrcArr = (chg && (!chg->fullChg() || _trueCondPart < 0));
+            bool useSrcArr = (chg && chg->baseVS()->values() && (!chg->fullChg() || _trueCondPart < 0));
             unsigned long n;
 
             if (useSrcArr) {
@@ -2442,8 +2443,8 @@ namespace cmpl
                         }
                         if (ptc >= pend) {
                             CmplArray *a = chg->baseVS()->values();
-                            if (useInd || useSrcArr)
-                                pvals[ptc].copyFrom(a->at(i));
+                            if (useInd || useSrcArr || !a)
+                                pvals[ptc].copyFrom((a ? a->at(i) : &vnull));
                             else
                                 pvals[ptc].copyFrom((SetUtil::tupleInSet(_execContext, a->defset(), curtp, n) ? a->at(n) : &vnull));
                         }
@@ -2681,6 +2682,37 @@ namespace cmpl
         }
 
         return true;
+    }
+
+
+    /**
+     * get full condition (including from parent) for current codeblock part
+     */
+    CmplValAuto &VarCondMapping::getFullCond()
+    {
+        if (!_curFullCond && _curCBPart >= 0) {
+            _curFullCond.copyFrom(_partVarCond[_curCBPart]);
+            unsigned se = _cbContext->syntaxElem();
+
+            vector<CmplValAuto> *ncs = _prvPartConds[_curCBPart];
+            if (ncs) {
+                for (CmplVal& nc : *ncs) {
+                    CmplValAuto tn, tc;
+                    OperationBase::execUnaryOper(_execContext, &tn, se, ICS_OPER_NOT, &nc);
+                    OperationBase::execBinaryOper(_execContext, &tc, se, ICS_OPER_AND, false, &_curFullCond, &tn);
+                    _curFullCond.moveFrom(tc, true);
+                }
+            }
+
+            if (_parent) {
+                CmplVal& pfc = _parent->getFullCond();
+                CmplValAuto tc;
+                OperationBase::execBinaryOper(_execContext, &tc, se, ICS_OPER_AND, false, &pfc, &_curFullCond);
+                _curFullCond.moveFrom(tc, true);
+            }
+        }
+
+        return _curFullCond;
     }
 }
 

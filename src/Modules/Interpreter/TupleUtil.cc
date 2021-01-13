@@ -66,8 +66,10 @@ namespace cmpl
 		}
 
 		CmplVal *v;
+        CmplVal nl(TP_NULL);
+
 		if (cnt == 1) {
-			v = top->simpleValue();
+            v = top->simpleValueOrEmptyArr(&nl);
 
 			// check for empty tuple (with one blank component) or null tuple
 			if (v && (v->t == TP_BLANK || v->t == TP_NULL)) {
@@ -92,7 +94,7 @@ namespace cmpl
 
 		// discard trailing nulls
 		StackValue *ptop = NULL;
-		while (cnt && top->simpleValue() && top->simpleValue()->t == TP_NULL) {
+        while (cnt && top->simpleValueOrEmptyArr(&nl) && top->simpleValueOrEmptyArr(&nl)->t == TP_NULL) {
 			ptop = top;
 			top = ctx->stackPrev(ptop);
 			cnt--;
@@ -106,7 +108,7 @@ namespace cmpl
 		Tuple::TupleType ttp;
 
 		for (i = 0, sv = top; i < cnt; i++, bot = sv, sv = ctx->stackPrev(sv, false)) {
-			v = sv->simpleValue();
+            v = sv->simpleValueOrEmptyArr(&nl);
 			if (v) {
 				PROTO_MOD_OUTL(ctx->modp(), "  value for tuple: " << *v);
 				if (v->t == TP_BLANK) {
@@ -179,8 +181,8 @@ namespace cmpl
 		// check if simple index tuple (first non-null is the simple value for tuple)
         if (rtr == 1 && indTuple && !cbs) {
 			for (i = 0, sv = top; i < cnt; i++, sv = ctx->stackPrev(sv, false)) {
-				v = sv->simpleValue();
-				if (v->t != TP_NULL && (v->isScalarIndex() || (v->isTuple() && Tuple::rank(*v) == 1))) {
+                v = sv->simpleValue();
+                if (v && v->t != TP_NULL && (v->isScalarIndex() || (v->isTuple() && Tuple::rank(*v) == 1))) {
 					if (v->isScalarIndex())
 						res.set((v->t == TP_STR ? TP_ITUPLE_1STR : TP_ITUPLE_1INT), v->v.i);
 					else
@@ -203,7 +205,7 @@ namespace cmpl
 		unsigned i2;
 
         for (i = 0, sv = top; i < cnt; i++, sv = ctx->stackPrev(sv, false)) {
-			v = sv->simpleValue();
+            v = sv->simpleValueOrEmptyArr(&nl);
 			if (v) {
 				if (v->t != TP_NULL) {
                     if (v->isTuple() || v->t == TP_DEF_CB_SYM_TUPLE) {

@@ -91,6 +91,13 @@ namespace cmpl
 		 */
         inline CmplVal *simpleValue()						{ return (isSimple() ? &_val : (_val.isArray() ? _val.array()->simpleValue() : (_val.t == TP_SYMBOL_VAL ? ((SymbolValue *)(_val.v.p))->simpleValue() : NULL))); }
 
+        /**
+         * get pointer to simple value (no array or list) or if empty array then to ea or NULL if other array or a list
+         * @param ea            value returned if empty array
+         * @return				pointer to value or NULL
+         */
+        inline CmplVal *simpleValueOrEmptyArr(CmplVal *ea)	{ CmplVal *r = simpleValue(); if (!r && _val.isArray() && _val.array()->isEmpty()) { r = ea; } return r; }
+
 		/**
 		 * get whether this value is a simple value (no array or list)
 		 */
@@ -312,7 +319,6 @@ namespace cmpl
          */
         static CmplArray *arrayFromArrayComp(ExecContext *ctx, CmplArray *src);
 
-    private:
         /**
          * cast source array to array with same values but definition set according ind
          * @param ctx           execution context
@@ -323,6 +329,7 @@ namespace cmpl
          */
         static StackValue *castArray(ExecContext *ctx, StackValue *arr, CmplVal &ind, unsigned se);
 
+    private:
         /**
          * info about indexation value within an array cast
          */

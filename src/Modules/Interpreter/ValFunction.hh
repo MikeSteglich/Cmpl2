@@ -89,7 +89,7 @@ namespace cmpl
          * @param se			syntax element id of source value
          * @return              only used if aggr: true if result is final
          */
-        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se)      { return true; }
+        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se, void *info = NULL)      { return true; }
 
     private:
         /**
@@ -97,8 +97,9 @@ namespace cmpl
          * @param ctx			execution context
          * @param res           return of result value
          * @param arg			pointer to argument value
+         * @param info          info object for use by the caller
          */
-        void callForArrayAggrRek(ExecContext *ctx, CmplVal &res, StackValue *arg);
+        void callForArrayAggrRek(ExecContext *ctx, CmplVal &res, StackValue *arg, void *info);
 
     protected:
         /**
@@ -106,16 +107,18 @@ namespace cmpl
          * @param ctx			execution context
          * @param res           return of result value
          * @param arg			pointer to argument value
+         * @param info          info object for use by the caller
          */
-        void callForArrayAggr(ExecContext *ctx, CmplVal &res, StackValue *arg)            { res.set(TP_NULL); callForArrayAggrRek(ctx, res, arg); }
+        void callForArrayAggr(ExecContext *ctx, CmplVal &res, StackValue *arg, void *info = NULL)       { res.set(TP_NULL); callForArrayAggrRek(ctx, res, arg, info); }
 
         /**
          * calls function for every single element of an array or a list (result is array over the same definition set as argument value)
          * @param ctx			execution context
          * @param res           return of result value
          * @param arg			pointer to argument value
+         * @param info          info object for use by the caller
          */
-        void callForArrayElements(ExecContext *ctx, CmplVal &res, StackValue *arg);
+        void callForArrayElements(ExecContext *ctx, CmplVal &res, StackValue *arg, void *info = NULL);
     };
 
 
@@ -234,9 +237,10 @@ namespace cmpl
          * @param src			source value
          * @param aggr          called for aggregating elements of an array or a list
          * @param se			syntax element id of source value
+         * @param info          info object for use by the caller
          * @return              only used if aggr: true if result is final
          */
-        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se) override;
+        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se, void *info = NULL) override;
 	};
 
     /**
@@ -255,9 +259,10 @@ namespace cmpl
          * @param src			source value
          * @param aggr          called for aggregating elements of an array or a list
          * @param se			syntax element id of source value
+         * @param info          info object for use by the caller
          * @return              only used if aggr: true if result is final
          */
-        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se) override;
+        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se, void *info = NULL) override;
 
         /**
          * get whether function has special meaning for optimization direction
@@ -282,9 +287,10 @@ namespace cmpl
          * @param src			source value
          * @param aggr          called for aggregating elements of an array or a list
          * @param se			syntax element id of source value
+         * @param info          info object for use by the caller
          * @return              only used if aggr: true if result is final
          */
-        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se) override;
+        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se, void *info = NULL) override;
 
         /**
          * get whether function has special meaning for optimization direction
@@ -309,6 +315,18 @@ namespace cmpl
          * @return				true
          */
         virtual bool operCall(ExecContext *ctx, StackValue *arg) override;
+
+        /**
+         * calls the function for a simple source value (no array or list)
+         * @param ctx			execution context
+         * @param res			store for result value
+         * @param src			source value
+         * @param aggr          called for aggregating elements of an array or a list
+         * @param se			syntax element id of source value
+         * @param info          info object for use by the caller
+         * @return              only used if aggr: true if result is final
+         */
+        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se, void *info = NULL) override;
     };
 
     /**
@@ -327,6 +345,18 @@ namespace cmpl
          * @return				true
          */
         virtual bool operCall(ExecContext *ctx, StackValue *arg) override;
+
+        /**
+         * calls the function for a simple source value (no array or list)
+         * @param ctx			execution context
+         * @param res			store for result value
+         * @param src			source value
+         * @param aggr          called for aggregating elements of an array or a list
+         * @param se			syntax element id of source value
+         * @param info          info object for use by the caller
+         * @return              only used if aggr: true if result is final
+         */
+        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se, void *info = NULL) override;
     };
 
 
@@ -481,9 +511,10 @@ namespace cmpl
          * @param src			source value
          * @param aggr          called for aggregating elements of an array or a list
          * @param se			syntax element id of source value
+         * @param info          info object for use by the caller
          * @return              only used if aggr: true if result is final
          */
-        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se) override;
+        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se, void *info = NULL) override;
 	};
 
     /**
@@ -502,9 +533,10 @@ namespace cmpl
          * @param src			source value
          * @param aggr          called for aggregating elements of an array or a list
          * @param se			syntax element id of source value
+         * @param info          info object for use by the caller
          * @return              only used if aggr: true if result is final
          */
-        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se) override;
+        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se, void *info = NULL) override;
 	};
 
 
@@ -541,9 +573,10 @@ namespace cmpl
          * @param src			source value
          * @param aggr          called for aggregating elements of an array or a list
          * @param se			syntax element id of source value
+         * @param info          info object for use by the caller
          * @return              only used if aggr: true if result is final
          */
-        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se) override;
+        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se, void *info = NULL) override;
 
 //    private:
 //        /**
@@ -588,7 +621,74 @@ namespace cmpl
 		 * @return				true
 		 */
         virtual bool operCall(ExecContext *ctx, StackValue *arg) override;
-	};
+
+        /**
+         * calls the function for a simple source value (no array or list)
+         * @param ctx			execution context
+         * @param res			store for result value
+         * @param src			source value
+         * @param aggr          called for aggregating elements of an array or a list
+         * @param se			syntax element id of source value
+         * @param info          info object for use by the caller
+         * @return              only used if aggr: true if result is final
+         */
+        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se, void *info = NULL) override;
+
+    private:
+        /**
+         * info structure used in operCallSimple()
+         */
+        struct Info
+        {
+            const char *fullformat = NULL;              ///< full format string (first argument of the function)
+            unsigned formatse = 0;                      ///< syntax element id of format
+            unsigned nxtformat = 0;                     ///< start position of next part in <code>fullformat</code>
+            char formatbuf[105];                        ///< buffer for current format part copied from <code>fullformat</code>
+
+            tp_e formattp = TP_EMPTY;                   ///< type of current format specifier (TP_REAL/TP_INT/TP_STR) / TP_EMPTY: no one
+            bool strc = false;                          ///< true if TP_STR used for format specifier %c
+            unsigned cntadd = 0;                        ///< count of additional needed arguments (e.g. for width) (max is 2)
+
+            unsigned readadd = 0;                       ///< count of additional needed arguments already read
+            int add1 = 0;                               ///< first additional argument
+            int add2 = 0;                               ///< second additional argument
+
+            char *buf = NULL;                           ///< output buffer
+            size_t buflen = 0;                          ///< length of output buffer
+
+            string *res;                                ///< pointer to result string
+
+            Info(string *rp): res(rp)   { }             ///< constructor
+            ~Info()                     { if (buf) delete buf; }    ///< destructor
+        };
+
+        /**
+         * get next format specifier and set info for it
+         * @param ctx           execution context
+         * @param inf           info object
+         * @return              false if error or end of format
+         */
+        bool extractNextFormat(ExecContext *ctx, Info *inf);
+
+        /**
+         * write value to result string using current format
+         * @param ctx           execution context
+         * @param val           value
+         * @param se            syntax element id of the value
+         * @param inf           info object
+         */
+        void writeValue(ExecContext *ctx, CmplVal& val, unsigned se, Info *inf);
+
+        /**
+         * printf the value to buffer
+         * @param inf           info object
+         * @param valr          value if real
+         * @param vali          value if int
+         * @param vals          value if string
+         * @return              false if error
+         */
+        bool printfValue(Info *inf, realType valr, intType vali, const char *vals);
+    };
 
 
 	/****** integer division functions ****/

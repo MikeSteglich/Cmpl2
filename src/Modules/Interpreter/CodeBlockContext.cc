@@ -343,10 +343,19 @@ namespace cmpl
     {
         if (!_cancel && val) {
             if (tpl && tpl->val()) {
-                //TODO: Umwandlung in Set oder Tupel; wenn scheiternd dann Fehler
-                //TODO: Array-Cast: [tpl](val)
+                CmplValAuto ind;
+                TupleUtil::toIndexTuple(_execContext, ind, tpl, false);
 
-                assignResult(val->val(), false, val->syntaxElem());
+                if (ind == TP_SET_ALL)
+                {
+                    assignResult(val->val(), false, val->syntaxElem());
+                }
+                else
+                {
+                    StackValue *cval = StackValue::castArray(_execContext, val, ind, tpl->syntaxElem());
+                    assignResult(cval->val(), false, val->syntaxElem());
+                    _execContext->pop();
+                }
             }
             else {
                 assignResult(val->val(), true, val->syntaxElem());

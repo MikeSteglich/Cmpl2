@@ -49,15 +49,16 @@ namespace cmpl
      * @param ctx			execution context
      * @param res           return of result value
      * @param arg			pointer to argument value
+     * @param info          info object for use by the caller
      */
-    void ValFunctionBase::callForArrayElements(ExecContext *ctx, CmplVal& res, StackValue *arg)
+    void ValFunctionBase::callForArrayElements(ExecContext *ctx, CmplVal& res, StackValue *arg, void *info)
     {
         if (arg->isList())
             arg = ctx->replaceListOnStack(arg);
 
         CmplVal *s = arg->simpleValue();
         if (s) {
-            operCallSimple(ctx, res, *s, false, arg->syntaxElem());
+            operCallSimple(ctx, res, *s, false, arg->syntaxElem(), info);
         }
         else if (arg->val().t == TP_ARRAY) {
             CmplArray *arr = new CmplArray(arg->val().array()->defset());
@@ -67,7 +68,7 @@ namespace cmpl
             s = arg->val().array()->at(0);
 
             for (unsigned long i = 0; i < arr->size(); i++, r++, s++)
-                operCallSimple(ctx, *r, *s, false, arg->syntaxElem());
+                operCallSimple(ctx, *r, *s, false, arg->syntaxElem(), info);
 
             res.set(TP_ARRAY, arr);
         }
@@ -83,14 +84,15 @@ namespace cmpl
      * @param ctx			execution context
      * @param res           return of result value
      * @param arg			pointer to argument value
+     * @param info          info object for use by the caller
      */
-    void ValFunctionBase::callForArrayAggrRek(ExecContext *ctx, CmplVal &res, StackValue *arg)
+    void ValFunctionBase::callForArrayAggrRek(ExecContext *ctx, CmplVal &res, StackValue *arg, void *info)
     {
         if (arg->isList()) {
             if (arg->val().t == TP_LIST_TUPLE) {
                 CmplValAuto tp;
                 TupleUtil::constructFromList(ctx, tp, arg);
-                operCallSimple(ctx, res, tp, false, arg->syntaxElem());
+                operCallSimple(ctx, res, tp, false, arg->syntaxElem(), info);
             }
             else {
                 while (arg->val().t == TP_REF_LIST)
@@ -100,10 +102,10 @@ namespace cmpl
                 for (unsigned long i = cnt; i > 0; i--) {
                     CmplVal *s = arg[-i].simpleValue();
                     if (s && !s->isList()) {
-                        operCallSimple(ctx, res, *s, false, arg->syntaxElem());
+                        operCallSimple(ctx, res, *s, true, arg->syntaxElem(), info);
                     }
                     else if (arg[-i].val().t == TP_ARRAY || arg[-i].val().t == TP_REF_LIST) {
-                        callForArrayAggrRek(ctx, res, arg - i);
+                        callForArrayAggrRek(ctx, res, arg - i, info);
                     }
                 }
             }
@@ -111,21 +113,21 @@ namespace cmpl
         else {
             CmplVal *s = arg->simpleValue();
             if (s) {
-                operCallSimple(ctx, res, *s, false, arg->syntaxElem());
+                operCallSimple(ctx, res, *s, false, arg->syntaxElem(), info);
             }
             else if (arg->val().t == TP_ARRAY) {
                 CmplArray *arr = arg->val().array();
                 if (arr->hasUserOrder()) {
                     CmplArrayIterator iter(*arr, false, true, false);
                     for (iter.begin(); iter; iter++) {
-                        if (operCallSimple(ctx, res, **iter, true, arg->syntaxElem()))
+                        if (operCallSimple(ctx, res, **iter, true, arg->syntaxElem(), info))
                             break;
                     }
                 }
                 else {
                     s = arr->at(0);
                     for (unsigned long i = 0; i < arr->size(); i++, s++) {
-                        if (operCallSimple(ctx, res, *s, true, arg->syntaxElem()))
+                        if (operCallSimple(ctx, res, *s, true, arg->syntaxElem(), info))
                             break;
                     }
                 }
@@ -179,9 +181,10 @@ namespace cmpl
      * @param src			source value
      * @param aggr          called for aggregating elements of an array or a list
      * @param se			syntax element id of source value
+     * @param info          info object for use by the caller
      * @return              only used if aggr: true if result is final
      */
-    bool ValFunctionInternSum::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se)
+    bool ValFunctionInternSum::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se, void *info)
     {
         if (!res || res.t == TP_NULL) {
             res.copyFrom(src, true, false);
@@ -205,9 +208,10 @@ namespace cmpl
      * @param src			source value
      * @param aggr          called for aggregating elements of an array or a list
      * @param se			syntax element id of source value
+     * @param info          info object for use by the caller
      * @return              only used if aggr: true if result is final
      */
-    bool ValFunctionInternMax::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se)
+    bool ValFunctionInternMax::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se, void *info)
     {
         if (src && src.t != TP_NULL) {
             CmplVal srcv;
@@ -264,9 +268,10 @@ namespace cmpl
      * @param src			source value
      * @param aggr          called for aggregating elements of an array or a list
      * @param se			syntax element id of source value
+     * @param info          info object for use by the caller
      * @return              only used if aggr: true if result is final
      */
-    bool ValFunctionInternMin::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se)
+    bool ValFunctionInternMin::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se, void *info)
     {
         if (src && src.t != TP_NULL) {
             CmplVal srcv;
@@ -324,15 +329,51 @@ namespace cmpl
      */
     bool ValFunctionInternAnd::operCall(ExecContext *ctx, StackValue *arg)
     {
-        ctx->valueError(ctx->modp()->ctrl()->printBuffer("function '%s' not implemented", funcName()), arg);
-        //TODO:
-        //  - Ergebnis bin 0, wenn mindest ein Eingangsdatum bin 0 ist
-        //  - Ergebnis formula, aus und-verknüpften Eingangsformeln, wenn alle nicht-formula Eingangswerte bin 1 sind
-        //  - Ergebnis bin 1 sonst (insbesondere auch wenn gar kein Eingangsdatum)
-        // oder Funktionalitaet des &&-Operators aufrufen (bei Array mehrfach)?
+        CmplVal ea(TP_NULL);
+        CmplVal *v = arg->simpleValueOrEmptyArr(&ea);
 
-        ctx->opResult().set(TP_BIN, false);
+        if (v && v->t == TP_NULL)
+            ctx->opResult().set(TP_BIN, true);
+        else
+            callForArrayAggr(ctx, ctx->opResult(), arg);
+
         return true;
+    }
+
+    /**
+     * calls the function for a simple source value (no array or list)
+     * @param ctx			execution context
+     * @param res			store for result value
+     * @param src			source value
+     * @param aggr          called for aggregating elements of an array or a list
+     * @param se			syntax element id of source value
+     * @param info          info object for use by the caller
+     * @return              only used if aggr: true if result is final
+     */
+    bool ValFunctionInternAnd::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se, void *info)
+    {
+        if (src && src.t != TP_NULL) {
+            if (!res || res.t == TP_NULL) {
+                bool sb;
+                if ((src.t == TP_FORMULA && src.valFormula()->isBool()) || (src.t == TP_OPT_VAR && src.optVar()->binVar())) {
+                    res.copyFrom(src);
+                }
+                else if (src.t != TP_FORMULA && src.t != TP_OPT_VAR && src.toBool(sb, typeConversionAll, ctx->modp())) {
+                    res.set(TP_BIN, sb);
+                }
+                else {
+                    ctx->valueError("argument must have a boolean value", src, se);
+                    res.set(TP_BIN, false);
+                }
+            }
+            else {
+                CmplValAuto r;
+                OperationBase::execBinaryOper(ctx, &r, se, ICS_OPER_AND, false, &res, &src);
+                res.moveFrom(r, true);
+            }
+        }
+
+        return (res && res.t == TP_BIN && res.v.i == 0);
     }
 
 
@@ -346,15 +387,51 @@ namespace cmpl
      */
     bool ValFunctionInternOr::operCall(ExecContext *ctx, StackValue *arg)
     {
-        ctx->valueError(ctx->modp()->ctrl()->printBuffer("function '%s' not implemented", funcName()), arg);
-        //TODO:
-        //  - Ergebnis bin 1, wenn mindest ein Eingangsdatum bin 1 ist
-        //  - Ergebnis formula, aus oder-verknüpften Eingangsformeln, wenn alle nicht-formula Eingangswerte bin 0 sind
-        //  - Ergebnis bin 0 sonst (insbesondere auch wenn gar kein Eingangsdatum)
-        // oder Funktionalitaet des ||-Operators aufrufen (bei Array mehrfach)?
+        CmplVal ea(TP_NULL);
+        CmplVal *v = arg->simpleValueOrEmptyArr(&ea);
 
-        ctx->opResult().set(TP_BIN, false);
+        if (v && v->t == TP_NULL)
+            ctx->opResult().set(TP_BIN, false);
+        else
+            callForArrayAggr(ctx, ctx->opResult(), arg);
+
         return true;
+    }
+
+    /**
+     * calls the function for a simple source value (no array or list)
+     * @param ctx			execution context
+     * @param res			store for result value
+     * @param src			source value
+     * @param aggr          called for aggregating elements of an array or a list
+     * @param se			syntax element id of source value
+     * @param info          info object for use by the caller
+     * @return              only used if aggr: true if result is final
+     */
+    bool ValFunctionInternOr::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se, void *info)
+    {
+        if (src && src.t != TP_NULL) {
+            if (!res || res.t == TP_NULL) {
+                bool sb;
+                if ((src.t == TP_FORMULA && src.valFormula()->isBool()) || (src.t == TP_OPT_VAR && src.optVar()->binVar()) || src.t == TP_DATA_TYPE) {
+                    res.copyFrom(src);
+                }
+                else if (src.t != TP_FORMULA && src.t != TP_OPT_VAR && src.t != TP_DATA_TYPE && src.toBool(sb, typeConversionAll, ctx->modp())) {
+                    res.set(TP_BIN, sb);
+                }
+                else {
+                    ctx->valueError("argument must have a boolean value", src, se);
+                    res.set(TP_BIN, true);
+                }
+            }
+            else {
+                CmplValAuto r;
+                OperationBase::execBinaryOper(ctx, &r, se, ICS_OPER_OR, false, &res, &src);
+                res.moveFrom(r, true);
+            }
+        }
+
+        return (res && res.t == TP_BIN && res.v.i == 1);
     }
 
 
@@ -368,11 +445,31 @@ namespace cmpl
 	 */
 	bool ValFunctionInternCount::operCall(ExecContext *ctx, StackValue *arg)
 	{
-		ctx->valueError(ctx->modp()->ctrl()->printBuffer("function '%s' not implemented", funcName()), arg);
-		//TODO: returns int
-		
-		ctx->opResult().set(TP_NULL);
-		return true;
+        //TODO: Für besser Performance Liste direkt durchgehen, statt erst durch Array zu ersetzen
+        if (arg->isList())
+            arg = ctx->replaceListOnStack(arg);
+
+        CmplVal *va = arg->simpleValue();
+        if (va) {
+            ctx->opResult().set(TP_INT, (intType)(va->isEmpty() ? 0 : 1));
+        }
+        else if (arg->val().t == TP_ARRAY) {
+            CmplArray *arr = arg->val().array();
+            if (arr->allValid()) {
+                ctx->opResult().set(TP_INT, (intType)(arg->val().array()->size()));
+            }
+            else {
+                CmplValAuto vs;
+                SetUtil::getArrayValidSet(ctx, vs, arr);
+                ctx->opResult().set(TP_INT, (intType)(SetBase::cnt(vs)));
+            }
+        }
+        else {
+            ctx->valueError(ctx->modp()->ctrl()->printBuffer("function '%s' not implemented for value type", funcName()), arg);
+            ctx->opResult().set(TP_INT, (intType)0);
+        }
+
+        return true;
 	}
 
 
@@ -386,11 +483,22 @@ namespace cmpl
 	 */
 	bool ValFunctionInternDef::operCall(ExecContext *ctx, StackValue *arg)
 	{
-		ctx->valueError(ctx->modp()->ctrl()->printBuffer("function '%s' not implemented", funcName()), arg);
-		//TODO: returns int
-		
-		ctx->opResult().set(TP_NULL);
-		return true;
+        //TODO: Für besser Performance Liste direkt durchgehen, statt erst durch Array zu ersetzen
+        if (arg->isList())
+            arg = ctx->replaceListOnStack(arg);
+
+        if (arg->simpleValue()) {
+            ctx->opResult().set(TP_INT, (intType)1);
+        }
+        else if (arg->val().t == TP_ARRAY) {
+            ctx->opResult().set(TP_INT, (intType)(arg->val().array()->size()));
+        }
+        else {
+            ctx->valueError(ctx->modp()->ctrl()->printBuffer("function '%s' not implemented for value type", funcName()), arg);
+            ctx->opResult().set(TP_INT, (intType)0);
+        }
+
+        return true;
 	}
 
 
@@ -404,11 +512,31 @@ namespace cmpl
 	 */
 	bool ValFunctionInternValid::operCall(ExecContext *ctx, StackValue *arg)
 	{
-		ctx->valueError(ctx->modp()->ctrl()->printBuffer("function '%s' not implemented", funcName()), arg);
-		//TODO: returns bin
-		
-		ctx->opResult().set(TP_NULL);
-		return true;
+        //TODO: Für besser Performance Liste direkt durchgehen, statt erst durch Array zu ersetzen
+        if (arg->isList())
+            arg = ctx->replaceListOnStack(arg);
+
+        CmplVal *va = arg->simpleValue();
+        if (va) {
+            ctx->opResult().set(TP_BIN, !(va->isEmpty()));
+        }
+        else if (arg->val().t == TP_ARRAY) {
+            CmplArray *arr = arg->val().array();
+            if (arr->hasValidInfo()) {
+                ctx->opResult().set(TP_BIN, arr->allValid());
+            }
+            else {
+                CmplValAuto vs;
+                SetUtil::getArrayValidSet(ctx, vs, arr);
+                ctx->opResult().set(TP_BIN, (SetBase::cnt(vs) == arr->size()));
+            }
+        }
+        else {
+            ctx->valueError(ctx->modp()->ctrl()->printBuffer("function '%s' not implemented for value type", funcName()), arg);
+            ctx->opResult().set(TP_BIN, false);
+        }
+
+        return true;
 	}
 
 
@@ -444,7 +572,7 @@ namespace cmpl
             }
         }
         else {
-            ctx->valueError(ctx->modp()->ctrl()->printBuffer("function '%s' not implemented", funcName()), arg);
+            ctx->valueError(ctx->modp()->ctrl()->printBuffer("function '%s' not implemented for value type", funcName()), arg);
             ctx->opResult().set(TP_INT, (intType)0);
         }
 		
@@ -525,9 +653,10 @@ namespace cmpl
      * @param src			source value
      * @param aggr          called for aggregating elements of an array or a list
      * @param se			syntax element id of source value
+     * @param info          info object for use by the caller
      * @return              only used if aggr: true if result is final
      */
-    bool ValFunctionInternLen::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se)
+    bool ValFunctionInternLen::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se, void *info)
 	{
         if (src.isSet()) {
             if (src.isSetFin())
@@ -565,9 +694,10 @@ namespace cmpl
      * @param src			source value
      * @param aggr          called for aggregating elements of an array or a list
      * @param se			syntax element id of source value
+     * @param info          info object for use by the caller
      * @return              only used if aggr: true if result is final
      */
-    bool ValFunctionInternRank::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se)
+    bool ValFunctionInternRank::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se, void *info)
     {
         if (src.isSet()) {
             unsigned l = SetBase::minRank(src);
@@ -632,9 +762,10 @@ namespace cmpl
      * @param src			source value
      * @param aggr          called for aggregating elements of an array or a list
      * @param se			syntax element id of source value
+     * @param info          info object for use by the caller
      * @return              only used if aggr: true if result is final
      */
-    bool ValFunctionInternEcho::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se)
+    bool ValFunctionInternEcho::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se, void *info)
     {
         if (!res || res.t == TP_NULL)
             res.set(TP_INT, (intType)0);
@@ -746,12 +877,299 @@ namespace cmpl
 	 */
 	bool ValFunctionInternFormat::operCall(ExecContext *ctx, StackValue *arg)
 	{
-		ctx->valueError(ctx->modp()->ctrl()->printBuffer("function '%s' not implemented", funcName()), arg);
-		//TODO: returns string
-		
-		ctx->opResult().set(TP_NULL);
-		return true;
+        string *rp = new string();
+        ctx->opResult().set(TP_STRINGP, rp);
+
+        Info inf(rp);
+        callForArrayAggr(ctx, ctx->opResult(), arg, &inf);
+
+        if (inf.formattp != TP_EMPTY || inf.nxtformat < strlen(inf.fullformat)) {
+            ctx->valueError(ctx->modp()->ctrl()->printBuffer("too less arguments for function '%s'", funcName()), arg);
+            rp->append(inf.formatbuf);
+            if (inf.fullformat)
+                rp->append(inf.fullformat + inf.nxtformat);
+        }
+
+        return true;
+    }
+
+    /**
+     * calls the function for a simple source value (no array or list)
+     * @param ctx			execution context
+     * @param res			store for result value
+     * @param src			source value
+     * @param aggr          called for aggregating elements of an array or a list
+     * @param se			syntax element id of source value
+     * @param info          info object for use by the caller
+     * @return              only used if aggr: true if result is final
+     */
+    bool ValFunctionInternFormat::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se, void *info)
+    {
+        Info *inf = (Info *)info;
+
+        bool start = !inf->fullformat;
+        if (start) {
+            if (src.t != TP_STR && src.t != TP_STRINGP) {
+                ctx->valueError(ctx->modp()->ctrl()->printBuffer("first argument in function '%s' must be a string", funcName()), src, se);
+                return true;
+            }
+
+            inf->fullformat = src.stringAsCharP(ctx->modp());
+            inf->formatse = se;
+            inf->nxtformat = 0;
+
+            ctx->opResult().set(TP_STRINGP, inf->res);
+        }
+
+        if (inf->formattp == TP_EMPTY) {
+            if (!extractNextFormat(ctx, inf))
+                return true;
+        }
+
+        if (!start) {
+            if (inf->readadd < inf->cntadd) {
+                intType i;
+                if (!src.toInt(i, typeConversionValue, ctx->modp())) {
+                    ctx->valueError(ctx->modp()->ctrl()->printBuffer("argument for width or precision for format specifier in function '%s' must be an int", funcName()), src, se);
+                    i = 1;
+                }
+
+                if (inf->readadd == 0)
+                    inf->add1 = i;
+                else
+                    inf->add2 = i;
+
+                inf->readadd++;
+            }
+            else {
+                // write argument value using current format
+                writeValue(ctx, src, se, inf);
+
+                if (!extractNextFormat(ctx, inf))
+                    return true;
+            }
+        }
+
+        return false;
 	}
+
+    /**
+     * get next format specifier and set info for it
+     * @param ctx           execution context
+     * @param inf           info object
+     * @return              false if error or end of format
+     */
+    bool ValFunctionInternFormat::extractNextFormat(ExecContext *ctx, Info *inf)
+    {
+        inf->formattp = TP_EMPTY;
+        inf->cntadd = inf->readadd = 0;
+
+        // search for start of next format specifier
+        const char *ff = inf->fullformat;
+        unsigned p = inf->nxtformat;
+
+        for (; ff[p]; p++) {
+            if (ff[p] == '%') {
+                if (ff[p + 1] == '%')
+                    p++;
+                else if (ff[p + 1] != '\0')
+                    break;
+            }
+        }
+
+        if (p > inf->nxtformat) {
+            inf->res->append(ff + inf->nxtformat, p - inf->nxtformat);
+            inf->nxtformat = p;
+        }
+
+        if (!ff[p])
+            return false;
+
+        // search for end of next format specifier
+        unsigned int i = 0;
+        for (; ff[p] && i < 100; p++) {
+            inf->formatbuf[i++] = ff[p];
+
+            if (strchr("diouxXfFeEgGaAcspn", ff[p]))
+                break;
+
+            if (ff[p] == '*')
+                inf->cntadd++;
+        }
+
+        inf->formatbuf[i] = '\0';
+
+        if (!ff[p] || i >= 100 || inf->cntadd > 2) {
+            CmplValAuto f(TP_STRINGP, new string(ff + inf->nxtformat));
+            ctx->valueError(ctx->modp()->ctrl()->printBuffer("invalid format specifier in function '%s'", funcName()), f, inf->formatse);
+
+            inf->res->append(ff + inf->nxtformat);
+            inf->nxtformat = strlen(inf->fullformat);
+            return false;
+        }
+
+        // remove type length from specifier
+        char tpc = inf->formatbuf[i - 1];
+        char ln1 = (i >= 2 ? inf->formatbuf[i - 2] : '\0');
+        char ln2 = (i >= 3 ? inf->formatbuf[i - 3] : '\0');
+
+        if (isalpha(ln1)) {
+            unsigned cl = 1;
+            if ((ln1 == 'h' || ln1 == 'l') && ln2 == ln1)
+                cl = 2;
+
+            inf->formatbuf[i - 1 - cl] = tpc;
+            inf->formatbuf[i - cl] = '\0';
+
+            i -= cl;
+        }
+
+        // type of format specifier
+        const char *lenspec = NULL;
+        if (strchr("diouxX", tpc)) {
+            inf->formattp = TP_INT;
+            lenspec = CMPLINT_STDLENSPEC;
+        }
+        else if (strchr("fFeEgGaA", tpc)) {
+            inf->formattp = TP_REAL;
+            lenspec = CMPLREAL_STDLENSPEC;
+        }
+        else if (tpc == 's' || tpc == 'c') {
+            inf->formattp = TP_STR;
+            inf->strc = (tpc == 'c');
+        }
+        else {
+            CmplValAuto f(TP_STRINGP, new string(ff + inf->nxtformat));
+            ctx->valueError(ctx->modp()->ctrl()->printBuffer("invalid format specifier type in function '%s'", funcName()), f, inf->formatse);
+
+            inf->res->append(ff + inf->nxtformat);
+            inf->nxtformat = strlen(inf->fullformat);
+            return false;
+        }
+
+        // insert standard type length before specifier
+        if (lenspec && *lenspec) {
+            if (!lenspec[1]) {
+                inf->formatbuf[i - 1] = lenspec[0];
+                inf->formatbuf[i] = tpc;
+                inf->formatbuf[i + 1] = '\0';
+            }
+            else {
+                inf->formatbuf[i - 1] = lenspec[0];
+                inf->formatbuf[i] = lenspec[1];
+                inf->formatbuf[i + 1] = tpc;
+                inf->formatbuf[i + 2] = '\0';
+            }
+        }
+
+        inf->nxtformat = p + 1;
+        return true;
+    }
+
+    /**
+     * write value to result string using current format
+     * @param ctx           execution context
+     * @param val           value
+     * @param se            syntax element id of the value
+     * @param inf           info object
+     */
+    void ValFunctionInternFormat::writeValue(ExecContext *ctx, CmplVal& val, unsigned se, Info *inf)
+    {
+        // convert value to type of format specifier
+        realType valr;
+        intType vali;
+        const char *vals;
+        bool conv;
+        CmplVal strv;
+        bool strdisp = false;
+
+        if (inf->formattp == TP_INT) {
+            conv = val.toInt(vali, typeConversionAll, ctx->modp());
+        }
+        else if (inf->formattp == TP_REAL) {
+            conv = val.toReal(valr, typeConversionAll, ctx->modp());
+        }
+        else {
+            conv = val.toString(strv, typeConversionAll, ctx->modp(), strdisp);
+            vals = strv.stringAsCharP(ctx->modp());
+        }
+
+        if (!conv) {
+            ctx->valueError(ctx->modp()->ctrl()->printBuffer("invalid type of argument for format specifier '%s' in function '%s'", inf->formatbuf, funcName()), val, se);
+            valr = 0;
+            vali = 0;
+            vals = "";
+        }
+
+        // format value using printf
+        if (printfValue(inf, valr, vali, vals)) {
+            inf->res->append(inf->buf);
+        }
+        else {
+            CmplValAuto f(TP_STRINGP, new string(inf->formatbuf));
+            ctx->valueError(ctx->modp()->ctrl()->printBuffer("invalid format specifier in function '%s'", funcName()), f, inf->formatse);
+            inf->res->append(inf->formatbuf);
+        }
+
+        inf->buf[0] = '\0';
+
+        if (strdisp)
+            strv.dispose();
+
+        inf->formatbuf[0] = '\0';
+        inf->formattp = TP_EMPTY;
+    }
+
+    /**
+     * printf the value to buffer
+     * @param inf           info object
+     * @param valr          value if real
+     * @param vali          value if int
+     * @param vals          value if string
+     * @return              false if error
+     */
+    bool ValFunctionInternFormat::printfValue(Info *inf, realType valr, intType vali, const char *vals)
+    {
+        unsigned sc = (inf->formattp == TP_INT ? 10 : (inf->formattp == TP_REAL ? 20 : (inf->strc ? 40 : 30))) + inf->cntadd;
+
+        if (!inf->buf) {
+            inf->buflen = 50;
+            inf->buf = new char[inf->buflen];
+        }
+
+        int res;
+        while (true) {
+            switch (sc) {
+                case 10: res = snprintf(inf->buf, inf->buflen, inf->formatbuf, vali); break;
+                case 11: res = snprintf(inf->buf, inf->buflen, inf->formatbuf, inf->add1, vali); break;
+                case 12: res = snprintf(inf->buf, inf->buflen, inf->formatbuf, inf->add1, inf->add2, vali); break;
+
+                case 20: res = snprintf(inf->buf, inf->buflen, inf->formatbuf, valr); break;
+                case 21: res = snprintf(inf->buf, inf->buflen, inf->formatbuf, inf->add1, valr); break;
+                case 22: res = snprintf(inf->buf, inf->buflen, inf->formatbuf, inf->add1, inf->add2, valr); break;
+
+                case 30: res = snprintf(inf->buf, inf->buflen, inf->formatbuf, vals); break;
+                case 31: res = snprintf(inf->buf, inf->buflen, inf->formatbuf, inf->add1, vals); break;
+                case 32: res = snprintf(inf->buf, inf->buflen, inf->formatbuf, inf->add1, inf->add2, vals); break;
+
+                case 40: res = snprintf(inf->buf, inf->buflen, inf->formatbuf, *vals); break;
+                case 41: res = snprintf(inf->buf, inf->buflen, inf->formatbuf, inf->add1, *vals); break;
+                case 42: res = snprintf(inf->buf, inf->buflen, inf->formatbuf, inf->add1, inf->add2, *vals); break;
+            }
+
+            if (res < 0)
+                return false;
+            else if ((unsigned)res < inf->buflen)
+                break;
+
+            inf->buflen = res + 1;
+            delete inf->buf;
+            inf->buf = new char[inf->buflen];
+        }
+
+        return true;
+    }
+
 
 
     /****** ValFunctionDivInteger ****/

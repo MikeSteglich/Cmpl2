@@ -186,7 +186,7 @@ namespace cmpl
 	bool InputFunctionReadCSV::operCall(ExecContext *ctx, StackValue *arg)
 	{
 		//TODO
-		ctx->valueError("not implemented: readstdin", arg);
+        ctx->valueError("not implemented: readcsv", arg);
 		return true;
 	}
 

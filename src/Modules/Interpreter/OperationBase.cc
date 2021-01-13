@@ -63,8 +63,9 @@ namespace cmpl
 
         CmplVal resDs;
         MatrixMultMode mm = matrixMultNone;
-        CmplVal *a1s = (a1 ? a1->simpleValue() : NULL);
-        CmplVal *a2s = (a2 ? a2->simpleValue() : NULL);
+        CmplVal nl(TP_NULL);
+        CmplVal *a1s = (a1 ? a1->simpleValueOrEmptyArr(&nl) : NULL);
+        CmplVal *a2s = (a2 ? a2->simpleValueOrEmptyArr(&nl) : NULL);
         bool a1cbs = (a1s && a1s->isCbhVal());
         bool a2cbs = (a2s && a2s->isCbhVal());
 
@@ -112,24 +113,32 @@ namespace cmpl
         }
 
         if ((ac >= 1 && a1s && a1s->t == TP_NULL) || (ac == 2 && a2s && a2s->t == TP_NULL)) {
-            // if one operand in a numerical operation is null, then the other operand determines the result
-            if (op <= ICS_OPER_SUB || (ac == 2 && op <= ICS_OPER_POW)) {
+            // if one operand in a numerical or logical operation is null, then the other operand determines the result
+            if ((ac == 2 && op <= ICS_OPER_NOT) || op <= ICS_OPER_SUB || op == ICS_OPER_NOT) {
                 if (a1s && a1s->t == TP_NULL && (ac == 1 || (a2s && a2s->t == TP_NULL))) {
                     res.set(TP_NULL);
                     return true;
                 }
-                else {
-                    if (a1s && a1s->t == TP_NULL) {
-                        a1->val().dispSet(TP_INT, (intType)(op <= ICS_OPER_SUB ? 0 : 1));
+                else if (a2s && a2s->t == TP_NULL) {
+                    if (op == ICS_OPER_OR && a1s && a1s->t == TP_DATA_TYPE) {
+                        ValTypeUserOr::construct(&res, a1s, a2s);
+                        return true;
                     }
-                    else if (a2s && a2s->t == TP_NULL) {
-                        a2->val().dispSet(TP_INT, (intType)(op <= ICS_OPER_SUB ? 0 : 1));
+                    else {
+                        res.copyFrom(a1->val());
+                        return true;
                     }
                 }
-            }
-            else if (op == ICS_OPER_OR && ac == 2 && a1s && a1s->t == TP_DATA_TYPE) {
-                ValTypeUserOr::construct(&res, a1s, a2s);
-                return true;
+                else {
+                    if (op == ICS_OPER_ADD || ICS_OPER_MUL || ICS_OPER_AND || ICS_OPER_OR) {
+                        res.copyFrom(a2->val());
+                        return true;
+                    }
+                    else {
+                        a1->val().dispSet(TP_INT, (intType)(op == ICS_OPER_SUB ? 0 : 1));
+                        a1s = &(a1->val());
+                    }
+                }
             }
         }
 

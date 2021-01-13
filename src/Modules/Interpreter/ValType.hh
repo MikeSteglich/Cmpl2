@@ -185,7 +185,7 @@ namespace cmpl
          * @param se			syntax element id of source value
          * @return              only used if aggr: true if result is final
          */
-        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se) override     { convertSimpleTo(ctx, res, src, se); return false; }
+        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se, void *info = NULL) override     { convertSimpleTo(ctx, res, src, se); return false; }
 
 		//TODO
 	};
@@ -672,8 +672,10 @@ namespace cmpl
          * @param res			store for result value
          * @param src			source value
          * @param se			syntax element id of source value
+         * @param info          info object for use by the caller
+         * @return              only used if aggr: true if result is final
          */
-        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se) override;
+        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se, void *info = NULL) override;
 
         /**
          * try to convert simple value (no array) to this data type

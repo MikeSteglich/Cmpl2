@@ -602,6 +602,8 @@ namespace cmpl
         vector<vector<CmplValAuto>*> _prvPartConds; ///< conditions of previous parts
         int _trueCondPart;                          ///< number of codeblock part with condition value "true" / -1: no one
 
+        CmplValAuto _curFullCond;                   ///< full condition (including from parent) for current codeblock part / TP_EMPTY: not set
+
         vector<CmplValAuto> *_mapCBRes;             ///< mapping for codeblock result / NULL: not used or not initialized
         map<ValueStore *, VarCondMapVS *> _mapVS;   ///< mapping per mapped value store object (key is non-owning reference, but value is owning reference)
 
@@ -694,6 +696,18 @@ namespace cmpl
          */
         ~VarCondMapping();
 
+    public:
+        /**
+         * get full condition (including from parent) for current codeblock part
+         */
+        CmplValAuto &getFullCond();
+
+        /**
+         * get id of syntax element of the codeblock
+         */
+        unsigned syntaxElem()                   { return _cbContext->syntaxElem(); }
+
+    private:
         /**
          * check and get current mapping object within the execution context
          * @param ctx       execution context

@@ -493,9 +493,10 @@ namespace cmpl
          * @param src			source value
          * @param aggr          called for aggregating elements of an array or a list
          * @param se			syntax element id of source value
+         * @param info          info object for use by the caller
          * @return              only used if aggr: true if result is final
          */
-        bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se) override     { addSOSVar(ctx, res, src, se); return false; }
+        bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se, void *info = NULL) override     { addSOSVar(ctx, res, src, se); return false; }
     };
 
 
@@ -588,9 +589,10 @@ namespace cmpl
          * @param src			source value
          * @param aggr          called for aggregating elements of an array or a list
          * @param se			syntax element id of source value
+         * @param info          info object for use by the caller
          * @return              only used if aggr: true if result is final
          */
-        bool operCallSimple(ExecContext *ctx, CmplVal& sosVal, CmplVal& src, bool aggr, unsigned se) override;
+        bool operCallSimple(ExecContext *ctx, CmplVal& sosVal, CmplVal& src, bool aggr, unsigned se, void *info = NULL) override;
     };
 
     /**

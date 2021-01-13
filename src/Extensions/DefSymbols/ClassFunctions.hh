@@ -200,9 +200,10 @@ namespace cmpl
          * @param src			source value
          * @param aggr          called for aggregating elements of an array or a list
          * @param se			syntax element id of source value
+         * @param info          info object for use by the caller
          * @return              only used if aggr: true if result is final
          */
-        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se) override;
+        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se, void *info = NULL) override;
 
     public:
         /**
@@ -230,9 +231,10 @@ namespace cmpl
          * @param src			source value
          * @param aggr          called for aggregating elements of an array or a list
          * @param se			syntax element id of source value
+         * @param info          info object for use by the caller
          * @return              only used if aggr: true if result is final
          */
-        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr,  unsigned se) override;
+        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr,  unsigned se, void *info = NULL) override;
     };
 
 
@@ -251,9 +253,10 @@ namespace cmpl
          * @param src			source value
          * @param aggr          called for aggregating elements of an array or a list
          * @param se			syntax element id of source value
+         * @param info          info object for use by the caller
          * @return              only used if aggr: true if result is final
          */
-        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se) override;
+        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se, void *info = NULL) override;
 
     public:
         /**

@@ -1173,9 +1173,10 @@ namespace cmpl
      * @param src			source value
      * @param aggr          called for aggregating elements of an array or a list
      * @param se			syntax element id of source value
+     * @param info          info object for use by the caller
      * @return              only used if aggr: true if result is final
      */
-    bool SosContFunctionAdd::operCallSimple(ExecContext *ctx, CmplVal& sosVal, CmplVal& src, bool aggr, unsigned se)
+    bool SosContFunctionAdd::operCallSimple(ExecContext *ctx, CmplVal& sosVal, CmplVal& src, bool aggr, unsigned se, void *info)
     {
         // get sos store if necessary
         LinearSos::SOSStore *sos;

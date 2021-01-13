@@ -294,7 +294,14 @@ namespace cmpl
     {
         if (ind.t == TP_ITUPLE_NULL) {
             ctx->valueError("element not found in array with given index tuple", orgInd);
-            return false;
+            ctx->opResult().set(TP_NULL);
+            return true;
+        }
+
+        if (ind.t == TP_SET_ALL || ind.t == TP_TUPLE_EMPTY || ind.t == TP_BLANK) {
+            // trivial indexation, return this as TP_REF_LIST
+            ctx->opResult().setP(TP_REF_LIST, this);
+            return true;
         }
 
         // split the first element from the index value
@@ -371,7 +378,8 @@ namespace cmpl
         */
         else {
             ctx->internalError("wrong type of index value");
-            return false;
+            ctx->opResult().set(TP_NULL);
+            return true;
         }
 
         if (!fe.isScalarIndex()) {
@@ -382,10 +390,11 @@ namespace cmpl
             arr.init(_syntaxElem);
             arrayFromList(ctx, arr._val, this, false);
 
-            bool res = arr.indexation(ctx, ind, 1, orgInd);
-            arr.unsetValue();
+            if (!arr.indexation(ctx, ind, 1, orgInd))
+                ctx->opResult().copyFrom(arr.val(), true, false);
 
-            return res;
+            arr.unsetValue();
+            return true;
         }
         else if (fe.t == TP_STR || fe.v.i < 1 || fe.v.i > _val.v.i) {
             ctx->opResult().set(TP_NULL);
@@ -1223,15 +1232,19 @@ namespace cmpl
 				}
 			}
 			else {
-                size++;
-				if (sv->_val.t == TP_NULL || sv->_val.t == TP_BLANK)
+                if (sv->_val.t == TP_NULL || sv->_val.t == TP_BLANK) {
 					hasNull = true;
-				else if (sv->_val)
-					cnt++;
-				else {
-					allValid = false;
-					hasInvalid = true;
-				}
+                }
+                else {
+                    size++;
+                    if (sv->_val) {
+                        cnt++;
+                    }
+                    else {
+                        allValid = false;
+                        hasInvalid = true;
+                    }
+                }
 
                 totalStack++;
                 if (sv->_val.t == TP_LIST_TUPLE)

@@ -467,12 +467,13 @@ namespace cmpl
         else
         {
             CmplValAuto lhs, rhs, fact;
-            bool ge, ag;
+            bool ge, eq, ag;
 
             ValFormulaVar *fv = dynamic_cast<ValFormulaVar *>(frml.valFormula());
             if (fv || (fl && fl->logNeg())) {
                 // frml is single binary variable (negated or not)
                 ge = (fl == NULL);
+                eq = false;
                 lhs.copyFrom((fv ? frml : fl->formulas()[0]), true, false);
                 rhs.set(TP_INT, (intType)(ge ? 1 : 0));
                 fact.set(TP_INT, (intType)(ge ? 1 : -1));
@@ -482,6 +483,7 @@ namespace cmpl
                 // frml must be compare formula
                 ValFormulaCompare *fc = dynamic_cast<ValFormulaCompare *>(frml.valFormula());
                 ge = fc->isCompGe();
+                eq = (ge && fc->isCompLe());
                 fc->getSide(true, lhs);
                 fc->getSide(false, rhs);
                 fact.set(TP_REAL, (ge ? _bigM : -_bigM));
@@ -491,9 +493,38 @@ namespace cmpl
             CmplValAuto fvbv, nlhs;
             OperationBase::mult(modp->baseExecCtx(), &fvbv, oc->syntaxElem(), &vbv, &fact, true);
             OperationBase::plus(modp->baseExecCtx(), &nlhs, oc->syntaxElem(), &lhs, &fvbv);
-
             CmplValAuto f(TP_FORMULA, new ValFormulaCompareOp(oc->syntaxElem(), &nlhs, &rhs, ge, !ge, false, ag));
-            newOptCon(modp, om, oc, oc->syntaxElem(), f, &name, &tpl);
+
+            if (!eq) {
+                newOptCon(modp, om, oc, oc->syntaxElem(), f, &name, &tpl);
+            }
+            else {
+                CmplValAuto fvbv2, nlhs2;
+                fact.set(TP_REAL, -_bigM);
+                OperationBase::mult(modp->baseExecCtx(), &fvbv2, oc->syntaxElem(), &vbv, &fact, true);
+                OperationBase::plus(modp->baseExecCtx(), &nlhs2, oc->syntaxElem(), &lhs, &fvbv2);
+                CmplValAuto f2(TP_FORMULA, new ValFormulaCompareOp(oc->syntaxElem(), &nlhs2, &rhs, false, true, false, ag));
+
+                string nm2;
+                CmplValAuto tp2;
+                CmplVal *tpit = NULL;
+
+                if (!name.empty()) {
+                    nm2 = name + modp->data()->globStrings()->at(_attachNameConAnd);
+                    Tuple::constructTuple(tp2, tpl, CmplVal(TP_ITUPLE_1INT, (intType)1));
+                    if (tp2.useValP())
+                        tpit = tp2.tuple()->at(tp2.tuple()->rank() - 1);
+                }
+
+                newOptCon(modp, om, oc, oc->syntaxElem(), f, &nm2, &tp2);
+
+                if (tpit)
+                    tpit->v.i++;
+                else if (tp2.useInt())
+                    tp2.v.i++;
+
+                newOptCon(modp, om, oc, oc->syntaxElem(), f2, &nm2, &tp2);
+            }
         }
     }
 

@@ -269,9 +269,10 @@ namespace cmpl
      * @param src			source value
      * @param aggr          called for aggregating elements of an array or a list
      * @param se			syntax element id of source value
+     * @param info          info object for use by the caller
      * @return              only used if aggr: true if result is final
      */
-    bool ClassFunctionCopy::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se)
+    bool ClassFunctionCopy::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se, void *info)
     {
         // work only for containers
         if (src.t == TP_CONTAINER) {
@@ -293,9 +294,10 @@ namespace cmpl
      * @param src			source value
      * @param aggr          called for aggregating elements of an array or a list
      * @param se			syntax element id of source value
+     * @param info          info object for use by the caller
      * @return              only used if aggr: true if result is final
      */
-    bool ClassFunctionRefCopy::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se)
+    bool ClassFunctionRefCopy::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se, void *info)
     {
         // work only for containers
         if (src.t == TP_CONTAINER) {
@@ -317,9 +319,10 @@ namespace cmpl
      * @param src			source value
      * @param aggr          called for aggregating elements of an array or a list
      * @param se			syntax element id of source value
+     * @param info          info object for use by the caller
      * @return              only used if aggr: true if result is final
      */
-    bool ClassFunctionFinalize::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se)
+    bool ClassFunctionFinalize::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se, void *info)
     {
         // work only for containers
         if (src.t == TP_CONTAINER) {

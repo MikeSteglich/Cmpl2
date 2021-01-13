@@ -60,6 +60,7 @@ namespace cmpl
 	#define CMPLINT_MAX				LONG_MAX
 	#define CMPLINT_MIN				LONG_MIN
     #define CMPLINT_STDFORMAT		"%ld"
+    #define CMPLINT_STDLENSPEC      "l";
 
 	/**
 	 * type for real values in cmpl
@@ -71,6 +72,7 @@ namespace cmpl
 	#define CMPLREAL_MAX			DBL_MAX
 	#define CMPLREAL_MIN			DBL_MIN
     #define CMPLREAL_STDFORMAT		"%f"
+    #define CMPLREAL_STDLENSPEC     "";
 
 	#ifdef INFINITY
 	#define CMPLREAL_INFPOS			INFINITY

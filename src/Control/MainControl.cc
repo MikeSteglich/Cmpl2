@@ -1529,6 +1529,8 @@ namespace cmpl
 		va_list args;
 		va_start (args, format);
 
+        //TODO: _printBuffer braucht Schutz bei Multithreading
+
 		while (true) {
 			int n = vsnprintf(_printBuffer, _printBufferCap, format, args);
 			if (n < 0)

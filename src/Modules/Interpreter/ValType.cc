@@ -847,9 +847,10 @@ namespace cmpl
      * @param src			source value
      * @param aggr          called for aggregating elements of an array or a list
      * @param se			syntax element id of source value
+     * @param info          info object for use by the caller
      * @return              only used if aggr: true if result is final
      */
-    bool ValTypeSet::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se)
+    bool ValTypeSet::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se, void *info)
     {
         if (!res || res.t == TP_NULL) {
             convertSimpleTo(ctx, res, src, se);
@@ -1206,10 +1207,15 @@ namespace cmpl
                     ctx->valueError("objective cannot be defined within a condition over optimization variables", src, se);
                 }
                 else {
-                    //TODO: Aktuelle Gesamtbedingung aus vcm (und uebergeordneten) holen
-                    //          (fuer eventuelle weitere Verwendung in vcm merken)
-                    //  ValFormulaCondOp ueber v mit dieser Bedingung erstellen, wird neues v
+                    CmplValAuto t;
+                    ValFormulaCondOp *nf = new ValFormulaCondOp(vcm->syntaxElem());
+                    t.set(TP_FORMULA, nf);
 
+                    CmplValAuto& fc = vcm->getFullCond();
+                    vector<CmplValAuto> d;
+                    nf->insPart(fc, d, v);
+
+                    v.moveFrom(t, true);
                 }
             }
 
