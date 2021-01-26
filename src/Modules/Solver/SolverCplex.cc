@@ -161,7 +161,7 @@ void SolverCplex::writeCommandFile( OptModel* om){
             cmdFile <<  " " + _solverOpts[i].value << endl;
         }
 
-        cmdFile << ( om->isInteger() && !_integerRelaxation ? "mipopt" : "opt") << endl;
+        cmdFile <<  "optimize" << endl;
 
         cmdFile << "write " << _instanceSolName   ;
         cmdFile << ( _solutionPool ? " all" :"");
@@ -362,7 +362,7 @@ void SolverCplex::readSolFile(Solution* sol,  OptModel* om) {
                         _ctrl->errHandler().internalError("Internal error while reading activity from Cplex solution file" ,NULL);
                     solElem.setActivity(activity);
 
-                    if (!om->isInteger() || margPos>-1) {
+                    if (sol->hasMarginal()) {
                         string valStr=readXmlVal(varXmlVals[margPos]);
                         if (!StringStore::toDouble(valStr,marginal))
                             _ctrl->errHandler().internalError("Internal error while reading marginal from Cplex solution file" ,NULL);
@@ -426,7 +426,7 @@ void SolverCplex::readSolFile(Solution* sol,  OptModel* om) {
 
                     solElem.setActivity(activity);
 
-                    if (!om->isInteger()|| margPos>-1) {
+                    if (sol->hasMarginal()) {
                         string valStr=readXmlVal(conXmlVals[margPos]);
                         if (!StringStore::toDouble(valStr,marginal))
                             _ctrl->errHandler().internalError("Internal error while reading marginal from Cplex solution file" ,NULL);

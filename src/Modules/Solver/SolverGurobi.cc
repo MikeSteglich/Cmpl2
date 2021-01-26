@@ -339,7 +339,7 @@ void SolverGurobi::readSolFile(Solution* sol,  OptModel* om) {
                     _ctrl->errHandler().internalError("Internal error while reading activity from Gurobi solution file" ,NULL);
                 solElem.setActivity(activity);
 
-                if (!om->isInteger() ) {
+                if (sol->hasMarginal()) {
                     string valStr=readXmlVal(varXmlVals[3]);
                     if (!StringStore::toDouble(valStr,marginal))
                         _ctrl->errHandler().internalError("Internal error while reading marginal from gurobi solution file" ,NULL);
