@@ -138,6 +138,63 @@ namespace cmpl
         }
     }
 
+    /**
+     * set a value within a result array
+     * @param ctx           execution context
+     * @param res           result array in which the value is to set (is not necessary an array in input)
+     * @param tp1           first tuple part for the value
+     * @param tp2           second tuple part for the value
+     * @param val           value
+     * @param se            syntax element id
+     */
+    void ValFunctionBase::setInResultArray(ExecContext *ctx, CmplVal &res, const CmplVal &tp1, const CmplVal &tp2, const CmplVal &val, unsigned se)
+    {
+        if (val.t == TP_NULL || (val.isArray() && val.array()->size() == 0))
+            return;
+
+        CmplValAuto tp;
+        if (!tp1 || tp1.t == TP_ITUPLE_NULL)
+            tp.copyFrom(tp2);
+        else if (!tp2 || tp2.t == TP_ITUPLE_NULL)
+            tp.copyFrom(tp1);
+        else
+            Tuple::constructTuple(tp, tp1, tp2);
+
+        if (val.isArray()) {
+            CmplArray *ra = val.array();
+            CmplArrayIterator iter(*ra);
+            for (iter.begin(); iter; iter++) {
+                CmplVal *rv = *iter;
+                setInResultArray(ctx, res, tp, iter.curTuple(), *rv, se);
+            }
+        }
+
+        else {
+            if (res.t == TP_NULL || !res.isArray()) {
+                if (res.t == TP_NULL) {
+                    res.set(TP_ARRAY, new CmplArray());
+                }
+                else {
+                    CmplVal ds(TP_SET_NULL);
+                    CmplVal nr(TP_ARRAY, new CmplArray(ds, res));
+                    res.moveFrom(nr, true);
+                }
+            }
+
+            CmplArray *arr = res.array();
+            unsigned long ind;
+            if (SetUtil::tupleInSet(ctx, arr->defset(), tp, ind)) {
+                arr->at(ind)->copyFrom(val);
+            }
+            else {
+                CmplValAuto nds, v;
+                ind = SetUtil::addTupleToSet(ctx, nds, arr->defset(), tp, false, true);
+                v.copyFrom(val);
+                arr->insertValues(nds, ind, &v);
+            }
+        }
+    }
+
 
 
     /****** ValFunctionUser ****/
@@ -668,6 +725,15 @@ namespace cmpl
             // tuple is handled as a set with one element
             res.set(TP_INT, 1);
         }
+        else if (src.isInterval() && Interval::isSet(src)) {
+            // if interval can used as a set, then give its len
+            if (Interval::isEmpty(src))
+                res.set(TP_INT, 0);
+            else if (Interval::isSetFin(src))
+                res.set(TP_INT, 1 + Interval::uppBoundInt(src) - Interval::lowBoundInt(src));
+            else
+                res.set(TP_INFINITE, 1);
+        }
         else if (src.isScalarString()) {
             // function used for string len
             if (src.t == TP_STRINGP)
@@ -731,6 +797,137 @@ namespace cmpl
 
         return false;
 	}
+
+
+    /****** ValFunctionInternArray ****/
+
+    /**
+     * calls the cmpl function call operation and store result in execution context, if this value has a special handling for it
+     * @param ctx			execution context
+     * @param arg			pointer to argument value
+     * @return				true
+     */
+    bool ValFunctionInternArray::operCall(ExecContext *ctx, StackValue *arg)
+    {
+        CmplVal& res = ctx->opResult();
+        res.set(TP_NULL);
+
+        if (arg->isList())
+            arg = ctx->replaceListOnStack(arg);
+
+        CmplVal *s = arg->simpleValue();
+        if (s) {
+            operCallSimple(ctx, res, *s, false, arg->syntaxElem());
+        }
+        else if (arg->val().t == TP_ARRAY) {
+            CmplVal nulltp(TP_ITUPLE_NULL);
+            CmplArray *arrsrc = arg->val().array();
+
+            s = arrsrc->at(0);
+            SetIterator iter(arrsrc->defset());
+            iter.begin();
+
+            for (unsigned long i = 0; i < arrsrc->size(); i++, s++, iter++) {
+                CmplValAuto r;
+                operCallSimple(ctx, r, *s, false, arg->syntaxElem());
+
+                if (r.t != TP_NULL) {
+                    const CmplVal& tp = *iter;
+                    if (res.t == TP_NULL && tp.t == TP_ITUPLE_NULL)
+                        res.moveFrom(r);
+                    else
+                        setInResultArray(ctx, res, tp, nulltp, r, arg->syntaxElem());
+                }
+            }
+
+            if (res.isArray()) {
+                CmplValAuto vs;
+                SetUtil::getArrayValidSet(ctx, vs, res.array());
+            }
+        }
+        else {
+            ctx->valueError(ctx->modp()->ctrl()->printBuffer("function '%s' not implemented for value type", funcName()), arg);
+            res.set(TP_NULL);
+        }
+
+        return true;
+    }
+
+    /**
+     * calls the function for a simple source value (no array or list)
+     * @param ctx			execution context
+     * @param res			store for result value
+     * @param src			source value
+     * @param aggr          called for aggregating elements of an array or a list
+     * @param se			syntax element id of source value
+     * @param info          info object for use by the caller
+     * @return              only used if aggr: true if result is final
+     */
+    bool ValFunctionInternArray::operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se, void *info)
+    {
+        if (src.isSet() || src.isInterval()) {
+            if (src.isSetInf() || (src.isInterval() && Interval::isInf(src))) {
+                ctx->valueError(ctx->modp()->ctrl()->printBuffer("function '%s' cannot be used for infinite set or interval", funcName()), src, se);
+                res.set(TP_NULL);
+                return true;
+            }
+
+            CmplValAuto ss;
+            if (src.isInterval())
+                SetUtil::constructFromInterval(ctx, ss, src);
+            else
+                ss.copyFrom(src);
+
+            unsigned long sz = SetBase::cnt(ss);
+            CmplVal ds((sz == 0 ? TP_SET_EMPTY : (sz == 1 ? TP_SET_1INT : TP_SET_R1_1_UB)), (intType)sz);
+            CmplArray *arr = new CmplArray(ds);
+            res.set(TP_ARRAY, arr);
+
+            if (sz) {
+                CmplVal *ra = arr->at(0);
+                SetIterator iter(ss, SetIterator::iteratorTupleVal, true, false);
+
+                for (iter.begin(); iter; iter++, ra++)
+                    ra->copyFrom(iter.curTuple());
+
+                arr->setValidInfo(true);
+            }
+        }
+
+        else if (src.isTuple()) {
+            unsigned sz = Tuple::rank(src);
+            bool av = true;
+
+            CmplVal ds((sz == 0 ? TP_SET_EMPTY : (sz == 1 ? TP_SET_1INT : TP_SET_R1_1_UB)), (intType)sz);
+            CmplArray *arr = new CmplArray(ds);
+            res.set(TP_ARRAY, arr);
+
+            if (sz) {
+                CmplVal *ra = arr->at(0);
+                for (unsigned i = 0; i < sz; i++, ra++) {
+                    const CmplVal *v = Tuple::at(src, i);
+                    ra->copyFrom(v);
+                    if (v->t == TP_EMPTY)
+                        av = false;
+                }
+
+                if (av) {
+                    arr->setValidInfo(true);
+                }
+                else {
+                    CmplValAuto vs;
+                    arr->delValidInfo();
+                    SetUtil::getArrayValidSet(ctx, vs, arr);
+                }
+            }
+        }
+
+        else {
+            res.copyFrom(src);
+        }
+
+        return true;
+    }
 
 
 	/****** ValFunctionInternEcho ****/

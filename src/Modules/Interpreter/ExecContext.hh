@@ -63,6 +63,30 @@ namespace cmpl
 	{
         friend class VarCondMapping;
 
+    private:
+        /**
+         * info for codeblock context and name prefix
+         */
+        struct CBContextNmPref
+        {
+            CodeBlockContext *cbContext;            ///< codeblock context / NULL: codeblock doesn't need a context object for execution
+            intType nmPref;                         ///< row/col name prefix valid within the codeblock (as index in global StringStore) / -1: not specified
+            unsigned nmPrefSet;                     ///< type of setting the name prefix: 0: not new set / 1: set by name before the codeblock / 2: set by using $curDestName
+        };
+
+        /**
+         * part of current full tuple within iterations
+         */
+        struct IterTuplePart
+        {
+            CmplVal tplPart;                       ///< part of tuple (must be scalar index value or index tuple / TP_EMPTY if not set)
+            CodeBlockIteration *iter;              ///< iteration to which this part belongs
+
+            void init()     { tplPart.unset(); iter = NULL; }             ///< initialize empty element
+            void dispose()  { tplPart.dispUnset(); iter = NULL; }         ///< dispose and empty element
+            bool empty()    { return (tplPart.t == TP_EMPTY); }            ///< get whether element is empty
+        };
+
 	private:
 		Interpreter *_modp;							///< interpreter module
 		ExecContext *_parent;						///< parent execution context / NULL: this is the root execution context
@@ -85,10 +109,18 @@ namespace cmpl
         ValContainer *_fctThis;                     ///< only for function context: pointer to "$this" container if existing
         ValContainer *_callThis;                    ///< only within start of function call: pointer to "$this" container of called function
 
-        CodeBlockContext **_cbContext;              ///< array for stack of code block contexts
+        CBContextNmPref *_cbContext;                ///< array for stack of code block contexts and name prefixes
         unsigned _cbContextCap;                     ///< size of <code>_cbContext</code>
         unsigned _cbContextTop;                     ///< current code block context pointer
         unsigned _cbContextCreateTop;               ///< code block context pointer at creation time of this execution context object
+
+        CBContextNmPref _nmPrefStart;               ///< start value of row/rcol name prefix (<code>_nmPrefStart.cbContext</code> is not used)
+        intType _nmPrefCmd;                         ///< value of row/col name prefix for the current command / -1: not specified
+
+        IterTuplePart _topIterVal;                  ///< top part of current iteration tuple
+        IterTuplePart *_iterVals;                   ///< array of non-top parts of current iteration tuple
+        unsigned _iterValsCap;                      ///< size of <code>_iterVals</code>
+        unsigned _iterValsTop;                      ///< current length of <code>_iterVals</code>
 
         VarCondMapping *_curVarCondMap;             ///< topmost mapping info for execution within a codeblock part with conditions over optimization variables / NULL: not within such codeblock part
 
@@ -240,6 +272,13 @@ namespace cmpl
 		 * @return			next intermediary code position / NULL if you have to leave this execution context after the command
 		 */
 		IntCode::IcElem* execCodeConstruct(IntCode::IcElem *cd);
+
+        /**
+         * executes intermediary code command for name prefix for naming of rows and cols in the result matrix
+         * @param cd		intermediary code command
+         * @return			next intermediary code position / NULL if you have to leave this execution context after the command
+         */
+        IntCode::IcElem* execCodeLineNamePref(IntCode::IcElem *cd);
 
 		/**
 		 * executes intermediary code command for functions and jumps
@@ -408,7 +447,7 @@ namespace cmpl
          * @param offset    offset to current context
          * @return          code block context object or NULL if no context is needed (or invalid offset)
          */
-        inline CodeBlockContext *getCBContext(unsigned offset = 0)              { return (offset < _cbContextTop ? _cbContext[_cbContextTop - offset - 1] : NULL); }
+        inline CodeBlockContext *getCBContext(unsigned offset = 0)              { return (offset < _cbContextTop ? _cbContext[_cbContextTop - offset - 1].cbContext : NULL); }
 
         /**
          * replace empty top element on code block context stack by a new code block context object
@@ -458,6 +497,85 @@ namespace cmpl
          * @param dstLvl	nesting codeblock level of destination codeblock of the control command
          */
         void setCancel(int cmd, unsigned dstLvl);
+
+        /**
+         * get current row/col name prefix
+         * @param cmd       return whether a row/col name prefix is set for the current command
+         * @return          current row/col name prefix as index in global string store / -1: no name prefix
+         */
+        intType curNmPref()                         { return (_nmPrefCmd >= 0 ? _nmPrefCmd : (_cbContextTop ? _cbContext[_cbContextTop - 1].nmPref : _nmPrefStart.nmPref)); }
+
+        /**
+         * get current row/col name prefix
+         * @param cmd       return whether a row/col name prefix is set for the current command
+         * @return          current row/col name prefix as index in global string store / -1: no name prefix
+         */
+        intType curNmPref(bool& cmd)                { cmd = (_nmPrefCmd >= 0); return (cmd ? _nmPrefCmd : (_cbContextTop ? _cbContext[_cbContextTop - 1].nmPref : _nmPrefStart.nmPref)); }
+
+        /**
+         * set current row/col name prefix
+         * @param nmp       new row/col name prefix
+         * @param expl      true if name prefix is set explicit by $curDestName
+         */
+        void setCurNmPref(intType nmp, bool expl)   { CBContextNmPref& curCB = (_cbContextTop ? _cbContext[_cbContextTop - 1] : _nmPrefStart); curCB.nmPref = nmp; curCB.nmPrefSet = (expl ? 2 : 1); }
+
+        /**
+         * set current row/col name prefix from codeblock
+         * @param cb        codeblock
+         */
+        void setCurNmPrefCB(CodeBlockContext *cb)   { CBContextNmPref& curCB = (_cbContextTop ? _cbContext[_cbContextTop - 1] : _nmPrefStart); curCB.nmPref = cb->_nmPrefStart; curCB.nmPrefSet = cb->_nmPrefStartSet; }
+
+        /**
+         * set top part of current iteration tuple
+         * @param iter      iteration to which the tuple part belongs
+         * @param val       part of tuple (must be scalar index value or index tuple)
+         */
+        void setIterTplPart(CodeBlockIteration *iter, const CmplVal &val);
+
+        /**
+         * unset top part of current iteration tuple
+         * @param iter      iteration to which the tuple part belongs
+         */
+        void delIterTplPart(CodeBlockIteration *iter);
+
+        /**
+         * get all parts of current iteration tuple
+         * @param parts     vector for return of the parts
+         * @return          count of found tuple parts
+         */
+        unsigned getIterTplParts(vector<CmplValAuto>& parts);
+
+    private:
+        /**
+         * get parts of current iteration tuple, from start of given iteration
+         * @param parts     vector for return of the parts
+         * @param start     iteration
+         * @return          count of found tuple parts
+         */
+        unsigned getIterTplParts(vector<CmplValAuto>& parts, CodeBlockIteration *start);
+
+        /**
+         * get all parts of current iteration tuple which are stored in this execution context
+         * @param parts     vector for return of the parts
+         * @param start     start index within _iterVals
+         * @return          count of found tuple parts
+         */
+        unsigned getIterTplPartsThis(vector<CmplValAuto>& parts, unsigned start);
+
+    public:
+        /**
+         * get parts of current iteration tuple, only from start of the topmost iteration
+         * @param parts     vector for return of the parts
+         * @return          count of found tuple parts
+         */
+        unsigned getIterTplPartsIter(vector<CmplValAuto>& parts);
+
+        /**
+         * get parts of current iteration tuple, only from start of the topmost change of name prefix with $curDestName
+         * @param parts     vector for return of the parts
+         * @return          count of found tuple parts
+         */
+        unsigned getIterTplPartsNmPref(vector<CmplValAuto>& parts);
 
 
         /****** conditions over optimization variables ****/

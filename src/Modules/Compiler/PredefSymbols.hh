@@ -97,6 +97,8 @@
 	M ( "len",				specialSymbolFuncKnownVal,		PREDEFSYMVAL_FUNC_LEN )
 	M ( "rank",				specialSymbolFuncKnownVal,		PREDEFSYMVAL_FUNC_RANK )
 
+    M ( "array",            specialSymbolFuncEqKnownVal,    PREDEFSYMVAL_FUNC_ARRAY )
+
 	M ( "echo",				specialSymbolFuncKnownVal,		PREDEFSYMVAL_FUNC_ECHO )
 	M ( "error",			specialSymbolFuncKnownVal,		PREDEFSYMVAL_FUNC_ERROR )
 	M ( "format",			specialSymbolFuncKnownVal,		PREDEFSYMVAL_FUNC_FORMAT )
@@ -113,6 +115,7 @@
 	M ( "$this",			specialSymbolNo,				ICS_SPECIAL_THIS )
 	M ( "$func",			specialSymbolNameOnly,			9999 )
     M ( "$curTuple",		specialSymbolKnownVal,			ICS_SPECIAL_CURTUPLE )
+    M ( "$curFullTuple",    specialSymbolKnownVal,			ICS_SPECIAL_CURFULLTUPLE )
 
 	MW( "$curDestName",		specialSymbolKnownVal,			ICS_SPECIAL_CURDESTNAME )
     M ( "$curDestTuple",	specialSymbolKnownVal,			ICS_SPECIAL_CURDESTTUPLE )
@@ -124,7 +127,7 @@
 
 	// pseudo subsymbols
 	S ( "$objectType",		specialSymbolObjType,			ICS_SPECIAL_OBJECTTYPE )
-	S ( "$dataType",		specialSymbolDataType,			ICS_SPECIAL_DATATYPE )
+    S ( "$type",		    specialSymbolDataType,			ICS_SPECIAL_DATATYPE )
 	S ( "$typeBase",		specialSymbolDataType,			ICS_SPECIAL_TYPEBASE )
 	S ( "$typePar",			specialSymbolKnownVal,			ICS_SPECIAL_TYPEPAR )
 	S ( "$isReadOnly",		specialSymbolKnownVal,			ICS_SPECIAL_ISREADONLY )

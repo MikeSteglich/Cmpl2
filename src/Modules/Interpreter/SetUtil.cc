@@ -2350,6 +2350,9 @@ namespace cmpl
 
                 else if (!ewo->rank0()) {
                     resRank++;
+
+                    if (uo && uoAllRev && ewo->isInterval())
+                        uoAllRev = false;
                 }
             }
 
@@ -2366,7 +2369,7 @@ namespace cmpl
                 e = tpl->at(0);
                 unsigned i = 0;
 
-                bool uoSep = uo && !uoAllRev && !uoRecMult && !uoSetFin;
+                bool uoSep = uo && !uoRecMult && !uoSetFin;
                 bool uoNsv = uo && !uoAllRev && (uoRecMult || uoSetFin);
                 vector<const CmplVal *> uoSrc;
 

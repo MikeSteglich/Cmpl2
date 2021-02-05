@@ -119,6 +119,17 @@ namespace cmpl
          * @param info          info object for use by the caller
          */
         void callForArrayElements(ExecContext *ctx, CmplVal &res, StackValue *arg, void *info = NULL);
+
+        /**
+         * set a value within a result array
+         * @param ctx           execution context
+         * @param res           result array in which the value is to set (is not necessary an array in input)
+         * @param tp1           first tuple part for the value
+         * @param tp2           second tuple part for the value
+         * @param val           value
+         * @param se            syntax element id
+         */
+        void setInResultArray(ExecContext *ctx, CmplVal &res, const CmplVal &tp1, const CmplVal &tp2, const CmplVal &val, unsigned se);
     };
 
 
@@ -538,6 +549,36 @@ namespace cmpl
          */
         virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se, void *info = NULL) override;
 	};
+
+    /**
+     * internal function "array"
+     */
+    class ValFunctionInternArray : public ValFunctionInternal
+    {
+    protected:
+        virtual const char *funcName() const override 		{ return "array"; }			///< name of the internal function
+
+    public:
+        /**
+         * calls the cmpl function call operation and store result in execution context, if this value has a special handling for it
+         * @param ctx			execution context
+         * @param arg			pointer to argument value
+         * @return				true
+         */
+        virtual bool operCall(ExecContext *ctx, StackValue *arg) override;
+
+        /**
+         * calls the function for a simple source value (no array or list)
+         * @param ctx			execution context
+         * @param res			store for result value
+         * @param src			source value
+         * @param aggr          called for aggregating elements of an array or a list
+         * @param se			syntax element id of source value
+         * @param info          info object for use by the caller
+         * @return              only used if aggr: true if result is final
+         */
+        virtual bool operCallSimple(ExecContext *ctx, CmplVal& res, CmplVal& src, bool aggr, unsigned se, void *info = NULL) override;
+    };
 
 
 	/****** output functions ****/

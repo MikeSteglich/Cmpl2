@@ -381,7 +381,7 @@ namespace cmpl
 		realType lowBound = (hasLowBound ? Interval::lowBoundReal(*par) : 0.0);
 		realType uppBound = (hasUppBound ? Interval::uppBoundReal(*par) : 0.0);
 
-		if (hasLowBound == _hasLowBound && hasUppBound == _hasUppBound && (!hasLowBound || lowBound == _lowBound) && (!hasUppBound || uppBound == _uppBound))
+        if (_param && hasLowBound == _hasLowBound && hasUppBound == _hasUppBound && (!hasLowBound || lowBound == _lowBound) && (!hasUppBound || uppBound == _uppBound))
 			return NULL;
 
 		ValTypeReal *res = new ValTypeReal();
@@ -468,6 +468,30 @@ namespace cmpl
         return false;
     }
 
+    /**
+     * make type parameter from bounds
+     * @param param         return of resulting type parameter (TP_TUPLE* or TP_EMPTY)
+     */
+    void ValTypeReal::paramFromBounds(CmplVal& param) const
+    {
+        CmplVal lb, ub;
+        if (_hasLowBound)
+            lb.set(TP_REAL, _lowBound);
+        else
+            lb.set(TP_INFINITE, -1);
+
+        if (_hasUppBound)
+            ub.set(TP_REAL, _uppBound);
+        else
+            ub.set(TP_INFINITE, 1);
+
+        CmplValAuto iv;
+        Interval::construct(iv, lb, ub);
+
+        CmplVal nt(TP_ITUPLE_NULL);
+        Tuple::constructTuple(param, iv, nt);
+    }
+
 
 
 	/****** ValTypeInt ****/
@@ -493,7 +517,7 @@ namespace cmpl
 		intType lowBound = (hasLowBound ? Interval::lowBoundInt(*par) : 0);
 		intType uppBound = (hasUppBound ? Interval::uppBoundInt(*par) : 0);
 
-		if (hasLowBound == _hasLowBound && hasUppBound == _hasUppBound && (!hasLowBound || lowBound == _lowBound) && (!hasUppBound || uppBound == _uppBound))
+        if (_param && hasLowBound == _hasLowBound && hasUppBound == _hasUppBound && (!hasLowBound || lowBound == _lowBound) && (!hasUppBound || uppBound == _uppBound))
 			return NULL;
 
 		ValTypeInt *res = new ValTypeInt();
@@ -578,6 +602,30 @@ namespace cmpl
         }
 
         return false;
+    }
+
+    /**
+     * make type parameter from bounds
+     * @param param         return of resulting type parameter (TP_TUPLE* or TP_EMPTY)
+     */
+    void ValTypeInt::paramFromBounds(CmplVal& param) const
+    {
+        CmplVal lb, ub;
+        if (_hasLowBound)
+            lb.set(TP_INT, _lowBound);
+        else
+            lb.set(TP_INFINITE, -1);
+
+        if (_hasUppBound)
+            ub.set(TP_INT, _uppBound);
+        else
+            ub.set(TP_INFINITE, 1);
+
+        CmplValAuto iv;
+        Interval::construct(iv, lb, ub);
+
+        CmplVal nt(TP_ITUPLE_NULL);
+        Tuple::constructTuple(param, iv, nt);
     }
 
 
@@ -809,7 +857,7 @@ namespace cmpl
 			return NULL;
 		}
 
-		if (_hasFixRank && _fixRank == p)
+        if (_param && _hasFixRank && _fixRank == p)
 			return NULL;
 
 		ValTypeTuple *res = newValTypeObject();
@@ -820,6 +868,18 @@ namespace cmpl
 
 		return res;
 	}
+
+    /**
+     * make type parameter from bounds
+     * @param param         return of resulting type parameter (TP_TUPLE* or TP_EMPTY)
+     */
+    void ValTypeTuple::paramFromBounds(CmplVal& param) const
+    {
+        if (_hasFixRank)
+            param.dispSet(TP_ITUPLE_1INT, (intType)_fixRank);
+        else
+            param.dispUnset();
+    }
 
 
 

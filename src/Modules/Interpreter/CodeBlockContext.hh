@@ -70,6 +70,7 @@ namespace cmpl
 	{
         friend class CodeBlockIteration;
         friend class CBThreadInfo;
+        friend class ExecContext;
 
     private:
         ExecContext *_execContext;                  ///< execution context in which this codeblock has started
@@ -92,6 +93,9 @@ namespace cmpl
         CBHeaderIterInfo *_startIter;               ///< initial iteration info for current part of this codeblock / NULL: no iteration
         CodeBlockIteration *_startIterObj;          ///< initial iteration object for current part of this codeblock (only set while executing a codeblock body with iteration)
         vector<CodeBlockHeaderBase *> _headers;     ///< headers of the current part of this codeblock (only headers not fully processed yet)
+
+        intType _nmPrefStart;                       ///< value of row/rcol name prefix at start of this codeblock / -1: not specified
+        unsigned _nmPrefStartSet;                   ///< type of setting the name prefix: 0: not new set / 1: set by name before the codeblock / 2: set by using $curDestName
 
         volatile CmplVal _cbResult;                 ///< codeblock result value / TP_BLANK: not initialized or not needed
         volatile bool _cancel;                      ///< cancel execution of this codeblock (triggered by codeblock control command)
@@ -208,6 +212,13 @@ namespace cmpl
          * @param se            syntax element of v
          */
         void addCurVarCondition(CmplVal *v, unsigned se);
+
+        /**
+         * set value of row/rcol name prefix at start of this codeblock
+         * @param nmp           name prefix
+         * @param nms           type of setting the name prefix
+         */
+        inline void setNmPrefStart(intType nmp, int nms)          { _nmPrefStart = nmp; _nmPrefStartSet = nms; }
 
         /**
          * get codeblock result value

@@ -270,9 +270,9 @@ namespace cmpl
                     _values->setValidInfo((v ? TP_EMPTY : TP_SET_EMPTY));
                     _values->setObjType(v.getObjectType());
 
-                    if (srn && v.isOptRC()) {
+                    if (v.isOptRC() && (srn || ctx->curNmPref() > 0)) {
                         CmplVal tpl(TP_ITUPLE_NULL);
-                        CmplVal symName(TP_STR, (intType)(ctx->modp()->data()->globStrings()->search(srn)));
+                        CmplVal symName((srn ? TP_STR : TP_EMPTY), (intType)(srn ? ctx->modp()->data()->globStrings()->search(srn) : 0));
                         setValInValueTree(ctx, &v, (sv ? sv->syntaxElem() : se), ctx->modp()->getResModel(), symName, tpl);
                     }
 
@@ -337,9 +337,9 @@ namespace cmpl
 				arr->incRef();
 				_values = arr;
 
-                if (srn) {
+                if (srn || ctx->curNmPref()) {
                     OptModel *resModel = ctx->modp()->getResModel();
-                    CmplVal symName(TP_STR, (intType)(ctx->modp()->data()->globStrings()->search(srn)));;
+                    CmplVal symName((srn ? TP_STR : TP_EMPTY), (intType)(srn ? ctx->modp()->data()->globStrings()->search(srn) : 0));
 
                     CmplArrayIterator iter(*arr);
                     for (iter.begin(); iter; iter++) {
@@ -407,9 +407,9 @@ namespace cmpl
             val.stringPToStr(ctx->modp());
 
         CmplVal& ds = _values->defset();
-        if (srn && val.isOptRC()) {
+        if (val.isOptRC() && (srn || ctx->curNmPref())) {
             OptModel *resModel = ctx->modp()->getResModel();
-            CmplVal symName(TP_STR, (intType)(ctx->modp()->data()->globStrings()->search(srn)));
+            CmplVal symName((srn ? TP_STR : TP_EMPTY), (intType)(srn ? ctx->modp()->data()->globStrings()->search(srn) : 0));
 
             CmplValAuto tpds;
             if (!tpl)
@@ -566,28 +566,105 @@ namespace cmpl
      * @param resMatrix			result matrix
      * @param fi				first index part (can be TP_INT, TP_STR, TP_ITUPLE* or TP_LIST_TUPLE), or TP_EMPTY then <code>sc</code> holds only the remaining tuple parts up from <code>sub</code>
      * @param sc				second index part (can be TP_INT, TP_STR, TP_ITUPLE* or TP_LIST_TUPLE)
-     * @param sub				subtree for the element if known
+     * @param rec               recursive call after applying name prefix
      */
-    void ValueStore::setValInValueTree(ExecContext *ctx, CmplVal *v, unsigned se, OptModel *resMatrix, const CmplVal& fi, const CmplVal& sc, ValueTree *sub)
+    void ValueStore::setValInValueTree(ExecContext *ctx, CmplVal *v, unsigned se, OptModel *resMatrix, const CmplVal& fi, const CmplVal& sc, bool rec)
     {
-        if (!v->isOptRC()) {
-            ctx->valueError("Internal Error: value for setValInValueTree() is not a variable or constraint", *v, se);
-            return;
-        }
+        if (!rec) {
+            if (!v->isOptRC()) {
+                ctx->valueError("Internal Error: value for setValInValueTree() is not a variable or constraint", *v, se);
+                return;
+            }
 
-        if (v->optRC()->isInTree()) {
-            ctx->valueError("optimization variable/constraint has had already name and tuple for result matrix", *v, se, ERROR_LVL_WARN);	//TODO: Ausgabe bisheriger Name+Tuple
+            if (v->optRC()->isInTree()) {
+                ctx->valueError("optimization variable/constraint has had already name and tuple for result matrix", *v, se, ERROR_LVL_WARN);	//TODO: Ausgabe bisheriger Name+Tuple
+            }
+
+            intType nmp = ctx->curNmPref();
+            if (nmp >= 0 && (fi.t == TP_STR || fi.t == TP_EMPTY)) {
+                CmplValAuto nfi, nsc;
+                if (fi && nmp > 0) {
+                    string rp(ctx->modp()->data()->globStrings()->at(nmp));
+                    if (ctx->modp()->nmPrefSep(true))
+                        rp.append(ctx->modp()->data()->globStrings()->at(ctx->modp()->nmPrefSep(true)));
+                    rp.append(fi.stringAsCharP(ctx->modp()));
+                    nfi.set(TP_STR, (intType)(ctx->modp()->data()->globStrings()->storeInd(rp)));
+                }
+                else if (fi || nmp > 0) {
+                    nfi.set(TP_STR, (fi ? fi.v.i : nmp));
+                }
+                else {
+                    // no name, do nothing
+                    return;
+                }
+
+                vector<CmplValAuto> tplParts;
+                if (ctx->getIterTplPartsNmPref(tplParts)) {
+                    if (sc && sc.t != TP_ITUPLE_NULL) {
+                        tplParts.emplace_back();
+                        tplParts.back().copyFrom(sc);
+                    }
+                    Tuple::constructTuple(nsc, tplParts);
+                }
+                else {
+                    nsc.copyFrom(sc);
+                }
+
+                return setValInValueTree(ctx, v, se, resMatrix, nfi, nsc, true);
+            }
         }
 
         ValueTreeRoot *vtr = (v->t == TP_OPT_VAR ? &(resMatrix->cols()) : &(resMatrix->rows()));
         LockGuard<mutex> lck(ctx->needLock(), vtr->accMtx());
 
-        int err = v->optRC()->setInValueTree(vtr, fi, sc, sub);
+        int err = v->optRC()->setInValueTree(vtr, fi, sc);
         if (err == 1) {
             if (v->t == TP_OPT_VAR)
                 ctx->valueError("optimization variable with this name and tuple already exists", *v, se);	//TODO: Ausgabe Tuple aus fi+sc
             else
                 ctx->valueError("optimization constraint with this name and tuple already exists", *v, se);	//TODO: Ausgabe Tuple aus fi+sc
+        }
+    }
+
+    /**
+     * set or move value for variable or constraint within the value tree for the result matrix, using only current name prefix
+     * @param ctx				execution context
+     * @param v					value to set in the value tree
+     * @param se				syntax element id of the value
+     * @param tp                additional index tuple / NULL: no one
+     */
+    void ValueStore::setValInValueTree(ExecContext *ctx, CmplVal *v, unsigned se, OptModel *resMatrix, const CmplVal *tp)
+    {
+        CmplValAuto snm(TP_EMPTY), tpl(TP_ITUPLE_NULL);
+        if (tp && *tp)
+            tpl.copyFrom(tp);
+
+        if (v->isOptRC()) {
+            ValueStore::setValInValueTree(ctx, v, se, resMatrix, snm, tpl);
+        }
+        else if (v->t == TP_ARRAY) {
+            CmplVal *vs = v->array()->at(0);
+
+            SetIterator iter(v->array()->defset());
+
+            for (iter.begin(); iter; iter++, vs++) {
+                const CmplVal& ts = iter.curTuple();
+
+                if (tpl.t == TP_ITUPLE_NULL) {
+                    if (vs->isOptRC())
+                        ValueStore::setValInValueTree(ctx, vs, se, resMatrix, snm, ts);
+                    else
+                        setValInValueTree(ctx, vs, se, resMatrix, &ts);
+                }
+                else {
+                    CmplValAuto nts;
+                    Tuple::constructTuple(nts, tpl, ts);
+                    if (vs->isOptRC())
+                        ValueStore::setValInValueTree(ctx, vs, se, resMatrix, snm, nts);
+                    else
+                        setValInValueTree(ctx, vs, se, resMatrix, &nts);
+                }
+            }
         }
     }
 

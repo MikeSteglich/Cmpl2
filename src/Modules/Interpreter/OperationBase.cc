@@ -907,10 +907,12 @@ namespace cmpl
         else {
             if ((a1->isSet() || a1->isTuple() || a1->isInterval()) && (a2->isSet() || a2->isTuple() || a2->isInterval())) {
                 // "+" is used for union operation
-                //if (a1->isInterval() && a2->isInterval())
-                //    { } //TODO: Vereinigung zweier Intervalle (wenn nicht moeglich, da Luecke, dann doch Mengenvereinigung)
-                //else
-                    SetUtil::addSet(ctx, res, se, a1, a2, false, true);
+                if (a1->isInterval() && a2->isInterval()) {
+                    if (Interval::merge(*res, *a1, *a2))
+                        return;
+                }
+
+                SetUtil::addSet(ctx, res, se, a1, a2, false, true);
             }
             else if ((a1->t == TP_STR || a1->t == TP_STRINGP) || (a2->t == TP_STR || a2->t == TP_STRINGP)) {
                 // "+" is used for string concat
@@ -1054,6 +1056,12 @@ namespace cmpl
         else if (a1->isScalarNumber() && a2->isScalarNumber()) {
             minusN(ctx, res, se, a1, a2);
         }
+        else if ((a1->isSet() || a1->isTuple() || a1->isInterval()) && (a2->isSet() || a2->isTuple() || a2->isInterval())) {
+            // "-" is used for set difference
+            //TODO: set difference
+            ctx->valueError("set difference is not implemented yet", *a1, se);
+            res->set(TP_SET_EMPTY);
+        }
         else {
             CmplVal n1, n2;
             if (!(a1->toNumber(n1, typeConversionExact, ctx->modp()))) {
@@ -1178,6 +1186,17 @@ namespace cmpl
         }
         else if (a1->isScalarNumber() && a2->isScalarNumber()) {
             multN(ctx, res, se, a1, a2);
+        }
+        else if ((a1->isSet() || a1->isTuple() || a1->isInterval()) && (a2->isSet() || a2->isTuple() || a2->isInterval())) {
+            // "*" is used for intersect operation
+            if (a1->isInterval() && a2->isInterval()) {
+                if (Interval::intersect(*res, *a1, *a2))
+                    return;
+            }
+
+            //TODO: set intersection
+            ctx->valueError("set intersection is not implemented yet", *a1, se);
+            res->set(TP_SET_EMPTY);
         }
         else {
             CmplVal n1, n2;
@@ -1401,13 +1420,39 @@ namespace cmpl
             }
         }
         else if ((a1->t == TP_OPT_VAR || a1->t == TP_FORMULA) && a2->isScalarNumber()) {
-            ctx->internalError("call of exp() with optimization variable not implemented");
+            intType a2i;
+            if (!a2->toInt(a2i, typeConversionValue, ctx->modp()) || a2i < 0) {
+                ctx->valueError("argument two must be a non-negative integer number when argument one contains an optimization variable", *a2, se);
+                res->set(TP_INT, 0);
+            }
+            else if (a2i > 10) {
+                ctx->valueError("operation not implemented for argument two greater than 10 when argument one contains an optimization variable", *a2, se);
+                res->set(TP_INT, 0);
+            }
+            else if (a2i <= 1) {
+                if (a2i == 0)
+                    res->set(TP_INT, 1);
+                else
+                    res->copyFrom(a1);
+            }
+            else {
+                CmplValAuto t1, t2;
+                t1.copyFrom(a1);
+
+                for (int i = 1; i < a2i; i++) {
+                    mult(ctx, &t2, se, &t1, a1);
+                    t1.moveFrom(t2, true);
+                }
+
+                res->moveFrom(t1);
+            }
         }
         else {
             if (!a1->isScalarNumber())
                 ctx->valueError("argument one is not a number", *a1, se);
             else
                 ctx->valueError("argument two is not a number", *a2, se);
+            res->set(TP_INT, 0);
         }
     }
 
@@ -1920,7 +1965,7 @@ namespace cmpl
      */
     void OperationBase::setMarkNF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a1, bool mnf)
     {
-        if (res->isTuple() && res->useValP()) {
+        if (a1->isTuple() && a1->useValP()) {
             // recursive for all tuple parts
             Tuple *tpl1 = a1->tuple();
             unsigned r = tpl1->rank();

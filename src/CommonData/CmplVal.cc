@@ -184,23 +184,23 @@ namespace cmpl
 				
 				case TP_SET_R1_0_UB_MNF:
 					if (mode == 0)
-						ostr << "[/0.." << v.i << ']';
+                        ostr << "[/set(0.." << v.i << ")]";
 					else
-						ostr << "/0.." << v.i;
+                        ostr << "/set(0.." << v.i << ')';
 					break;
 				
 				case TP_SET_R1_1_UB:
 					if (mode == 0)
-						ostr << "[1.." << v.i << ']';
+                        ostr << "[1.." << v.i << ']';
 					else
 						ostr << "1.." << v.i;
 					break;
 				
 				case TP_SET_R1_1_UB_MNF:
 					if (mode == 0)
-						ostr << "[/1.." << v.i << ']';
+                        ostr << "[/set(1.." << v.i << ")]";
 					else
-						ostr << "/1.." << v.i;
+                        ostr << "/set(1.." << v.i << ')';
 					break;
 				
 				case TP_SET_EMPTY:
@@ -239,9 +239,9 @@ namespace cmpl
 				
 				case TP_SET_R1_LB_INF_MNF:
 					if (mode == 0)
-						ostr << "[/" << v.i << "..]";
+                        ostr << "[/set(" << v.i << "..)]";
 					else
-						ostr << '/' << v.i << "..";
+                        ostr << "/set(" << v.i << "..)";
 					break;
 
 				case TP_SET_R1_INF_UB:
@@ -253,9 +253,9 @@ namespace cmpl
 
 				case TP_SET_R1_INF_UB_MNF:
 					if (mode == 0)
-						ostr << "[/.." << v.i << ']';
+                        ostr << "[/set(.." << v.i << ")]";
 					else
-						ostr << "/.." << v.i;
+                        ostr << "/set(.." << v.i << ')';
 					break;
 
                 case TP_SET_R1_IINF:
@@ -267,9 +267,9 @@ namespace cmpl
 
                 case TP_SET_R1_IINF_MNF:
                     if (mode == 0)
-                        ostr << "[/..]";
+                        ostr << "[/set(..)]";
                     else
-                        ostr << "/..";
+                        ostr << "/set(..)";
                     break;
 
                 case TP_SET_R1A:
@@ -295,9 +295,9 @@ namespace cmpl
 
                 case TP_SET_R1A_INT_MNF:
                     if (mode == 0)
-                        ostr << "[/0..]";
+                        ostr << "[/set(0..)]";
                     else
-                        ostr << "/0..";
+                        ostr << "/set(0..)";
                     break;
 
                 case TP_SET_R1A_STR:
@@ -323,6 +323,7 @@ namespace cmpl
                         ostr << "[/[]]";
                     else
                         ostr << "/[]";
+                    break;
 
                 case TP_SET_ALL_INT:
                     ostr << "set(int)";
@@ -931,6 +932,33 @@ namespace cmpl
         return true;
     }
 
+
+    /**
+     * get base data type for type
+     * @param tp        given type
+     * @return          base type
+     */
+    tp_e CmplVal::getBaseType(tp_e tp)
+    {
+        tp_e res;
+
+        if (TP_IS_EMPTY(tp))
+            res = TP_EMPTY;
+        else if (TP_IS_SCALAR_REAL(tp))
+            res = TP_REAL;
+        else if (TP_IS_SCALAR_STRING(tp))
+            res = TP_STR;
+        else if (TP_IS_INTERVAL(tp))
+            res = TP_INTERVAL;
+        else if (TP_IS_TUPLE(tp))
+            res = TP_TUPLE;
+        else if (TP_IS_SET(tp))
+            res = TP_SET_INF_SET;   // despite its name also used as base type of all sets
+        else
+            res = tp;
+
+        return res;
+    }
 
 }
 

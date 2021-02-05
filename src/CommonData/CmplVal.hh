@@ -758,6 +758,21 @@ namespace cmpl
          * @return			true if conversion is successful
          */
         bool toSet(CmplVal& r, TypeConversionLevel tcl, ModuleBase *modp);
+
+
+        // base type
+        /**
+         * get base data type for type
+         * @param tp        given type
+         * @return          base type
+         */
+        static tp_e getBaseType(tp_e tp);
+
+        /**
+         * get base data type of value
+         * @return          base type
+         */
+        tp_e getBaseType()                              { return getBaseType(t); }
     };
 
 

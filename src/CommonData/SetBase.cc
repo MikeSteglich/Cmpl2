@@ -148,6 +148,7 @@ namespace cmpl
 
             case TP_SET_ALL:
             case TP_SET_ALL_MNF:
+            case TP_TUPLE_EMPTY:
                 set.t = (mnf ? TP_SET_ALL_MNF : TP_SET_ALL);
                 break;
             case TP_SET_ALL_INT:
@@ -193,13 +194,17 @@ namespace cmpl
 	{
 		if (mode == 0)
 			ostr << '[';
+        if (_markNF)
+            ostr << "/set(";
 
         if (_step == 1)
             ostr << _start << ".." << (_start + _cnt - 1);
         else
             ostr << _start << '(' << _step << ')' << (_start + _step * (_cnt - 1));
 
-		if (mode == 0)
+        if (_markNF)
+            ostr << ')';
+        if (mode == 0)
 			ostr << ']';
 	}
 
@@ -264,7 +269,10 @@ namespace cmpl
 	 */
 	void SetEnum::write(ostream& ostr, ModuleBase *modp, int mode) const
 	{
-		ostr << "set(";
+        if (_markNF)
+            ostr << '/';
+
+        ostr << "set(";
 
 		CmplVal v(TP_STR);
 		for (unsigned long i = 0; i < _cnt; i++) {
@@ -521,7 +529,10 @@ namespace cmpl
 	 */
 	void SetRecMult::write(ostream& ostr, ModuleBase *modp, int mode) const
 	{
-		if (mode == 0)
+        if (_markNF)
+            ostr << "/set(";
+
+        if (mode == 0 || _markNF)
 			ostr << '[';
 
 		for (unsigned r = 0; r < _rank; r++) {
@@ -531,9 +542,11 @@ namespace cmpl
 			_array[r].write(ostr, modp, 1);
 		}
 
-		if (mode == 0)
+        if (mode == 0 || _markNF)
 			ostr << ']';
-	}
+        if (_markNF)
+            ostr << ')';
+    }
 
 
     /**
@@ -1011,6 +1024,9 @@ namespace cmpl
 	 */
 	void SetFinite::write(ostream& ostr, ModuleBase *modp, int mode) const
 	{
+        if (_markNF)
+            ostr << '/';
+
 		ostr << "set(";
 
         const CmplVal v(TP_SET_FIN, const_cast<SetFinite *>(this), false);		// CmplVal constructor with inc=false doesn't change this, so removing const is save here
@@ -1290,11 +1306,15 @@ namespace cmpl
                 mnf = s->markNF();
             }
 
+            if (mode == 0)
+                ostr << '[';
             if (mnf)
-                ostr << "/(";
+                ostr << "/set(";
             ostr << start << '(' << step << ')' << end;
             if (mnf)
                 ostr << ')';
+            if (mode == 0)
+                ostr << ']';
         }
         else {
             if (SetBase::markNF(_set))

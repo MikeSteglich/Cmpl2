@@ -990,7 +990,7 @@ namespace cmpl
                 if (res.t == TP_SET_EMPTY && isdigit(lstr[pos])) {
                     // check for special format for an algorithmic set (maybe with contained whitespaces)
                     size_t pe = lstr.find('>', pos);
-                    size_t pn = lstr.find_first_not_of(WHITE_SPACES_AND("0123456789.()"), pos);
+                    size_t pn = lstr.find_first_not_of(WHITE_SPACES_AND("0123456789+-.()"), pos);
                     if (pn == string::npos || pn >= pe) {
                         if (testConstructAlgSet(lstr.substr(pos, pe-pos), res, line)) {
                             pos = pe;
@@ -1006,7 +1006,9 @@ namespace cmpl
 
                 if (!qt && t.t == TP_STR) {
                     // check for special format for an algorithmic set (only without contained whitespaces)
-                    testConstructAlgSet(string(t.stringAsCharP(_mod)), res, line);
+                    CmplVal r;
+                    if (testConstructAlgSet(string(t.stringAsCharP(_mod)), r, line))
+                        t.moveFrom(r);
                 }
 
                 if (t.isSet()) {

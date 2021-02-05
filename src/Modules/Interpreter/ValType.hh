@@ -151,6 +151,12 @@ namespace cmpl
         virtual bool checkValue(CmplVal& v) const                                   { return false; }
 
         /**
+         * make type parameter from bounds
+         * @param param         return of resulting type parameter (TP_TUPLE* or TP_EMPTY)
+         */
+        virtual void paramFromBounds(CmplVal& param) const                          { param.dispUnset(); }
+
+        /**
          * set info about base type and bounds for this data type within an optimization variable
          * @param v				optimization variable
          * @return				false if this data type is not suitable for optimization variables
@@ -277,15 +283,21 @@ namespace cmpl
 	class ValTypeInternal : public ValType
 	{
 	protected:
-		virtual void writeParam(ostream& ostr) const	{ }		///< write parameter to stream
+        /**
+         * write parameter to stream
+         * @param ostr          stream
+         * @param modp          calling module
+         */
+        virtual void writeParam(ostream& ostr, ModuleBase *modp) const                          { if (_param) _param.write(ostr, modp, 1); }		///< write parameter to stream
 
 	public:
 		/**
 		 * write contents of the object to a stream
-		 * @param modp			calling module
+         * @param ostr          stream
+         * @param modp			calling module
 		 * @param mode			mode for output: 0=direct; 1=part of other value
 		 */
-        virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const override		{ if (mode == 0) { ostr << "<data type '" << typeName(); writeParam(ostr); ostr << "'>"; } else { ostr << typeName(); writeParam(ostr); } }
+        virtual void write(ostream& ostr, ModuleBase *modp, int mode = 0) const override		{ /*if (mode == 0) { ostr << "<data type '" << typeName(); writeParam(ostr); ostr << "'>"; } else*/ { ostr << typeName(); writeParam(ostr, modp); } }
 
         /**
          * convert simple value (no array) to this data type
@@ -312,7 +324,7 @@ namespace cmpl
 		
 	protected:
         virtual const char *typeName() const override           { return "real"; }
-        virtual void writeParam(ostream& ostr) const override	{ ostr << '['; if (_hasLowBound) { ostr << _lowBound; } ostr << ".."; if (_hasUppBound) { ostr << _uppBound; } ostr << ']'; }
+        //virtual void writeParam(ostream& ostr) const override	{ ostr << '['; if (_hasLowBound) { ostr << _lowBound; } ostr << ".."; if (_hasUppBound) { ostr << _uppBound; } ostr << ']'; }
 
 	public:
 		/**
@@ -352,6 +364,12 @@ namespace cmpl
          * @return              true if value has this data type
          */
         virtual bool checkValue(CmplVal& v) const override;
+
+        /**
+         * make type parameter from bounds
+         * @param param         return of resulting type parameter (TP_TUPLE* or TP_EMPTY)
+         */
+        virtual void paramFromBounds(CmplVal& param) const override;
     };
 
 
@@ -369,7 +387,7 @@ namespace cmpl
 		
 	protected:
         virtual const char *typeName() const override           { return "int"; }
-        virtual void writeParam(ostream& ostr) const override	{ ostr << '['; if (_hasLowBound) { ostr << _lowBound; } ostr << ".."; if (_hasUppBound) { ostr << _uppBound; } ostr << ']'; }
+        //virtual void writeParam(ostream& ostr) const override	{ ostr << '['; if (_hasLowBound) { ostr << _lowBound; } ostr << ".."; if (_hasUppBound) { ostr << _uppBound; } ostr << ']'; }
 
 	public:
 		/**
@@ -409,6 +427,12 @@ namespace cmpl
          * @return              true if value has this data type
          */
         virtual bool checkValue(CmplVal& v) const override;
+
+        /**
+         * make type parameter from bounds
+         * @param param         return of resulting type parameter (TP_TUPLE* or TP_EMPTY)
+         */
+        virtual void paramFromBounds(CmplVal& param) const override;
     };
 	
 
@@ -419,7 +443,7 @@ namespace cmpl
 	{
 	protected:
         virtual const char *typeName() const override           { return "bin"; }
-        virtual void writeParam(ostream& ostr) const override	{ }
+        //virtual void writeParam(ostream& ostr) const override	{ }
 
 	public:
 		/**
@@ -445,6 +469,12 @@ namespace cmpl
          * @return              true if conversion is successful
          */
         virtual bool tryConvertSimpleTo(ExecContext *ctx, CmplVal& res, CmplVal& src, TypeConversionLevel tcl) const override;
+
+        /**
+         * make type parameter from bounds
+         * @param param         return of resulting type parameter (TP_TUPLE* or TP_EMPTY)
+         */
+        virtual void paramFromBounds(CmplVal& param) const override         { param.dispUnset(); }
     };
 
 
@@ -608,7 +638,7 @@ namespace cmpl
 
 	protected:
         virtual const char *typeName() const override			{ return "tuple"; }
-        virtual void writeParam(ostream& ostr) const override	{ if (_hasFixRank) { ostr << '[' << _fixRank << ']'; } }
+        //virtual void writeParam(ostream& ostr) const override	{ if (_hasFixRank) { ostr << '[' << _fixRank << ']'; } }
 
 		/**
 		 * get a new object of this class
@@ -636,6 +666,12 @@ namespace cmpl
          * @return              true if value has this data type
          */
         virtual bool checkValue(CmplVal& v) const override  { return (v.isTuple()); }
+
+        /**
+         * make type parameter from bounds
+         * @param param         return of resulting type parameter (TP_TUPLE* or TP_EMPTY)
+         */
+        virtual void paramFromBounds(CmplVal& param) const override;
     };
 
 

@@ -632,7 +632,7 @@ namespace cmpl
 	/**
 	 * get whether the symbol is a subsymbol
 	 */
-	inline bool SymbolDef::subsymbol()
+    bool SymbolDef::subsymbol()
 	{
 		return _symTab->sub();
 	}
@@ -641,7 +641,7 @@ namespace cmpl
 	/**
 	 * return whether symbol is predefined
 	 */
-	inline bool SymbolDef::predef()
+    bool SymbolDef::predef()
 	{
 		return _symInfo->predef();
 	}

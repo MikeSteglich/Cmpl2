@@ -33,6 +33,7 @@
 #include "ValContainer.hh"
 #include "Interpreter.hh"
 #include "ExecContext.hh"
+#include "ValType.hh"
 #include "../../Control/MainControl.hh"
 #include "../../CommonData/ExtensionSteps.hh"
 
@@ -59,6 +60,7 @@ namespace cmpl
             case ICS_SPECIAL_ARG:           v = new ValSpecialArg(ctx, se, lval, base); break;
             case ICS_SPECIAL_THIS:          v = new ValSpecialThis(ctx, se, lval, base); break;
             case ICS_SPECIAL_CURTUPLE:      v = new ValSpecialCurTuple(ctx, se, lval, base); break;
+            case ICS_SPECIAL_CURFULLTUPLE:  v = new ValSpecialCurFullTuple(ctx, se, lval, base); break;
             case ICS_SPECIAL_CURDESTNAME:   v = new ValSpecialCurDestName(ctx, se, lval, base); break;
             case ICS_SPECIAL_CURDESTTUPLE:  v = new ValSpecialCurDestTuple(ctx, se, lval, base); break;
 
@@ -210,8 +212,32 @@ namespace cmpl
      */
     void ValSpecialCurTuple::get(CmplVal& res)
     {
-        //TODO
-        res.set(TP_ITUPLE_NULL);
+        vector<CmplValAuto> tplParts;
+        unsigned c = _ctx->getIterTplPartsIter(tplParts);
+
+        if (c)
+            Tuple::constructTuple(res, tplParts);
+        else
+            res.set(TP_NULL);
+    }
+
+
+
+    /****** ValSpecialCurFullTuple ****/
+
+    /**
+     * read functionality of the pseudo symbol
+     * @param res			return of result value
+     */
+    void ValSpecialCurFullTuple::get(CmplVal& res)
+    {
+        vector<CmplValAuto> tplParts;
+        unsigned c = _ctx->getIterTplParts(tplParts);
+
+        if (c)
+            Tuple::constructTuple(res, tplParts);
+        else
+            res.set(TP_ITUPLE_NULL);
     }
 
 
@@ -224,8 +250,11 @@ namespace cmpl
      */
     void ValSpecialCurDestName::get(CmplVal& res)
     {
-        //TODO
-        res.set(TP_NULL);
+        intType nmp = _ctx->curNmPref();
+        if (nmp >= 0)
+            res.set(TP_STR, nmp);
+        else
+            res.set(TP_NULL);
     }
 
     /**
@@ -235,12 +264,39 @@ namespace cmpl
      */
     void ValSpecialCurDestName::set(CmplVal& val, unsigned se)
     {
-        //TODO
+        intType nmp;
+        if (val.t == TP_NULL) {
+            nmp = -1;
+        }
+        else if (val.t == TP_STR) {
+            nmp = val.v.i;
+        }
+        else {
+            CmplVal sv;
+            bool disp;
+            if (val.toString(sv, typeConversionValue, _ctx->modp(), disp)) {
+                sv.stringPToStr(_ctx->modp(), disp);
+                nmp = sv.v.i;
+            }
+            else {
+                _ctx->valueError("value must be a string", val, se);
+                return;
+            }
+        }
+
+        bool cmd;
+        _ctx->curNmPref(cmd);
+        if (cmd) {
+            _ctx->valueError("cannot assign value within a command with own line name prefix", val, se);
+        }
+        else {
+            _ctx->setCurNmPref(nmp, true);
+        }
     }
 
 
 
-    /****** ValSpecialCurTuple ****/
+    /****** ValSpecialCurDestTuple ****/
 
     /**
      * read functionality of the pseudo symbol
@@ -248,8 +304,13 @@ namespace cmpl
      */
     void ValSpecialCurDestTuple::get(CmplVal& res)
     {
-        //TODO
-        res.set(TP_ITUPLE_NULL);
+        vector<CmplValAuto> tplParts;
+        unsigned c = _ctx->getIterTplPartsNmPref(tplParts);
+
+        if (c)
+            Tuple::constructTuple(res, tplParts);
+        else
+            res.set(TP_NULL);
     }
 
 
@@ -410,8 +471,12 @@ namespace cmpl
      */
     void ValSpecialObjectType::get(CmplVal& res)
     {
-        //TODO
-        res.set(TP_OBJECT_TYPE, VAL_OBJECT_TYPE_PAR);
+        if (_base.isOptCol())
+            res.set(TP_OBJECT_TYPE, VAL_OBJECT_TYPE_VAR);
+        else if (_base.isOptRow())
+            res.set(TP_OBJECT_TYPE, (_base.optCon()->objective() ? VAL_OBJECT_TYPE_OBJ : VAL_OBJECT_TYPE_CON));
+        else
+            res.set(TP_OBJECT_TYPE, VAL_OBJECT_TYPE_PAR);
     }
 
 
@@ -424,8 +489,20 @@ namespace cmpl
      */
     void ValSpecialDataType::get(CmplVal& res)
     {
-        //TODO
-        res.set(TP_NULL);
+        if (_base.isOptCol()) {
+            res.copyFrom(_base.optVar()->dataType());
+        }
+        else {
+            tp_e bt = (_base.isOptRow() ? TP_REAL : _base.getBaseType());
+            if (_ctx->modp()->dataTypes().count(bt))
+                res.copyFrom(_ctx->modp()->dataTypes()[bt]);
+            else
+                res.set(TP_NULL);
+        }
+
+        //TODO:
+        // wenn Erweiterung wie fuer ValSpecialIsReadOnly notwendig und beschrieben:
+        //      entsprechend wie fuer ValSpecialTypePar beschrieben
     }
 
 
@@ -438,8 +515,20 @@ namespace cmpl
      */
     void ValSpecialTypeBase::get(CmplVal& res)
     {
-        //TODO
-        res.set(TP_NULL);
+        tp_e bt;
+        if (_base.isOptCol())
+            bt = (_base.optVar()->binVar() ? TP_BIN : (_base.optVar()->intVar() ? TP_INT : TP_REAL));
+        else
+            bt = (_base.isOptRow() ? TP_REAL : _base.getBaseType());
+
+        if (_ctx->modp()->dataTypes().count(bt))
+            res.copyFrom(_ctx->modp()->dataTypes()[bt]);
+        else
+            res.set(TP_NULL);
+
+        //TODO:
+        // wenn Erweiterung wie fuer ValSpecialIsReadOnly notwendig und beschrieben:
+        //      entsprechend wie fuer ValSpecialTypePar beschrieben
     }
 
 
@@ -452,8 +541,27 @@ namespace cmpl
      */
     void ValSpecialTypePar::get(CmplVal& res)
     {
+        if (_base.isOptCol()) {
+            CmplVal& tpar = _base.optVar()->dataType().valType()->param();
+            if (tpar) {
+                res.copyFrom(tpar);
+            }
+            else {
+                _base.optVar()->dataType().valType()->paramFromBounds(res);
+                if (!res)
+                    res.set(TP_NULL);
+            }
+        }
+        else {
+            res.set(TP_NULL);
+        }
+
         //TODO
-        res.set(TP_NULL);
+        // wenn Erweiterung wie fuer ValSpecialIsReadOnly notwendig und beschrieben:
+        //     wenn auf Symbol aufgerufen:
+        //          wenn assertions ueber Typ fuer Symbol: Typ aus assertions zurueck, daraus Typparameter
+        //          sonst wenn trotzdem einfacher Wert in _base: Ausfuehrung wie wenn kein Symbol
+        //          sonst: TP_NULL fuer nicht festgelegten Typ
     }
 
 
@@ -468,6 +576,10 @@ namespace cmpl
     {
         //TODO
         res.set(TP_BIN, 0);
+
+        //TODO: allgemeine Erweiterung notwendig: wenn auf ein Symbol angewendet, dann muss auch Symbol in this gespeichert sein
+        //  ValSpecialBaseSub abgeleitete Klassen brauchen Eigenschaften, ob auf Symbol anwendbar (dann braucht _base kein einfacher Wert sein!)
+        //  und ob (wie hier) nur auf Symbol anwendbar (dann Fehler, wenn auf Nicht-lvalue aufgerufen)
     }
 
 

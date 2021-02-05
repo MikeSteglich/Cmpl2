@@ -550,7 +550,9 @@ unaryOp			: numOpSignAdd expression			%prec NUMBER_SIGN			{ $$.init(); CMPLELEME
 																				} }
 				| expression OPERATOR_TRANSPOSE									{ $$.init(); CMPLELEMENTRY_TXT($$, SyntaxElementUnaryOp, @1, @2, $2._name); CMPLELEM_CHILD($$, $1); $$.setExp($1._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, NULL, false));
 																				  COMP_OPERATION($$._elem, ICS_OPER_TRP, 1); }
-				| logOpSignNot expression			%prec LOG_NOT				{ $$.init(); CMPLELEMENTRY_TXT($$, SyntaxElementUnaryOp, @1, @2, $1._name); CMPLELEM_CHILD($$, $2); $$.setExp($2._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_LOG, NULL, false));
+                | expression '^' OPERATOR_TRANSPOSE								{ $$.init(); CMPLELEMENTRY_TXT($$, SyntaxElementUnaryOp, @1, @3, $3._name); CMPLELEM_CHILD($$, $1); $$.setExp($1._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, NULL, false));
+                                                                                  COMP_OPERATION($$._elem, ICS_OPER_TRP, 1); }
+                | logOpSignNot expression			%prec LOG_NOT				{ $$.init(); CMPLELEMENTRY_TXT($$, SyntaxElementUnaryOp, @1, @2, $1._name); CMPLELEM_CHILD($$, $2); $$.setExp($2._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_LOG, NULL, false));
 																				  COMP_OPERATION($$._elem, ICS_OPER_NOT, 1); }
 		  		;
 

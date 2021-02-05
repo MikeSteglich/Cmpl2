@@ -522,6 +522,16 @@ namespace cmpl
         CmplVal *lhsSimple = (mapVS ? mapVS->simpleValue() : sym->simpleValue());
         StackValue *popTo = NULL;
 
+        if (op && (mapVS ? mapVS->isNull() : sym->isNull())) {
+            if (op == '+' || op == '*') {
+                op = '\0';
+            }
+            else {
+                ctx->valueError("invalid use of assignment with operation for empty symbol", this);
+                return;
+            }
+        }
+
         if (!sym->isUninitialized() && (hasIndex() || (rhsSimple && lhsSimple) || op)) {
             bool needLockVS = (!mapVS && sym->hasValueStore() && sym->valueStore()->refCnt() > 1);
             LockGuard<mutex> lckV(needLockVS, (needLockVS ? &(sym->valueStore()->accMtx()) : NULL));
@@ -530,6 +540,8 @@ namespace cmpl
                 // assign scalar value
                 if (rhsSimple && rhsSimple->t != TP_NULL)
                     doAssignScalar(ctx, sym, (lhsInd && lhsInd->isITuple() ? lhsInd : NULL), rhsSimple, rhs->syntaxElem(), op, srn, map);
+                else if (op && ((rhsSimple && rhsSimple->t == TP_NULL) || (rhs->val().isArray() && rhs->val().array()->isEmpty())))
+                    return;
                 else
                     ctx->valueError("left hand side is indexed as scalar, but right hand side is an array", rhs);
             }
@@ -590,9 +602,9 @@ namespace cmpl
                     sym->setSimpleConstVal(*rhsSimple);
                     assArray = false;
 
-                    if (srn && rhsSimple->isOptRC()) {
+                    if (rhsSimple->isOptRC() && (srn || ctx->curNmPref() > 0)) {
                         OptModel *resModel = ctx->modp()->getResModel();
-                        CmplVal symName(TP_STR, (intType)(ctx->modp()->data()->globStrings()->search(ctx->modp()->symbolInfo(sym->defId())->name())));
+                        CmplVal symName((srn ? TP_STR : TP_EMPTY), (intType)(srn ? ctx->modp()->data()->globStrings()->search(ctx->modp()->symbolInfo(sym->defId())->name()) : 0));
                         CmplVal tpl(TP_ITUPLE_NULL);
                         ValueStore::setValInValueTree(ctx, rhsSimple, rhs->syntaxElem(), resModel, symName, tpl);
                     }
@@ -655,17 +667,38 @@ namespace cmpl
         }
 
         if (op) {
-            //TODO: insbesondere += (fuer String), wenn rhsSimple && !hasIndex():
-            //          dann ueber vsp->set() erst Wert holen, dann Operation ausfuehren, und Ergebnis als rhs verwenden
-            ctx->valueError("assigment to pseudo symbol with operation not implemented", this);
+            if ((rhsSimple && rhsSimple->t == TP_NULL) || (rhs->val().isArray() && rhs->val().array()->isEmpty())) {
+                return;
+            }
+            else if (rhsSimple && !hasIndex()) {
+                CmplValAuto org;
+                vsp->get(org);
+                if (org.isEmpty()) {
+                    if (op == '+' || op == '*')
+                        vsp->set(*rhsSimple, rhs->syntaxElem());
+                    else
+                        ctx->valueError("invalid assigment to pseudo symbol with operation", this);
+                }
+                else if (rhsSimple->t != TP_NULL) {
+                    CmplValAuto rhsres;
+                    unsigned short opc = (op=='+' ? ICS_OPER_ADD : (op=='-' ? ICS_OPER_SUB : (op=='*' ? ICS_OPER_MUL : ICS_OPER_DIV)));
+                    OperationBase::execBinaryOper(ctx, &rhsres, rhs->syntaxElem(), opc, false, &org, rhsSimple);
+
+                    vsp->set(rhsres, rhs->syntaxElem());
+                }
+            }
+            else {
+                ctx->valueError("invalid assigment to pseudo symbol with operation", this);
+            }
+
             return;
         }
 
         if (init) {
-            //TODO: Zuweisung nur ausfuehren, wenn bisher kein Wert
-            //  dafuer erst testweise Wert holen und pruefen ob leer
-            ctx->valueError("only initial assigment to pseudo symbol not implemented", this);
-            return;
+            CmplValAuto org;
+            vsp->get(org);
+            if (!org.isEmpty())
+                return;
         }
 
         if (hasIndex())
@@ -763,65 +796,6 @@ namespace cmpl
 
         ValueStore *store = (map ? map->getDstVS() : sym->valueStore());
         store->setSingleValue(ctx, &itpl, 0, *rhs, se, srname, op, (map ? map->chgInfo() : NULL));
-
-        /*
-         *TODO: entfaellt alles (nach setSingleValue() verschoben)
-
-        if (!op && rhs->t == TP_STRINGP)
-            rhs->stringPToStr(ctx->modp());
-
-        // copy on write if neccessary
-        ValueStore *vst = sym->valueStore();
-        vst->copyOnWrite(false);
-
-        CmplArray *arr = vst->values();
-        if (!arr) {
-            ctx->valueError("illegal left hand side", this);
-            return;
-        }
-
-        // search tuple in the definition set of the value array of the symbol
-        CmplVal& ds = arr->defset();
-        unsigned long ind;
-
-        if (srn && rhs->isOptRC()) {
-            OptModel *resModel = ctx->modp()->getResModel();
-            CmplVal symName(TP_STR, (intType)(ctx->modp()->data()->globStrings()->search(ctx->modp()->symbolInfo(sym->defId())->name())));
-            ValueStore::setValInValueTree(ctx, rhs, se, resModel, symName, itpl);
-        }
-
-        if (SetUtil::tupleInSet(ctx, ds, itpl, ind)) {
-            // set value in array
-            if (!op) {
-                arr->at(ind)->copyFrom(rhs, true, true);
-            }
-            else {
-                CmplVal org;
-                org.moveFrom(arr->at(ind));
-                unsigned short opc = (op=='+' ? ICS_OPER_ADD : (op=='-' ? ICS_OPER_SUB : (op=='*' ? ICS_OPER_MUL : ICS_OPER_DIV)));
-
-                OperationBase::execBinaryOper(ctx, arr->at(ind), _syntaxElem, opc, false, &org, rhs);
-            }
-
-            if (arr->allValid() && !(arr->at(ind)))
-                arr->delValidInfo();
-            if (arr->hasObjType() && (arr->at(ind)) && !(arr->at(ind)->hasObjectType(arr->objType())))
-                arr->delObjType(true);
-        }
-        else {
-            if (!op) {
-                // grow definition set and array, and insert value
-                CmplVal nds;
-                unsigned long ii = SetUtil::addTupleToSet(ctx, nds, ds, itpl, false, true);
-
-                arr->insertValues(nds, ii, rhs);
-                nds.dispose();
-            }
-            else {
-                 ctx->valueError("left hand side element not found", this);
-            }
-        }
-        */
     }
 
 

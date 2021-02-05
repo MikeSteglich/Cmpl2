@@ -150,8 +150,8 @@ SYM_NAME		[a-zA-Z_$][a-zA-Z0-9_]*
 <SC_Cmpl,SC_CmplAM,SC_ArrCast>in									{ BEGIN(SC_Cmpl); yylval->s.init(); yylval->s._name = "in"; PARSE_CONTEXT.resetScanPrevTokenType(); return(token::OPERATOR_IN); }
 <SC_Cmpl,SC_CmplAM,SC_ArrCast>of/[[:space:]]*[([{]					|
 <SC_Cmpl,SC_CmplAM,SC_ArrCast>of									{ BEGIN(SC_Cmpl); yylval->s.init(); yylval->s._name = "of"; PARSE_CONTEXT.resetScanPrevTokenType(); return(token::OPERATOR_OF); }
-<SC_Cmpl,SC_CmplAM,SC_ArrCast>T|"\^T"/[[:space:]]*[([{]				|
-<SC_Cmpl,SC_CmplAM,SC_ArrCast>T|"\^T"								{ BEGIN(SC_Cmpl); yylval->s.init(); yylval->s._name = "^T"; PARSE_CONTEXT.resetScanPrevTokenType(); return(token::OPERATOR_TRANSPOSE); }
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>T/[[:space:]]*[([{]                   |
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>T                                     { BEGIN(SC_Cmpl); yylval->s.init(); yylval->s._name = "^T"; PARSE_CONTEXT.resetScanPrevTokenType(); return(token::OPERATOR_TRANSPOSE); }
 
 	/* symbols */
 <SC_Cmpl,SC_CmplAM>{SYM_NAME}/[[:space:]]*[([{]						{ BEGIN(SC_Cmpl); yylval->s.init();

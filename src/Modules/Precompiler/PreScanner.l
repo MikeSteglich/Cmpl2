@@ -132,7 +132,8 @@
 
 
 	/* other characters: copy to result */
-<SC_Cmpl>[^%#*/\n]+												|
+<SC_Cmpl>[^%#*/\"\n]+											|
+<SC_Cmpl>\"([^\"\n]|\\\")*\"                                    |
 <SC_Cmpl>.														{ precomp->curPos()->addCols(yyleng); precomp->resStream() << yytext; }
 <SC_Cmpl>\n														{ precomp->curPos()->addLines(); precomp->resStream() << endl; }
 

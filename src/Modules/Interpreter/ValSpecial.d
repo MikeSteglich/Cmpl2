@@ -13,7 +13,8 @@ ValSpecial.o ValSpecial.d : ValSpecial.cc ValSpecial.hh ../../CommonData/CmplVal
  ../../Control/ModuleBase.hh ../../CommonData/OptModel.hh \
  ../../CommonData/ValueTree.hh ../../CommonData/CmplArray.hh \
  ../../CommonData/../Control/StringStore.hh \
- ../../CommonData/ExternDataInfo.hh ../../Control/MainControl.hh \
+ ../../CommonData/ExternDataInfo.hh ValType.hh ../../CommonData/Tuple.hh \
+ ValFunction.hh ../../Control/MainControl.hh \
  ../../Control/ThreadHandler.hh ../../Control/FileBase.hh \
  ../../Control/ExtensionBase.hh ../../Control/StringStore.hh \
  ../../CommonData/ExtensionSteps.hh

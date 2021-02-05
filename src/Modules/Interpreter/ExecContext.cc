@@ -83,13 +83,34 @@ namespace cmpl
         _cbContextTop = 0;
         _cbContextCreateTop = 0;
         _cbContext = NULL;
+
         if (_fctArg) {
             _cbContextCap = ARR_NEWCAP(0);
-            ARR_REALLOC(_cbContext, CodeBlockContext *, _cbContextTop, _cbContextCap);
+            ARR_REALLOC(_cbContext, CBContextNmPref, _cbContextTop, _cbContextCap);
         }
         else {
             _cbContextCap = 0;
         }
+
+        _nmPrefCmd = (!fct && prv ? prv->_nmPrefCmd : -1);
+        _nmPrefStart.cbContext = NULL;
+        if (fct && prv && (prv->_nmPrefCmd >= 0 || prv->_cbContextTop)) {
+            _nmPrefStart.nmPref = (prv->_nmPrefCmd >= 0 ? prv->_nmPrefCmd : prv->_cbContext[prv->_cbContextTop - 1].nmPref);
+            _nmPrefStart.nmPrefSet = (prv->_nmPrefCmd >= 0 ? 1 : prv->_cbContext[prv->_cbContextTop - 1].nmPrefSet);
+        }
+        else if (prv) {
+            _nmPrefStart.nmPref = prv->_nmPrefStart.nmPref;
+            _nmPrefStart.nmPrefSet = prv->_nmPrefStart.nmPrefSet;
+        }
+        else {
+            _nmPrefStart.nmPref = -1;
+            _nmPrefStart.nmPrefSet = 0;
+        }
+
+        _topIterVal.init();
+        _iterVals = NULL;
+        _iterValsCap = 0;
+        _iterValsTop = 0;
 
         _curVarCondMap = (prv ? prv->_curVarCondMap : NULL);
 
@@ -122,12 +143,21 @@ namespace cmpl
         if (_cbContext) {
             // only for error handling: delete codeblock contexts
             for (unsigned i = _cbContextCreateTop; i < _cbContextTop; i++) {
-                if (_cbContext[i])
-                    delete _cbContext[i];
+                if (_cbContext[i].cbContext)
+                    delete _cbContext[i].cbContext;
             }
 
             delete _cbContext;
         }
+
+        if (_iterVals) {
+            for (unsigned i = 0; i < _iterValsCap; i++)
+                _iterVals[i].dispose();
+
+            delete _iterVals;
+        }
+
+        _topIterVal.dispose();
 
         while (_curVarCondMap && _curVarCondMap->_execContext == this) {
             VarCondMapping *vcm = _curVarCondMap;
@@ -167,8 +197,8 @@ namespace cmpl
             res->_cbContextCap = _cbContextCap;
             res->_cbContextTop = res->_cbContextCreateTop = _cbContextTop;
 
-            ARR_REALLOC(res->_cbContext, CodeBlockContext *, 0, res->_cbContextCap);
-            memcpy(res->_cbContext, _cbContext, sizeof(CodeBlockContext *) * res->_cbContextTop);
+            ARR_REALLOC(res->_cbContext, CBContextNmPref, 0, res->_cbContextCap);
+            memcpy(res->_cbContext, _cbContext, sizeof(CBContextNmPref) * res->_cbContextTop);
         }
 
         return res;
@@ -320,9 +350,8 @@ namespace cmpl
 					break;
 
 				case INTCODE_LINENAMEPREF:
-                        ncd = curCommand + (curCommand->v.c.cnt + 1);
-					//TODO
-					break;
+                    ncd = execCodeLineNamePref(curCommand);
+                    break;
 
 				case INTCODE_FUNCTION:
                     ncd = execCodeFunction(curCommand);
@@ -686,7 +715,11 @@ namespace cmpl
 			}
             else if (setResName && (_assObjType == VAL_OBJECT_TYPE_CON || _assObjType == VAL_OBJECT_TYPE_OBJ)) {
                 // convert right hand side to constraint or objective
-                getCurAssignRhs(_assSyntaxElem);
+                StackValue *sv = getCurAssignRhs(_assSyntaxElem);
+                if (curNmPref() > 0) {
+                    CmplVal *ssv = sv->simpleValue();
+                    ValueStore::setValInValueTree(this, (ssv ? ssv : &(sv->val())), _assSyntaxElem, _modp->getResModel());
+                }
 			}
             stackPopTo(_assRhs);
         }
@@ -984,7 +1017,50 @@ namespace cmpl
 	}
 
 
-	/**
+    /**
+     * executes intermediary code command for name prefix for naming of rows and cols in the result matrix
+     * @param cd		intermediary code command
+     * @return			next intermediary code position / NULL if you have to leave this execution context after the command
+     */
+    IntCode::IcElem* ExecContext::execCodeLineNamePref(IntCode::IcElem *cd)
+    {
+        switch (cd->v.c.minor) {
+            case ICS_LNP_EXTEND:
+                {
+                    bool cmd;
+                    intType curpref = curNmPref(cmd);
+                    if (cmd) {
+                        internalError("multiple setting of lineNamePref for current statement");
+                    }
+                    else {
+                        intType addpref = (cd->v.c.cnt == 0 ? (intType) cd->v.c.par : cd[1].v.i);
+                        if (curpref >= 0) {
+                            string s(_modp->data()->globStrings()->at(curpref));
+                            if (_modp->nmPrefSep(false))
+                                s.append(_modp->data()->globStrings()->at(_modp->nmPrefSep(false)));
+                            s.append(_modp->data()->globStrings()->at(addpref));
+                            _nmPrefCmd = (intType) _modp->data()->globStrings()->storeInd(s);
+                        }
+                        else {
+                            _nmPrefCmd = addpref;
+                        }
+                    }
+                }
+                break;
+
+            case ICS_LNP_RESET:
+                _nmPrefCmd = -1;
+                break;
+
+            default:
+                internalError("invalid lineNamePref subcommand in intermediary code");
+        }
+
+        return cd + (cd->v.c.cnt + 1);
+    }
+
+
+    /**
 	 * executes intermediary code command for functions and jumps
 	 * @param cd		intermediary code command
 	 * @return			next intermediary code position / NULL if you have to leave this execution context after the command
@@ -1591,10 +1667,25 @@ namespace cmpl
     {
         if (_cbContextTop == _cbContextCap) {
             _cbContextCap = ARR_NEWCAP(_cbContextCap);
-            ARR_REALLOC(_cbContext, CodeBlockContext *, _cbContextTop, _cbContextCap);
+            ARR_REALLOC(_cbContext, CBContextNmPref, _cbContextTop, _cbContextCap);
         }
 
-        _cbContext[_cbContextTop++] = cb;
+        CBContextNmPref& curCB = _cbContext[_cbContextTop++];
+        curCB.cbContext = cb;
+
+        if (_nmPrefCmd >= 0) {
+            curCB.nmPref = _nmPrefCmd;
+            curCB.nmPrefSet = 1;
+            _nmPrefCmd = -1;
+        }
+        else {
+            curCB.nmPref = (_cbContextTop == 1 ? _nmPrefStart.nmPref : _cbContext[_cbContextTop - 2].nmPref);
+            curCB.nmPrefSet = 0;
+        }
+
+        if (cb)
+            cb->setNmPrefStart(curCB.nmPref, curCB.nmPrefSet);
+
         PROTO_MOD_OUTL(_modp, "pushCBContext: " << _cbContextTop << " (" << se << ')');
     }
 
@@ -1608,13 +1699,11 @@ namespace cmpl
         if (!_cbContextTop)
             internalError("missing code block context object stack element");
 
-        CodeBlockContext *cb = _cbContext[_cbContextTop - 1];
-        if (!cb) {
-            cb = CodeBlockContext::newContextAdd(this, cd);
-            _cbContext[_cbContextTop - 1] = cb;
-        }
+         CBContextNmPref& curCB = _cbContext[_cbContextTop - 1];
+        if (!curCB.cbContext)
+            curCB.cbContext = CodeBlockContext::newContextAdd(this, cd);
 
-        return cb;
+        return curCB.cbContext;
     }
 
     /**
@@ -1628,13 +1717,13 @@ namespace cmpl
         if (i >= _cbContextTop)
             return NULL;
 
-        CodeBlockContext **res = _cbContext + i;
-        if (*res)
-            return *res;
+        CBContextNmPref *res = _cbContext + i;
+        if (res->cbContext)
+            return res->cbContext;
 
         for (i++, res++; i < _cbContextTop; i++, res++) {
-            if (*res)
-                return *res;
+            if (res->cbContext)
+                return res->cbContext;
         }
 
         return NULL;
@@ -1651,8 +1740,8 @@ namespace cmpl
             cnt--;
             _cbContextTop--;
 
-            if (_cbContext[_cbContextTop]) {
-                delete _cbContext[_cbContextTop];
+            if (_cbContext[_cbContextTop].cbContext) {
+                delete _cbContext[_cbContextTop].cbContext;
             }
 
             PROTO_MOD_OUTL(_modp, "popCBContext: " << (_cbContextTop+1) << " (" << se << ')');
@@ -1721,10 +1810,184 @@ namespace cmpl
             _cancelCbLvl = dstLvl;
 
             for (unsigned n = max(dstLvl + 1, _cbContextCreateTop); n < _cbContextTop; n++) {
-                if (_cbContext[n])
-                    _cbContext[n]->setCancel(cmd, dstLvl);
+                if (_cbContext[n].cbContext)
+                    _cbContext[n].cbContext->setCancel(cmd, dstLvl);
             }
         }
+    }
+
+
+    /**
+     * set top part of current iteration tuple
+     * @param iter      iteration to which the tuple part belongs
+     * @param val       part of tuple (must be scalar index value or index tuple)
+     */
+    void ExecContext::setIterTplPart(CodeBlockIteration *iter, const CmplVal& val)
+    {
+        if (!_topIterVal.empty()) {
+            if (_iterValsTop == _iterValsCap) {
+                _iterValsCap = ARR_NEWCAP(_iterValsCap);
+                ARR_REALLOC(_iterVals, IterTuplePart, _iterValsTop, _iterValsCap);
+                for (unsigned i = _iterValsTop; i < _iterValsCap; i++)
+                    _iterVals[i].init();
+            }
+
+            IterTuplePart& tp = _iterVals[_iterValsTop++];
+            tp.tplPart.moveFrom(_topIterVal.tplPart);
+            tp.iter = _topIterVal.iter;
+        }
+
+        _topIterVal.tplPart.copyFrom(val);
+        _topIterVal.iter = iter;
+    }
+
+    /**
+     * unset top part of current iteration tuple
+     * @param iter      iteration to which the tuple part belongs
+     */
+    void ExecContext::delIterTplPart(CodeBlockIteration *iter)
+    {
+        bool found = false;
+        if (!_topIterVal.empty()) {
+            found = (_topIterVal.iter == iter);
+            _topIterVal.dispose();
+        }
+
+        while (!found && _iterValsTop > 0) {
+            IterTuplePart& tp = _iterVals[--_iterValsTop];
+            found = (tp.iter == iter);
+            tp.dispose();
+        }
+    }
+
+    /**
+     * get all parts of current iteration tuple
+     * @param parts     vector for return of the parts
+     * @return          count of found tuple parts
+     */
+    unsigned ExecContext::getIterTplParts(vector<CmplValAuto>& parts)
+    {
+        unsigned res = (_parent ? _parent->getIterTplParts(parts) : 0);
+        return res + getIterTplPartsThis(parts, 0);
+    }
+
+    /**
+     * get parts of current iteration tuple, from start of given iteration
+     * @param parts     vector for return of the parts
+     * @param start     iteration
+     * @return          count of found tuple parts
+     */
+    unsigned ExecContext::getIterTplParts(vector<CmplValAuto>& parts, CodeBlockIteration *start)
+    {
+        unsigned res = 0;
+
+        if (!_topIterVal.empty() && _topIterVal.iter == start) {
+            res = getIterTplPartsThis(parts, _iterValsTop);
+        }
+
+        else if (_iterValsTop) {
+            int i;
+            for (i = _iterValsTop - 1; i >= 0; i--) {
+                IterTuplePart *tp = _iterVals + i;
+                if (!tp->empty() && tp->iter == start)
+                    break;
+            }
+
+            if (i >= 0)
+                res = getIterTplPartsThis(parts, i);
+        }
+
+        if (!res) {
+            if (_parent) {
+                res = _parent->getIterTplParts(parts, start);
+                if (res)
+                    res += getIterTplPartsThis(parts, 0);
+            }
+        }
+
+        return res;
+    }
+
+    /**
+     * get all parts of current iteration tuple which are stored in this execution context
+     * @param parts     vector for return of the parts
+     * @param start     start index within _iterVals
+     * @return          count of found tuple parts
+     */
+    unsigned ExecContext::getIterTplPartsThis(vector<CmplValAuto>& parts, unsigned start)
+    {
+        unsigned res = 0;
+
+        if (start < _iterValsTop) {
+            IterTuplePart *tp = _iterVals + start;
+            for (unsigned i = start; i < _iterValsTop; i++, tp++) {
+                if (!tp->empty()) {
+                    parts.emplace_back();
+                    parts.back().copyFrom(tp->tplPart);
+                    res++;
+                }
+            }
+        }
+
+        if (!_topIterVal.empty()) {
+            parts.emplace_back();
+            parts.back().copyFrom(_topIterVal.tplPart);
+            res++;
+        }
+
+        return res;
+    }
+
+    /**
+     * get parts of current iteration tuple, only from start of the topmost iteration
+     * @param parts     vector for return of the parts
+     * @return          count of found tuple parts
+     */
+    unsigned ExecContext::getIterTplPartsIter(vector<CmplValAuto>& parts)
+    {
+        int i;
+        for (i = _cbContextTop - 1; i >= 0; i--) {
+            CodeBlockContext *cb = _cbContext[i].cbContext;
+            if (cb && cb->_startIter) {
+                return (cb->_startIterObj ? getIterTplParts(parts, cb->_startIterObj) : 0);
+            }
+        }
+
+        return 0;
+    }
+
+    /**
+     * get parts of current iteration tuple, only from start of the topmost change of name prefix with $curDestName
+     * @param parts     vector for return of the parts
+     * @return          count of found tuple parts
+     */
+    unsigned ExecContext::getIterTplPartsNmPref(vector<CmplValAuto>& parts)
+    {
+        bool found = false;
+        CodeBlockContext *cbStart = NULL;
+        ExecContext *ctx = this;
+
+        while (!found && ctx) {
+            for (int i = ctx->_cbContextTop - 1; i >= 0; i--) {
+                CBContextNmPref& curCB = ctx->_cbContext[i];
+                if (curCB.nmPrefSet == 2) {
+                    found = true;
+                    break;
+                }
+
+                CodeBlockContext *cb = curCB.cbContext;
+                if (cb && cb->_startIter && cb->_startIterObj)
+                    cbStart = cb;
+            }
+
+            if (!found)
+                ctx = ctx->_parent;
+        }
+
+        if (found)
+            return (cbStart && cbStart->_startIterObj ? getIterTplParts(parts, cbStart->_startIterObj) : 0);
+        else
+            return getIterTplParts(parts);
     }
 
 

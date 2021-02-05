@@ -315,6 +315,12 @@ namespace cmpl
         OptVar* asSingleBin(bool& neg) override;
 
         /**
+         * set model properties from this constraint
+         * @param prop          properties of optimization model
+         */
+        void setModelProperties(OptModel::Properties& prop) const override;
+
+        /**
          * get count of direct parts of the formula
          */
         unsigned partCount() const override             { return 2; }

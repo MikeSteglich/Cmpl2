@@ -291,6 +291,34 @@ namespace cmpl
 
 
     /**
+     * class for pseudo symbol $curFullTuple.
+     */
+    class ValSpecialCurFullTuple : public ValSpecialBase
+    {
+    public:
+        /**
+         * constructor
+         * @param ctx			execution context
+         * @param se            syntax element
+         * @param lval          pseudo subsymbol used as lvalue
+         * @param base			base object for pseudo subsymbol
+         */
+        ValSpecialCurFullTuple(ExecContext *ctx, unsigned se, bool lval, CmplVal *base): ValSpecialBase(ctx, se, lval, base)   { }
+
+        /**
+         * get name of the pseudo symbol
+         */
+        virtual const char *funcName() const                                    { return "$curFullTuple"; }
+
+        /**
+         * read functionality of the pseudo symbol
+         * @param res			return of result value
+         */
+        virtual void get(CmplVal& res);
+    };
+
+
+    /**
      * class for pseudo symbol $curDestName.
      */
     class ValSpecialCurDestName : public ValSpecialBase

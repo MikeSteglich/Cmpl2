@@ -290,9 +290,18 @@ namespace cmpl
          * @param resMatrix			result matrix
          * @param fi				first index part (can be TP_INT, TP_STR, TP_ITUPLE* or TP_LIST_TUPLE), or TP_EMPTY then <code>sc</code> holds only the remaining tuple parts up from <code>sub</code>
          * @param sc				second index part (can be TP_INT, TP_STR, TP_ITUPLE* or TP_LIST_TUPLE)
-         * @param sub				subtree for the element if known
+         * @param rec               recursive call after applying name prefix
          */
-        static void setValInValueTree(ExecContext *ctx, CmplVal *v, unsigned se, OptModel *resMatrix, const CmplVal& fi, const CmplVal& sc, ValueTree *sub = NULL);
+        static void setValInValueTree(ExecContext *ctx, CmplVal *v, unsigned se, OptModel *resMatrix, const CmplVal& fi, const CmplVal& sc, bool rec = false);
+
+        /**
+         * set or move value for variable or constraint within the value tree for the result matrix, using only current name prefix
+         * @param ctx				execution context
+         * @param v					value to set in the value tree
+         * @param se				syntax element id of the value
+         * @param tp                additional index tuple / NULL: no one
+         */
+        static void setValInValueTree(ExecContext *ctx, CmplVal *v, unsigned se, OptModel *resMatrix, const CmplVal *tp = NULL);
 
 		//TODO: Funktionen insbesondere zum Einfügen und Ändern von Werten
 	

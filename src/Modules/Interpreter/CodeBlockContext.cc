@@ -1101,15 +1101,16 @@ namespace cmpl
     void CodeBlockIteration::execIter(CBThreadInfo *thd, ExecContext *ctx, const CmplVal& curIter, unsigned long curInd)
     {
         _assignInfo->setCBSymbolValues(ctx, curIter, curInd);
-
-        //TODO: Werte für Pseudosymbole setzen
-        //	in Ausführungskontext entsprechend curIter
+        ctx->setIterTplPart(this, curIter);
 
         execElem(thd, ctx, _nextHead, curInd);
 
         // reset execution context
+        ctx->delIterTplPart(this);
         unsigned cbsFrom = (_headNum == -1 ? _cbContext->_localSymFrom : _assignInfo->numCBSymbolsFrom(ctx));
         ctx->uninitCBSymbols(cbsFrom, _cbContext->_localSymTo, false);
+
+        ctx->setCurNmPrefCB(_cbContext);
     }
 
 

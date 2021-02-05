@@ -68,6 +68,10 @@ namespace cmpl
 
         map<string, string> _fileAlias;					///< file name aliases for data files
         map<string, unsigned> _fileAliasPrio;			///< priority of file name aliases (same keys as in _fileAlias)
+
+        unsigned _nmPrefSep;                            ///< separator between and after line name prefixes (0: no such separator)
+        int _nmPrefAfter;                               ///< separator only after line name prefixes (-1: use _nmPrefSep)
+
         //TODO
 
 
@@ -90,10 +94,8 @@ namespace cmpl
         unsigned _symIdSubAsString;                     ///< symbol definition number for subsymbol "as_string"
 
         /************** data for interpreter module **********/
+        map<tp_e, CmplValAuto> _dataTypes;              ///< data type objects by TP_DATA_BASETYPE
         CmplValAuto _defTypeVar;						///< default data type for optimization variables
-        CmplValAuto _realTypeVar;						///< data type for real optimization variable
-        CmplValAuto _intTypeVar;						///< data type for integer optimization variable
-        CmplValAuto _binTypeVar;						///< data type for binary optimization variable
 
         ExecContext *_baseExecCtx;                      ///< base execution context, set only while executing execCode()
         OptModel *_resModel;							///< result optimization model
@@ -121,6 +123,11 @@ namespace cmpl
         inline bool echoDuration()                                  { return _echoDuration; }
 
         /**
+         * get separator between and after line name prefixes
+         */
+        inline unsigned nmPrefSep(bool aft)                         { return (aft && _nmPrefAfter >= 0 ? (unsigned) _nmPrefAfter : _nmPrefSep); }
+
+        /**
          * get file name aliases for data files
          */
         inline map<string, string>& fileAlias()                     { return _fileAlias; }
@@ -136,6 +143,11 @@ namespace cmpl
         inline OptModel *getResModel()								{ return _resModel; }
 
         /**
+         * get map of data type objects by TP_DATA_BASETYPE
+         */
+        inline map<tp_e, CmplValAuto>& dataTypes()                  { return _dataTypes; }
+
+        /**
          * default data type for optimization variables
          */
         inline CmplVal& defTypeVar()								{ return _defTypeVar; }
@@ -143,17 +155,17 @@ namespace cmpl
         /**
          * data type for real optimization variables
          */
-        inline CmplVal& realTypeVar()								{ return _realTypeVar; }
+        inline CmplVal& realTypeVar()								{ return _dataTypes[TP_REAL]; }
 
         /**
          * data type for integer optimization variables
          */
-        inline CmplVal& intTypeVar()								{ return _intTypeVar; }
+        inline CmplVal& intTypeVar()								{ return _dataTypes[TP_INT]; }
 
         /**
          * data type for binary optimization variables
          */
-        inline CmplVal& binTypeVar()								{ return _binTypeVar; }
+        inline CmplVal& binTypeVar()								{ return _dataTypes[TP_BIN]; }
 
         /**
          * get symbol info for a symbol
@@ -269,6 +281,11 @@ namespace cmpl
 		 * initialize symbols
 		 */
 		void initSymbols();
+
+        /**
+         * initialize map _dataTypes
+         */
+        void initDataTypes();
 
 		/**
 		 * initialize predefined values

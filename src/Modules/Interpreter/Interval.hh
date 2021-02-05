@@ -104,6 +104,16 @@ namespace cmpl
 		 */
         inline static bool hasUppBound(const CmplVal &v)						{ return (v.boundUpp() || v.boundLU()); }
 
+        /**
+         * get whether the interval v has no bound
+         */
+        inline static bool hasNoBound(const CmplVal &v)                         { return (!v.boundLow() && !v.boundUpp() && !v.boundLU()); }
+
+        /**
+         * get whether the interval is infinite (not bounded on both sides)
+         */
+        inline static bool isInf(const CmplVal &v)                              { return (!v.boundLU()); }
+
 		/**
 		 * get whether the lower bound of interval v is a real number (only if hasLowBound(v))
 		 */
@@ -183,8 +193,29 @@ namespace cmpl
 		 * @param ub			value for upper bound (must be TP_INT, TP_REAL or TP_INFINITE) / TP_EMPTY: no upper bound
 		 */
 		static void construct(CmplVal &res, CmplVal& lb, CmplVal& ub);
-	};
 
+
+        /****** interval operations ****/
+
+        /**
+         * merge two intervals to a result interval
+         * @param res			store for result interval
+         * @param a1			first source interval (must be an interval)
+         * @param a2			second source interval (must be an interval)
+         * @param mgap          merge even when there is a gap between the two source intervals
+         * @return              true if result interval is created / false if not possible
+         */
+        static bool merge(CmplVal &res, const CmplVal &a1, const CmplVal &a2, bool mgap = false);
+
+        /**
+         * intersect two intervals to a result interval
+         * @param res			store for result interval
+         * @param a1			first source interval (must be an interval)
+         * @param a2			second source interval (must be an interval)
+         * @return              true if result interval is created / false if not possible
+         */
+        static bool intersect(CmplVal &res, const CmplVal &a1, const CmplVal &a2);
+    };
 }
 
 #endif // INTERVAL_HH

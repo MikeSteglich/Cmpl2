@@ -2130,237 +2130,244 @@ namespace cmpl {
 
   case 103:
 #line 553 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementUnaryOp, yystack_[1].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD((yylhs.value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[0].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_LOG, NULL, false));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_NOT, 1); }
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementUnaryOp, yystack_[2].location, yystack_[0].location, (yystack_[0].value.s)._name); CMPLELEM_CHILD((yylhs.value.s), (yystack_[2].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, NULL, false));
+                                                                                  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_TRP, 1); }
 #line 2136 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 104:
-#line 557 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[2].location, yystack_[0].location, ((yystack_[1].value.s)._u.b ? "+" : "-")); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, (yystack_[0].value.s)._u.exp, true));
-		  																		  COMP_OPERATION((yylhs.value.s)._elem, ((yystack_[1].value.s)._u.b ? ICS_OPER_ADD : ICS_OPER_SUB), 2); }
+#line 555 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementUnaryOp, yystack_[1].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD((yylhs.value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[0].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_LOG, NULL, false));
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_NOT, 1); }
 #line 2143 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 105:
 #line 559 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[2].location, yystack_[0].location, ((yystack_[1].value.s)._u.b ? "*" : "/")); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ((yystack_[1].value.s)._u.b ? ICS_OPER_MUL : ICS_OPER_DIV), 2); }
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[2].location, yystack_[0].location, ((yystack_[1].value.s)._u.b ? "+" : "-")); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, (yystack_[0].value.s)._u.exp, true));
+		  																		  COMP_OPERATION((yylhs.value.s)._elem, ((yystack_[1].value.s)._u.b ? ICS_OPER_ADD : ICS_OPER_SUB), 2); }
 #line 2150 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 106:
 #line 561 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[2].location, yystack_[0].location, "^"); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, (yystack_[0].value.s)._u.exp, true));
-                                                                                  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_POW, 2); }
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[2].location, yystack_[0].location, ((yystack_[1].value.s)._u.b ? "*" : "/")); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, (yystack_[0].value.s)._u.exp, true));
+																				  COMP_OPERATION((yylhs.value.s)._elem, ((yystack_[1].value.s)._u.b ? ICS_OPER_MUL : ICS_OPER_DIV), 2); }
 #line 2157 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 107:
 #line 563 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_LOG_AND, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_AND, 2); }
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[2].location, yystack_[0].location, "^"); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, (yystack_[0].value.s)._u.exp, true));
+                                                                                  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_POW, 2); }
 #line 2164 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 108:
 #line 565 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_LOG, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_OR, 2); }
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_LOG_AND, (yystack_[0].value.s)._u.exp, true));
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_AND, 2); }
 #line 2171 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 109:
 #line 567 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_IRR, 2); }
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_LOG, (yystack_[0].value.s)._u.exp, true));
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_OR, 2); }
 #line 2178 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 110:
 #line 569 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_OBJTO, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_OBJTO, 2); }
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, (yystack_[0].value.s)._u.exp, true));
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_IRR, 2); }
 #line 2185 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 111:
 #line 571 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[1].location, yystack_[0].location, "in"); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_IN, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_IN, 2); }
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_OBJTO, (yystack_[0].value.s)._u.exp, true));
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_OBJTO, 2); }
 #line 2192 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 112:
 #line 573 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[1].location, yystack_[0].location, "of"); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_IN, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_OF, 2); }
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[1].location, yystack_[0].location, "in"); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_IN, (yystack_[0].value.s)._u.exp, true));
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_IN, 2); }
 #line 2199 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 113:
 #line 575 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_ALT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[1].location, yystack_[0].location, "", "*"); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_MUL, 2); }
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[1].location, yystack_[0].location, "of"); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_IN, (yystack_[0].value.s)._u.exp, true));
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_OF, 2); }
 #line 2206 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 114:
-#line 579 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); (yylhs.value.s)._u.b = true; PARSE_CONTEXT.setCbExprModeReset(); }
-#line 2212 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 577 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY_ALT((yylhs.value.s), SyntaxElementBinaryOp, yystack_[1].location, yystack_[0].location, "", "*"); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, (yystack_[0].value.s)._u.exp, true));
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_MUL, 2); }
+#line 2213 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 115:
-#line 580 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); (yylhs.value.s)._u.b = false; PARSE_CONTEXT.setCbExprModeReset(); }
-#line 2218 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 581 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); (yylhs.value.s)._u.b = true; PARSE_CONTEXT.setCbExprModeReset(); }
+#line 2219 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 116:
-#line 583 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); (yylhs.value.s)._u.b = true; PARSE_CONTEXT.setCbExprModeReset(); }
-#line 2224 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 582 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); (yylhs.value.s)._u.b = false; PARSE_CONTEXT.setCbExprModeReset(); }
+#line 2225 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 117:
-#line 584 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); (yylhs.value.s)._u.b = false; PARSE_CONTEXT.setCbExprModeReset(); }
-#line 2230 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 585 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); (yylhs.value.s)._u.b = true; PARSE_CONTEXT.setCbExprModeReset(); }
+#line 2231 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 118:
-#line 587 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.setCbExprModeReset(); }
-#line 2236 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 586 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); (yylhs.value.s)._u.b = false; PARSE_CONTEXT.setCbExprModeReset(); }
+#line 2237 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 119:
-#line 590 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s) = (yystack_[1].value.s); NOT_USED((yystack_[0].value.s)); }
-#line 2242 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 589 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s) = (yystack_[0].value.s); PARSE_CONTEXT.setCbExprModeReset(); }
+#line 2243 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 120:
-#line 591 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s) = (yystack_[1].value.s); NOT_USED((yystack_[0].value.s)); /* $1 doesn't mean multiplication here, but is delivered so by flex, because "in" is a keyword operator */ }
-#line 2248 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 592 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s) = (yystack_[1].value.s); NOT_USED((yystack_[0].value.s)); }
+#line 2249 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 121:
-#line 594 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s) = (yystack_[1].value.s); NOT_USED((yystack_[0].value.s)); }
-#line 2254 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 593 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s) = (yystack_[1].value.s); NOT_USED((yystack_[0].value.s)); /* $1 doesn't mean multiplication here, but is delivered so by flex, because "in" is a keyword operator */ }
+#line 2255 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 122:
-#line 595 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s) = (yystack_[1].value.s); NOT_USED((yystack_[0].value.s)); /* $1 doesn't mean multiplication here, but is delivered so by flex, because "of" is a keyword operator */ }
-#line 2260 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 596 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s) = (yystack_[1].value.s); NOT_USED((yystack_[0].value.s)); }
+#line 2261 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 123:
-#line 598 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementCompareOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CMP, (yystack_[0].value.s)._u.exp, true));
-		   																		  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_EQ, 2); }
+#line 597 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s) = (yystack_[1].value.s); NOT_USED((yystack_[0].value.s)); /* $1 doesn't mean multiplication here, but is delivered so by flex, because "of" is a keyword operator */ }
 #line 2267 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 124:
 #line 600 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementCompareOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CMP2, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_EQ2, 2); }
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementCompareOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CMP, (yystack_[0].value.s)._u.exp, true));
+		   																		  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_EQ, 2); }
 #line 2274 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 125:
 #line 602 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementCompareOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CMP, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_NE, 2); }
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementCompareOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CMP2, (yystack_[0].value.s)._u.exp, true));
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_EQ2, 2); }
 #line 2281 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 126:
 #line 604 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementCompareOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CMP2, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_NE2, 2); }
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementCompareOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CMP, (yystack_[0].value.s)._u.exp, true));
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_NE, 2); }
 #line 2288 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 127:
 #line 606 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementCompareOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CMP, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_LT, 2); }
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementCompareOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CMP2, (yystack_[0].value.s)._u.exp, true));
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_NE2, 2); }
 #line 2295 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 128:
 #line 608 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementCompareOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CMP, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_GT, 2); }
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_LT, 2); }
 #line 2302 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 129:
 #line 610 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementCompareOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CMP, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_LE, 2); }
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_GT, 2); }
 #line 2309 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 130:
 #line 612 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementCompareOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CMP, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_GE, 2); }
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_LE, 2); }
 #line 2316 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 131:
-#line 617 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementSubSymbolOp, yystack_[2].location, yystack_[0].location, "."); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); NOT_USED((yystack_[1].value.s));
-			 																	  (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_SUB, (yystack_[0].value.s)._u.exp, true)); }
+#line 614 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementCompareOp, yystack_[2].location, yystack_[0].location, (yystack_[1].value.s)._name); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CMP, (yystack_[0].value.s)._u.exp, true));
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_GE, 2); }
 #line 2323 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 132:
-#line 621 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s) = (yystack_[0].value.s); }
-#line 2329 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 619 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementSubSymbolOp, yystack_[2].location, yystack_[0].location, "."); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); NOT_USED((yystack_[1].value.s));
+			 																	  (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_SUB, (yystack_[0].value.s)._u.exp, true)); }
+#line 2330 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 133:
-#line 622 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s) = (yystack_[0].value.s); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementIncDec, yystack_[1].location, yystack_[0].location, ((yystack_[1].value.s)._u.i > 0 ? "prefix inc" : "prefix dec")); CMPLELEM_CHILD((yylhs.value.s), (yystack_[0].value.s));
-																				  (yylhs.value.s).setExp((yystack_[0].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_INC, NULL, false));
-																				  COMP_INCDEC_FETCH((yylhs.value.s)._elem, true, (yystack_[1].value.s)._u.i); }
-#line 2337 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 623 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s) = (yystack_[0].value.s); }
+#line 2336 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 134:
-#line 625 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s) = (yystack_[1].value.s); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementIncDec, yystack_[1].location, yystack_[0].location, ((yystack_[0].value.s)._u.i > 0 ? "postfix inc" : "postfix dec")); CMPLELEM_CHILD((yylhs.value.s), (yystack_[1].value.s));
-																				  (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_INC, NULL, false));
-																				  COMP_INCDEC_FETCH((yylhs.value.s)._elem, false, (yystack_[0].value.s)._u.i); }
-#line 2345 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 624 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s) = (yystack_[0].value.s); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementIncDec, yystack_[1].location, yystack_[0].location, ((yystack_[1].value.s)._u.i > 0 ? "prefix inc" : "prefix dec")); CMPLELEM_CHILD((yylhs.value.s), (yystack_[0].value.s));
+																				  (yylhs.value.s).setExp((yystack_[0].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_INC, NULL, false));
+																				  COMP_INCDEC_FETCH((yylhs.value.s)._elem, true, (yystack_[1].value.s)._u.i); }
+#line 2344 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 135:
-#line 630 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s) = (yystack_[0].value.s); CMPLELEMENTRY_SYM((yylhs.value.s), SyntaxElementSymbol, yystack_[0].location, yystack_[0].location, (yystack_[0].value.s)._u.exp->sym());
-																				  COMP_FETCH_SYM((yylhs.value.s)._elem, (yystack_[0].value.s)._u.exp); (yylhs.value.s)._u.exp->setLvalueSyntaxElem((yylhs.value.s)._elem); }
+#line 627 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s) = (yystack_[1].value.s); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementIncDec, yystack_[1].location, yystack_[0].location, ((yystack_[0].value.s)._u.i > 0 ? "postfix inc" : "postfix dec")); CMPLELEM_CHILD((yylhs.value.s), (yystack_[1].value.s));
+																				  (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_INC, NULL, false));
+																				  COMP_INCDEC_FETCH((yylhs.value.s)._elem, false, (yystack_[0].value.s)._u.i); }
 #line 2352 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 136:
-#line 635 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY((yylhs.value.s), SyntaxElementFuncCall, yystack_[1].location, yystack_[0].location); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s)); /* auch als Set-Konstruktor der Art 1(1)(n-1) */
-			 																	  (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CALL, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_FUNC, 2); }
-#line 2360 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 632 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s) = (yystack_[0].value.s); CMPLELEMENTRY_SYM((yylhs.value.s), SyntaxElementSymbol, yystack_[0].location, yystack_[0].location, (yystack_[0].value.s)._u.exp->sym());
+																				  COMP_FETCH_SYM((yylhs.value.s)._elem, (yystack_[0].value.s)._u.exp); (yylhs.value.s)._u.exp->setLvalueSyntaxElem((yylhs.value.s)._elem); }
+#line 2359 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 137:
-#line 638 "CMPL_Parser.yy" // lalr1.cc:859
+#line 637 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY((yylhs.value.s), SyntaxElementFuncCall, yystack_[1].location, yystack_[0].location); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s)); /* auch als Set-Konstruktor der Art 1(1)(n-1) */
+			 																	  (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CALL, (yystack_[0].value.s)._u.exp, true));
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_FUNC, 2); }
+#line 2367 "_CMPL_Parser.cc" // lalr1.cc:859
+    break;
+
+  case 138:
+#line 640 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init();
 																				  if (PARSE_CONTEXT.modpt()->compatLineNamePref() && (yystack_[1].value.s)._u.exp->sym() && (yystack_[1].value.s)._u.exp->sym()->notDefined()) {
 																					// no function call, $1 is a line name prefix
@@ -2372,19 +2379,19 @@ namespace cmpl {
 																				  	(yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CALL, (yystack_[0].value.s)._u.exp, true));
 																					COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_FUNC, 2);
 																				} }
-#line 2376 "_CMPL_Parser.cc" // lalr1.cc:859
-    break;
-
-  case 138:
-#line 651 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY((yylhs.value.s), SyntaxElementIndexation, yystack_[1].location, yystack_[0].location); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s));
-																				  (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_IND, (yystack_[0].value.s)._u.exp, true));
-																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_INDEX, 2); }
-#line 2384 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 2383 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 139:
-#line 656 "CMPL_Parser.yy" // lalr1.cc:859
+#line 653 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY((yylhs.value.s), SyntaxElementIndexation, yystack_[1].location, yystack_[0].location); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s));
+																				  (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_IND, (yystack_[0].value.s)._u.exp, true));
+																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_INDEX, 2); }
+#line 2391 "_CMPL_Parser.cc" // lalr1.cc:859
+    break;
+
+  case 140:
+#line 658 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); NOT_USED((yystack_[1].value.s));
 		   																		  if ((yystack_[2].value.s)._u.exp->expTypeTuple()) {
 																					CMPLELEMENTRY((yylhs.value.s), SyntaxElementArrayCast, yystack_[2].location, yystack_[0].location); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s));
@@ -2407,23 +2414,23 @@ namespace cmpl {
 																						(yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, (yystack_[0].value.s)._u.exp, true));
 																					}
 																				} }
-#line 2411 "_CMPL_Parser.cc" // lalr1.cc:859
-    break;
-
-  case 140:
-#line 680 "CMPL_Parser.yy" // lalr1.cc:859
-    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementError, yystack_[1].location, yystack_[0].location, "illegal expression"); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, (yystack_[0].value.s)._u.exp, true)); }
-#line 2417 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 2418 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
   case 141:
-#line 681 "CMPL_Parser.yy" // lalr1.cc:859
+#line 682 "CMPL_Parser.yy" // lalr1.cc:859
     { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementError, yystack_[1].location, yystack_[0].location, "illegal expression"); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, (yystack_[0].value.s)._u.exp, true)); }
-#line 2423 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 2424 "_CMPL_Parser.cc" // lalr1.cc:859
+    break;
+
+  case 142:
+#line 683 "CMPL_Parser.yy" // lalr1.cc:859
+    { (yylhs.value.s).init(); CMPLELEMENTRY_TXT((yylhs.value.s), SyntaxElementError, yystack_[1].location, yystack_[0].location, "illegal expression"); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[1].value.s), (yystack_[0].value.s)); (yylhs.value.s).setExp((yystack_[1].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_NUM, (yystack_[0].value.s)._u.exp, true)); }
+#line 2430 "_CMPL_Parser.cc" // lalr1.cc:859
     break;
 
 
-#line 2427 "_CMPL_Parser.cc" // lalr1.cc:859
+#line 2434 "_CMPL_Parser.cc" // lalr1.cc:859
             default:
               break;
             }
@@ -2678,67 +2685,67 @@ namespace cmpl {
   }
 
 
-  const signed char CMPL_Parser::yypact_ninf_ = -91;
+  const signed char CMPL_Parser::yypact_ninf_ = -65;
 
   const signed char CMPL_Parser::yytable_ninf_ = -90;
 
   const short int
   CMPL_Parser::yypact_[] =
   {
-     524,   -57,   -91,   -91,   -91,   -91,   -91,     8,   -91,   475,
-     -91,   778,    66,   -91,   -91,   -91,   -91,   -91,   -91,   -91,
-     -91,   -91,   -91,   -91,   -91,   -91,   -91,   -91,   -91,   -91,
-     -91,   -91,   -91,   -38,   -91,   -91,   -91,   -45,   191,   -91,
-     567,   -17,   762,   -91,   -28,     2,   -91,   821,   -91,   431,
-     -91,   610,   -91,   929,   -91,   -91,   -91,   844,   929,   844,
-     844,   844,   -91,   -91,   -91,   -91,   -91,   -91,   -91,   -91,
-     -91,   -91,   -91,   -14,   924,   -36,   -91,   -35,   -33,   653,
-     -43,   -25,   -91,   -38,   844,   844,   844,   844,   844,   844,
-     844,   844,   844,   844,   -91,   -91,   844,   -91,   844,   844,
-     -37,   844,   -91,    87,   -91,   929,   844,   844,   -91,   -91,
-     -91,   -91,   -91,   -91,   -91,   -91,   -91,   -91,   -91,   -91,
-     -91,     4,   -29,   924,   -22,   -27,   -12,     0,   114,   114,
-     114,   114,  1021,  1021,   -91,   -91,   -91,   -91,   -25,   -91,
-     778,   -91,    13,   -19,   844,   -91,   -91,   979,  1005,   724,
-     724,   724,   724,   724,   724,   724,   724,     4,    31,    64,
-     -91,     1,   -91,    16,   -91,   -91,   -91,   -91,   114,   304,
-       4,   -91,   -91,   844,   -91,   -91,   -91,   706,   -91,   -43,
-     -91,   896,   -91,   -91,   -91,   -91,   844,   924
+     544,   -56,   -65,   -65,   -65,   -65,   -65,     6,   -65,   495,
+     -65,   798,    19,   -65,   -65,   -65,   -65,   -65,   -65,   -65,
+     -65,   -65,   -65,   -65,   -65,   -65,   -65,   -65,   -65,   -65,
+     -65,   -65,   -65,   -36,   -65,   -65,   -65,   -51,   864,   -65,
+     587,     8,   782,   -65,    99,     5,   -65,   841,   -65,   451,
+     -65,   630,   -65,  1001,   -65,   -65,   -65,   916,  1001,   916,
+     916,   916,   -65,   -65,   -65,   -65,   -65,   -65,   -65,   -65,
+     -65,   -65,   -65,    11,   996,    -6,   -65,    -4,   -32,   673,
+     -21,    13,   -65,   -36,   916,   916,   916,   916,   916,   916,
+     916,   916,   916,   916,   -65,   -65,   916,   -65,   916,   893,
+     -19,   916,   -65,   112,   -65,  1001,   916,   916,   -65,   -65,
+     -65,   -65,   -65,   -65,   -65,   -65,   -65,   -65,   -65,   -65,
+     -65,   397,    -1,   996,    21,     7,    12,    30,   132,   132,
+     132,   132,   742,   742,   -65,   -65,   -65,   -65,    13,   -65,
+     798,   -65,    34,    35,   916,   -65,   -65,  1051,  1077,    -5,
+      -5,    -5,    -5,    -5,    -5,    -5,    -5,   397,    77,   -65,
+       4,   -65,    48,   -65,    53,   -65,   -65,   -65,   -65,   132,
+     366,   397,   -65,   -65,   916,   -65,   -65,   -65,   726,   -65,
+     -21,   -65,   968,   -65,   -65,   -65,   -65,   916,   996
   };
 
   const unsigned char
   CMPL_Parser::yydefact_[] =
   {
        0,     0,    13,    14,    15,    10,    11,     0,     2,     0,
-       5,     0,     8,    12,     6,    18,     1,     4,   114,   115,
-     116,   117,    95,   118,    83,    86,    35,    77,    76,    78,
+       5,     0,     8,    12,     6,    18,     1,     4,   115,   116,
+     117,   118,    95,   119,    83,    86,    35,    77,    76,    78,
       80,    79,    73,     0,     7,    53,    16,     0,     0,    67,
        0,     0,    74,    54,    70,    20,    55,     0,    56,     0,
       57,     0,    58,    94,    59,    60,    61,     0,   100,     0,
        0,     0,    62,    63,    64,    65,    66,    69,     9,    71,
       17,    25,    19,    23,    22,     0,    43,     0,    36,     0,
       48,    41,    68,     0,     0,     0,     0,     0,     0,     0,
-       0,     0,     0,     0,   119,   121,     0,   102,     0,     0,
-       0,     0,   137,   136,   138,    92,     0,     0,    72,   140,
-     141,    26,    27,    28,    29,    30,    31,    32,    21,   120,
-     122,   113,     0,    90,     0,    87,     0,     0,    93,    99,
-     101,   103,   111,   112,    24,    34,    33,    38,    41,    50,
-       0,    39,     0,    44,     0,    42,   110,   108,   107,   123,
-     124,   125,   126,   127,   128,   129,   130,   109,   139,   106,
-     135,     0,   131,   132,    75,    98,    97,    96,    91,   104,
-     105,    82,    81,    89,    85,    84,    37,    74,    40,    48,
-      47,    51,   133,   134,    88,    45,     0,    52
+       0,     0,     0,     0,   120,   122,     0,   102,     0,     0,
+       0,     0,   138,   137,   139,    92,     0,     0,    72,   141,
+     142,    26,    27,    28,    29,    30,    31,    32,    21,   121,
+     123,   114,     0,    90,     0,    87,     0,     0,    93,    99,
+     101,   104,   112,   113,    24,    34,    33,    38,    41,    50,
+       0,    39,     0,    44,     0,    42,   111,   109,   108,   124,
+     125,   126,   127,   128,   129,   130,   131,   110,   140,   103,
+     107,   136,     0,   132,   133,    75,    98,    97,    96,    91,
+     105,   106,    82,    81,    89,    85,    84,    37,    74,    40,
+      48,    47,    51,   134,   135,    88,    45,     0,    52
   };
 
   const short int
   CMPL_Parser::yypgoto_[] =
   {
-     -91,   -91,     5,   -91,   -91,   -10,   -91,    33,   -91,   -91,
-     -91,   -91,   -91,   -91,   -13,   -91,   -52,   -91,   -91,   -91,
-      10,   -91,   -90,   -91,   -91,   -91,   -91,   -91,   -11,   -91,
-     -20,     6,   -41,   -91,   123,   -91,    30,   -91,   -50,   -91,
-     -91,   166,   -91,   -91,   -91,   -91,   227,   270,   -91,   -91,
-     -91,   -91,   -91,   -91,   -60,   -91,   -91,   -91,   -91
+     -65,   -65,    -8,   -65,   -65,    -9,   -65,    70,   -65,   -65,
+     -65,   -65,   -65,   -65,   -30,   -65,   -29,   -65,   -65,   -65,
+      51,   -65,   -64,   -65,   -65,   -65,   -65,   -65,   -11,   -65,
+     -31,    33,   -40,   -65,   103,   -65,    41,   -65,   -43,   -65,
+     -65,   165,   -65,   -65,   -65,   -65,   227,   289,   -65,   -65,
+     -65,   -65,   -65,   -65,   -27,   -65,   -65,   -65,   -65
   };
 
   const short int
@@ -2746,58 +2753,60 @@ namespace cmpl {
   {
       -1,     7,     8,     9,    10,    11,    12,    13,    14,    37,
       38,    72,    73,   118,    39,    40,    77,   138,    78,    79,
-      80,    81,   142,   143,   144,   141,   180,    41,   123,    43,
+      80,    81,   142,   143,   144,   141,   181,    41,   123,    43,
       44,    45,    46,    47,    48,    49,    50,    51,   124,   125,
-      52,    53,    54,   167,    55,    56,    57,    58,    59,    60,
-      61,    62,    63,   162,   163,    64,    65,    66,    67
+      52,    53,    54,   168,    55,    56,    57,    58,    59,    60,
+      61,    62,    63,   163,   164,    64,    65,    66,    67
   };
 
   const short int
   CMPL_Parser::yytable_[] =
   {
-      42,   127,    68,   110,    15,    32,   111,   160,    16,    27,
-      28,    29,   -46,    69,    17,    32,    70,   161,    26,   -46,
-      25,   135,   136,    76,   109,   137,   108,    74,    82,   102,
-      97,    98,    99,    22,   171,   173,   121,    24,    25,    26,
-     100,   172,   128,   179,   174,   160,   129,   130,   131,   132,
-     133,   112,   113,   114,   115,   116,   175,   117,    98,    99,
-      22,   102,   166,   146,    24,    25,    26,   100,   178,   140,
-     183,    71,   104,   147,   148,   149,   150,   151,   152,   153,
-     154,   155,   156,   165,   139,   157,   176,   158,   159,   185,
-      42,   145,    99,    22,   168,   169,   170,    24,    25,    26,
-     100,   182,     0,   134,   104,     0,     2,   164,   102,     0,
-     102,     3,     4,     5,     6,   102,   102,   102,   102,   102,
-     102,     0,     0,   184,    27,    28,    29,     0,     0,   177,
-      32,     0,     0,   181,   102,   102,   102,   102,   102,   102,
-     102,   102,   102,   102,   102,   102,   102,    24,    25,    26,
-     100,   104,     0,   104,     0,   102,   102,   102,   104,   104,
-     104,   104,   104,   104,   102,   103,     0,     0,   102,     0,
-       0,     0,     0,     0,   102,   187,     0,   104,   104,   104,
+      42,    17,    69,    68,   110,    15,    16,    32,   127,   111,
+      70,    82,   102,   109,    94,    95,    18,    19,    20,    21,
+      96,    97,    98,    99,    22,   161,   137,    74,    24,    25,
+      26,   100,    99,    22,   -46,   162,   121,    24,    25,    26,
+     100,   -46,   128,    26,   102,    25,   129,   130,   131,   132,
+     133,   135,   146,   136,   112,   113,   114,   115,   116,     2,
+     117,    76,   172,   167,     3,     4,     5,     6,   175,   174,
+     140,   139,   166,   147,   148,   149,   150,   151,   152,   153,
+     154,   155,   156,   104,   173,   157,   176,   158,   160,   179,
+      42,   102,   161,   102,   169,   170,   171,   180,   102,   102,
+     102,   102,   102,   102,    98,    99,    22,   184,    71,   177,
+      24,    25,    26,   100,   134,   104,   186,   102,   102,   102,
+     102,   102,   102,   102,   102,   102,   102,   102,   102,   178,
+     102,   185,   145,   182,   165,   183,    27,    28,    29,   102,
+     102,   102,    32,     0,     0,   103,     0,     0,   102,    27,
+      28,    29,   102,   108,     0,    32,     0,     0,   102,     0,
+       0,     0,   104,     0,   104,    24,    25,    26,   100,   104,
+     104,   104,   104,   104,   104,     0,   188,   103,     0,     0,
+       0,     0,     0,     0,     0,     0,     0,     0,   104,   104,
      104,   104,   104,   104,   104,   104,   104,   104,   104,   104,
-       0,     0,     0,     0,     0,     0,     0,   103,   104,   104,
-     104,     0,     0,     0,     0,     0,     0,   104,   105,     0,
-       0,   104,    18,    19,    20,    21,     0,   104,     0,     0,
-      22,     0,     0,    23,    24,    25,    26,     0,    27,    28,
-      29,     0,    30,    31,    32,     0,     3,     4,     0,     0,
-     105,     0,     0,     0,   103,    33,   103,     0,     0,     0,
-      35,   103,   103,   103,   103,   103,   103,     0,     0,     0,
-       0,     0,     0,     0,     0,     0,     0,     0,     0,   106,
+       0,   104,     0,     0,     0,     0,     0,   105,     0,     0,
+     104,   104,   104,     0,     0,     0,     0,     0,     0,   104,
+       0,     0,     0,   104,   103,     0,   103,     0,     0,   104,
+       0,   103,   103,   103,   103,   103,   103,     0,     0,   105,
+       0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
      103,   103,   103,   103,   103,   103,   103,   103,   103,   103,
-     103,   103,   103,     0,     0,     0,     0,   105,     0,   105,
-       0,   103,   103,   103,   105,   105,   105,   105,   105,   105,
-     103,   106,     0,     0,   103,     0,     0,     0,     0,     0,
-     103,     0,   107,   105,   105,   105,   105,   105,   105,   105,
-     105,   105,   105,   105,   105,   105,     0,    20,    21,    96,
-      97,    98,    99,    22,   105,   105,   105,    24,    25,    26,
-     100,     0,     0,   105,   107,     0,     0,   105,   106,     0,
+     103,   103,     0,   103,     0,     0,     0,     0,     0,   106,
+       0,     0,   103,   103,   103,     0,     0,     0,     0,     0,
+       0,   103,     0,     0,     0,   103,   105,     0,   105,     0,
+       0,   103,     0,   105,   105,   105,   105,   105,   105,     0,
+       0,   106,     0,     0,     0,     0,     0,     0,     0,     0,
+       0,     0,   105,   105,   105,   105,   105,   105,   105,   105,
+     105,   105,   105,   105,     0,   105,     0,     0,     0,     0,
+       0,   107,     0,     0,   105,   105,   105,     0,     0,     0,
+       0,     0,     0,   105,     0,     0,     0,   105,   106,     0,
      106,     0,     0,   105,     0,   106,   106,   106,   106,   106,
-     106,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+     106,     0,     0,   107,     0,     0,     0,     0,     0,     0,
        0,     0,     0,     0,   106,   106,   106,   106,   106,   106,
-     106,   106,   106,   106,   106,   106,   106,     0,     0,     0,
-       0,   107,     0,   107,     0,   106,   106,   106,   107,   107,
-     107,   107,   107,   107,   106,     0,     0,     0,   106,     0,
-       0,     0,     0,     0,   106,     0,     0,   107,   107,   107,
-     107,   107,   107,   107,   107,   107,   107,   107,   107,   107,
+     106,   106,   106,   106,   106,   106,     0,   106,     0,    20,
+      21,    96,    97,    98,    99,    22,   106,   106,   106,    24,
+      25,    26,   100,     0,     0,   106,     0,     0,     0,   106,
+     107,     0,   107,     0,     0,   106,     0,   107,   107,   107,
+     107,   107,   107,    97,    98,    99,    22,     0,     0,     0,
+      24,    25,    26,   100,     0,     0,   107,   107,   107,   107,
+     107,   107,   107,   107,   107,   107,   107,   107,     0,   107,
        0,     0,   122,     0,     0,     0,     0,     0,   107,   107,
      107,     0,     0,     0,     0,     0,     0,   107,     0,     0,
        0,   107,    18,    19,    20,    21,     0,   107,     0,     0,
@@ -2829,9 +2838,9 @@ namespace cmpl {
       -3,    -3,    -8,     0,    -8,    84,    85,    86,    87,    88,
       89,    90,    91,    92,    93,    94,    95,    18,    19,    20,
       21,    96,    97,    98,    99,    22,     0,     0,     0,    24,
-      25,    26,   100,    94,    95,    18,    19,    20,    21,    96,
-      97,    98,    99,    22,     0,     0,     0,    24,    25,    26,
-     100,     0,     0,   -49,   -49,    83,     0,     0,   101,     0,
+      25,    26,   100,    18,    19,    20,    21,    96,    97,    98,
+      99,    22,     0,     0,     0,    24,    25,    26,   100,     0,
+       0,     0,     0,   -49,   -49,    83,     0,     0,   101,     0,
        0,    84,    85,    86,    87,    88,    89,    90,    91,    92,
       93,    94,    95,    18,    19,    20,    21,    96,    97,    98,
       99,    22,     0,     0,     0,    24,    25,    26,   100,    18,
@@ -2843,75 +2852,81 @@ namespace cmpl {
       22,     0,     0,    23,    24,    25,    26,     0,    27,    28,
       29,     0,    30,    31,    32,    18,    19,    20,    21,     0,
        0,     0,     0,    22,     0,    33,    23,    24,    25,    26,
-      35,    27,    28,    29,     0,    30,    31,    32,     0,     0,
-       0,     0,     0,     0,     0,     0,     0,     0,    33,    83,
-     186,     0,     0,    35,     0,    84,    85,    86,    87,    88,
+      35,    27,    28,    29,     0,    30,    31,    32,     0,     3,
+       4,     0,     0,     0,    18,    19,    20,    21,    33,   159,
+       0,     0,    22,    35,     0,    23,    24,    25,    26,     0,
+      27,    28,    29,     0,    30,    31,    32,    18,    19,    20,
+      21,     0,     0,     0,     0,    22,     0,    33,    23,    24,
+      25,    26,    35,    27,    28,    29,     0,    30,    31,    32,
+       0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+      33,    83,   187,     0,     0,    35,     0,    84,    85,    86,
+      87,    88,    89,    90,    91,    92,    93,    94,    95,    18,
+      19,    20,    21,    96,    97,    98,    99,    22,     0,    83,
+       0,    24,    25,    26,   100,    84,    85,    86,    87,    88,
       89,    90,    91,    92,    93,    94,    95,    18,    19,    20,
-      21,    96,    97,    98,    99,    22,     0,    83,     0,    24,
-      25,    26,   100,    84,    85,    86,    87,    88,    89,    90,
-      91,    92,    93,    94,    95,    18,    19,    20,    21,    96,
-      97,    98,    99,    22,     0,     0,     0,    24,    25,    26,
-     100,    23,    24,    25,    26,     0,    27,    28,    29,     0,
-      30,    31,    32,     0,     0,     0,     0,     0,     0,     0,
-       0,     0,     0,    33,     0,     0,     0,     0,    35,    85,
-      86,    87,    88,    89,    90,    91,    92,    93,    94,    95,
-      18,    19,    20,    21,    96,    97,    98,    99,    22,     0,
-       0,     0,    24,    25,    26,   100,    86,    87,    88,    89,
-      90,    91,    92,    93,    94,    95,    18,    19,    20,    21,
-      96,    97,    98,    99,    22,     0,     0,     0,    24,    25,
-      26,   100,    18,    19,    20,    21,    96,    97,    98,    99,
-      22,     0,     0,     0,    24,    25,    26,   100
+      21,    96,    97,    98,    99,    22,     0,     0,     0,    24,
+      25,    26,   100,    23,    24,    25,    26,     0,    27,    28,
+      29,     0,    30,    31,    32,     0,     0,     0,     0,     0,
+       0,     0,     0,     0,     0,    33,     0,     0,     0,     0,
+      35,    85,    86,    87,    88,    89,    90,    91,    92,    93,
+      94,    95,    18,    19,    20,    21,    96,    97,    98,    99,
+      22,     0,     0,     0,    24,    25,    26,   100,    86,    87,
+      88,    89,    90,    91,    92,    93,    94,    95,    18,    19,
+      20,    21,    96,    97,    98,    99,    22,     0,     0,     0,
+      24,    25,    26,   100
   };
 
   const short int
   CMPL_Parser::yycheck_[] =
   {
-      11,    51,    12,    44,    61,    43,     4,    44,     0,    37,
-      38,    39,    55,    33,     9,    43,    61,    54,    35,    62,
-      34,    57,    57,    48,    44,    58,    54,    38,    41,    42,
-      26,    27,    28,    29,    63,    62,    47,    33,    34,    35,
-      36,    63,    53,    62,    56,    44,    57,    58,    59,    60,
-      61,    49,    50,    51,    52,    53,    56,    55,    27,    28,
-      29,    74,   103,    83,    33,    34,    35,    36,    55,    79,
-      54,    38,    42,    84,    85,    86,    87,    88,    89,    90,
-      91,    92,    93,   103,    79,    96,   138,    98,    99,   179,
-     101,    81,    28,    29,   105,   106,   107,    33,    34,    35,
-      36,   161,    -1,    73,    74,    -1,    40,   101,   121,    -1,
-     123,    45,    46,    47,    48,   128,   129,   130,   131,   132,
-     133,    -1,    -1,   173,    37,    38,    39,    -1,    -1,   140,
-      43,    -1,    -1,   144,   147,   148,   149,   150,   151,   152,
-     153,   154,   155,   156,   157,   158,   159,    33,    34,    35,
-      36,   121,    -1,   123,    -1,   168,   169,   170,   128,   129,
-     130,   131,   132,   133,   177,    42,    -1,    -1,   181,    -1,
-      -1,    -1,    -1,    -1,   187,   186,    -1,   147,   148,   149,
-     150,   151,   152,   153,   154,   155,   156,   157,   158,   159,
-      -1,    -1,    -1,    -1,    -1,    -1,    -1,    74,   168,   169,
-     170,    -1,    -1,    -1,    -1,    -1,    -1,   177,    42,    -1,
-      -1,   181,    21,    22,    23,    24,    -1,   187,    -1,    -1,
-      29,    -1,    -1,    32,    33,    34,    35,    -1,    37,    38,
-      39,    -1,    41,    42,    43,    -1,    45,    46,    -1,    -1,
-      74,    -1,    -1,    -1,   121,    54,   123,    -1,    -1,    -1,
-      59,   128,   129,   130,   131,   132,   133,    -1,    -1,    -1,
-      -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    42,
+      11,     9,    33,    12,    44,    61,     0,    43,    51,     4,
+      61,    41,    42,    44,    19,    20,    21,    22,    23,    24,
+      25,    26,    27,    28,    29,    44,    58,    38,    33,    34,
+      35,    36,    28,    29,    55,    54,    47,    33,    34,    35,
+      36,    62,    53,    35,    74,    34,    57,    58,    59,    60,
+      61,    57,    83,    57,    49,    50,    51,    52,    53,    40,
+      55,    48,    63,   103,    45,    46,    47,    48,    56,    62,
+      79,    79,   103,    84,    85,    86,    87,    88,    89,    90,
+      91,    92,    93,    42,    63,    96,    56,    98,    99,    55,
+     101,   121,    44,   123,   105,   106,   107,    62,   128,   129,
+     130,   131,   132,   133,    27,    28,    29,    54,    38,   138,
+      33,    34,    35,    36,    73,    74,   180,   147,   148,   149,
+     150,   151,   152,   153,   154,   155,   156,   157,   158,   140,
+     160,   174,    81,   144,   101,   162,    37,    38,    39,   169,
+     170,   171,    43,    -1,    -1,    42,    -1,    -1,   178,    37,
+      38,    39,   182,    54,    -1,    43,    -1,    -1,   188,    -1,
+      -1,    -1,   121,    -1,   123,    33,    34,    35,    36,   128,
+     129,   130,   131,   132,   133,    -1,   187,    74,    -1,    -1,
+      -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,   147,   148,
+     149,   150,   151,   152,   153,   154,   155,   156,   157,   158,
+      -1,   160,    -1,    -1,    -1,    -1,    -1,    42,    -1,    -1,
+     169,   170,   171,    -1,    -1,    -1,    -1,    -1,    -1,   178,
+      -1,    -1,    -1,   182,   121,    -1,   123,    -1,    -1,   188,
+      -1,   128,   129,   130,   131,   132,   133,    -1,    -1,    74,
+      -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
      147,   148,   149,   150,   151,   152,   153,   154,   155,   156,
-     157,   158,   159,    -1,    -1,    -1,    -1,   121,    -1,   123,
-      -1,   168,   169,   170,   128,   129,   130,   131,   132,   133,
-     177,    74,    -1,    -1,   181,    -1,    -1,    -1,    -1,    -1,
-     187,    -1,    42,   147,   148,   149,   150,   151,   152,   153,
-     154,   155,   156,   157,   158,   159,    -1,    23,    24,    25,
-      26,    27,    28,    29,   168,   169,   170,    33,    34,    35,
-      36,    -1,    -1,   177,    74,    -1,    -1,   181,   121,    -1,
-     123,    -1,    -1,   187,    -1,   128,   129,   130,   131,   132,
-     133,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
+     157,   158,    -1,   160,    -1,    -1,    -1,    -1,    -1,    42,
+      -1,    -1,   169,   170,   171,    -1,    -1,    -1,    -1,    -1,
+      -1,   178,    -1,    -1,    -1,   182,   121,    -1,   123,    -1,
+      -1,   188,    -1,   128,   129,   130,   131,   132,   133,    -1,
+      -1,    74,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
+      -1,    -1,   147,   148,   149,   150,   151,   152,   153,   154,
+     155,   156,   157,   158,    -1,   160,    -1,    -1,    -1,    -1,
+      -1,    42,    -1,    -1,   169,   170,   171,    -1,    -1,    -1,
+      -1,    -1,    -1,   178,    -1,    -1,    -1,   182,   121,    -1,
+     123,    -1,    -1,   188,    -1,   128,   129,   130,   131,   132,
+     133,    -1,    -1,    74,    -1,    -1,    -1,    -1,    -1,    -1,
       -1,    -1,    -1,    -1,   147,   148,   149,   150,   151,   152,
-     153,   154,   155,   156,   157,   158,   159,    -1,    -1,    -1,
-      -1,   121,    -1,   123,    -1,   168,   169,   170,   128,   129,
-     130,   131,   132,   133,   177,    -1,    -1,    -1,   181,    -1,
-      -1,    -1,    -1,    -1,   187,    -1,    -1,   147,   148,   149,
-     150,   151,   152,   153,   154,   155,   156,   157,   158,   159,
-      -1,    -1,     1,    -1,    -1,    -1,    -1,    -1,   168,   169,
-     170,    -1,    -1,    -1,    -1,    -1,    -1,   177,    -1,    -1,
-      -1,   181,    21,    22,    23,    24,    -1,   187,    -1,    -1,
+     153,   154,   155,   156,   157,   158,    -1,   160,    -1,    23,
+      24,    25,    26,    27,    28,    29,   169,   170,   171,    33,
+      34,    35,    36,    -1,    -1,   178,    -1,    -1,    -1,   182,
+     121,    -1,   123,    -1,    -1,   188,    -1,   128,   129,   130,
+     131,   132,   133,    26,    27,    28,    29,    -1,    -1,    -1,
+      33,    34,    35,    36,    -1,    -1,   147,   148,   149,   150,
+     151,   152,   153,   154,   155,   156,   157,   158,    -1,   160,
+      -1,    -1,     1,    -1,    -1,    -1,    -1,    -1,   169,   170,
+     171,    -1,    -1,    -1,    -1,    -1,    -1,   178,    -1,    -1,
+      -1,   182,    21,    22,    23,    24,    -1,   188,    -1,    -1,
       29,    -1,    -1,    32,    33,    34,    35,    -1,    37,    38,
       39,    -1,    41,    42,    43,     0,     1,    -1,    -1,    -1,
       -1,    -1,    -1,    -1,    -1,    54,    -1,    -1,    -1,    -1,
@@ -2940,9 +2955,9 @@ namespace cmpl {
       57,    58,    59,    -1,    61,     9,    10,    11,    12,    13,
       14,    15,    16,    17,    18,    19,    20,    21,    22,    23,
       24,    25,    26,    27,    28,    29,    -1,    -1,    -1,    33,
-      34,    35,    36,    19,    20,    21,    22,    23,    24,    25,
-      26,    27,    28,    29,    -1,    -1,    -1,    33,    34,    35,
-      36,    -1,    -1,    57,    58,     3,    -1,    -1,    62,    -1,
+      34,    35,    36,    21,    22,    23,    24,    25,    26,    27,
+      28,    29,    -1,    -1,    -1,    33,    34,    35,    36,    -1,
+      -1,    -1,    -1,    57,    58,     3,    -1,    -1,    62,    -1,
       -1,     9,    10,    11,    12,    13,    14,    15,    16,    17,
       18,    19,    20,    21,    22,    23,    24,    25,    26,    27,
       28,    29,    -1,    -1,    -1,    33,    34,    35,    36,    21,
@@ -2954,24 +2969,28 @@ namespace cmpl {
       29,    -1,    -1,    32,    33,    34,    35,    -1,    37,    38,
       39,    -1,    41,    42,    43,    21,    22,    23,    24,    -1,
       -1,    -1,    -1,    29,    -1,    54,    32,    33,    34,    35,
-      59,    37,    38,    39,    -1,    41,    42,    43,    -1,    -1,
-      -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    54,     3,
-       4,    -1,    -1,    59,    -1,     9,    10,    11,    12,    13,
+      59,    37,    38,    39,    -1,    41,    42,    43,    -1,    45,
+      46,    -1,    -1,    -1,    21,    22,    23,    24,    54,    26,
+      -1,    -1,    29,    59,    -1,    32,    33,    34,    35,    -1,
+      37,    38,    39,    -1,    41,    42,    43,    21,    22,    23,
+      24,    -1,    -1,    -1,    -1,    29,    -1,    54,    32,    33,
+      34,    35,    59,    37,    38,    39,    -1,    41,    42,    43,
+      -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
+      54,     3,     4,    -1,    -1,    59,    -1,     9,    10,    11,
+      12,    13,    14,    15,    16,    17,    18,    19,    20,    21,
+      22,    23,    24,    25,    26,    27,    28,    29,    -1,     3,
+      -1,    33,    34,    35,    36,     9,    10,    11,    12,    13,
       14,    15,    16,    17,    18,    19,    20,    21,    22,    23,
-      24,    25,    26,    27,    28,    29,    -1,     3,    -1,    33,
-      34,    35,    36,     9,    10,    11,    12,    13,    14,    15,
-      16,    17,    18,    19,    20,    21,    22,    23,    24,    25,
-      26,    27,    28,    29,    -1,    -1,    -1,    33,    34,    35,
-      36,    32,    33,    34,    35,    -1,    37,    38,    39,    -1,
-      41,    42,    43,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
-      -1,    -1,    -1,    54,    -1,    -1,    -1,    -1,    59,    10,
-      11,    12,    13,    14,    15,    16,    17,    18,    19,    20,
-      21,    22,    23,    24,    25,    26,    27,    28,    29,    -1,
-      -1,    -1,    33,    34,    35,    36,    11,    12,    13,    14,
-      15,    16,    17,    18,    19,    20,    21,    22,    23,    24,
-      25,    26,    27,    28,    29,    -1,    -1,    -1,    33,    34,
-      35,    36,    21,    22,    23,    24,    25,    26,    27,    28,
-      29,    -1,    -1,    -1,    33,    34,    35,    36
+      24,    25,    26,    27,    28,    29,    -1,    -1,    -1,    33,
+      34,    35,    36,    32,    33,    34,    35,    -1,    37,    38,
+      39,    -1,    41,    42,    43,    -1,    -1,    -1,    -1,    -1,
+      -1,    -1,    -1,    -1,    -1,    54,    -1,    -1,    -1,    -1,
+      59,    10,    11,    12,    13,    14,    15,    16,    17,    18,
+      19,    20,    21,    22,    23,    24,    25,    26,    27,    28,
+      29,    -1,    -1,    -1,    33,    34,    35,    36,    11,    12,
+      13,    14,    15,    16,    17,    18,    19,    20,    21,    22,
+      23,    24,    25,    26,    27,    28,    29,    -1,    -1,    -1,
+      33,    34,    35,    36
   };
 
   const unsigned char
@@ -2992,10 +3011,10 @@ namespace cmpl {
       20,    92,     1,    92,   102,   103,     1,   102,    92,    92,
       92,    92,    92,    92,   100,    57,    57,    58,    81,    66,
       69,    89,    86,    87,    88,    84,    94,    92,    92,    92,
-      92,    92,    92,    92,    92,    92,    92,    92,    92,    92,
-      44,    54,   117,   118,    95,    94,    96,   107,    92,    92,
-      92,    63,    63,    62,    56,    56,    80,    92,    55,    62,
-      90,    92,   118,    54,   102,    86,     4,    92
+      92,    92,    92,    92,    92,    92,    92,    92,    92,    26,
+      92,    44,    54,   117,   118,    95,    94,    96,   107,    92,
+      92,    92,    63,    63,    62,    56,    56,    80,    92,    55,
+      62,    90,    92,   118,    54,   102,    86,     4,    92
   };
 
   const unsigned char
@@ -3011,11 +3030,11 @@ namespace cmpl {
       93,    93,    93,    94,    95,    95,    96,    96,    96,    97,
       97,    98,    98,    99,   100,   100,   101,   102,   102,   103,
      103,   104,   104,   104,   104,   105,   106,   107,   107,   108,
-     108,   108,   108,   108,   109,   109,   109,   109,   109,   109,
-     109,   109,   109,   109,   110,   110,   111,   111,   112,   113,
-     113,   114,   114,   115,   115,   115,   115,   115,   115,   115,
-     115,   116,   117,   117,   117,   118,   119,   119,   120,   121,
-     122,   122
+     108,   108,   108,   108,   108,   109,   109,   109,   109,   109,
+     109,   109,   109,   109,   109,   110,   110,   111,   111,   112,
+     113,   113,   114,   114,   115,   115,   115,   115,   115,   115,
+     115,   115,   116,   117,   117,   117,   118,   119,   119,   120,
+     121,   122,   122
   };
 
   const unsigned char
@@ -3031,11 +3050,11 @@ namespace cmpl {
        1,     2,     2,     1,     1,     3,     1,     1,     1,     1,
        1,     3,     3,     1,     3,     3,     1,     1,     3,     0,
        1,     3,     2,     2,     1,     1,     3,     1,     1,     2,
-       1,     2,     2,     2,     3,     3,     3,     3,     3,     3,
-       3,     2,     2,     2,     1,     1,     1,     1,     1,     2,
-       2,     2,     2,     3,     3,     3,     3,     3,     3,     3,
-       3,     3,     1,     2,     2,     1,     2,     2,     2,     3,
-       2,     2
+       1,     2,     2,     3,     2,     3,     3,     3,     3,     3,
+       3,     3,     2,     2,     2,     1,     1,     1,     1,     1,
+       2,     2,     2,     2,     3,     3,     3,     3,     3,     3,
+       3,     3,     3,     1,     2,     2,     1,     2,     2,     2,
+       3,     2,     2
   };
 
 
@@ -3093,11 +3112,11 @@ namespace cmpl {
      434,   435,   439,   445,   450,   451,   454,   456,   458,   462,
      465,   471,   474,   479,   482,   485,   490,   493,   497,   503,
      504,   507,   510,   513,   516,   523,   526,   532,   533,   540,
-     542,   544,   551,   553,   557,   559,   561,   563,   565,   567,
-     569,   571,   573,   575,   579,   580,   583,   584,   587,   590,
-     591,   594,   595,   598,   600,   602,   604,   606,   608,   610,
-     612,   617,   621,   622,   625,   630,   635,   638,   651,   656,
-     680,   681
+     542,   544,   551,   553,   555,   559,   561,   563,   565,   567,
+     569,   571,   573,   575,   577,   581,   582,   585,   586,   589,
+     592,   593,   596,   597,   600,   602,   604,   606,   608,   610,
+     612,   614,   619,   623,   624,   627,   632,   637,   640,   653,
+     658,   682,   683
   };
 
   // Print the state stack on the debug stream.
@@ -3183,8 +3202,8 @@ namespace cmpl {
 
 
 } // cmpl
-#line 3187 "_CMPL_Parser.cc" // lalr1.cc:1167
-#line 684 "CMPL_Parser.yy" // lalr1.cc:1168
+#line 3206 "_CMPL_Parser.cc" // lalr1.cc:1167
+#line 686 "CMPL_Parser.yy" // lalr1.cc:1168
 
 
 void cmpl::CMPL_Parser::error(const cmpl::CMPL_Parser::location_type& l, const std::string& m)

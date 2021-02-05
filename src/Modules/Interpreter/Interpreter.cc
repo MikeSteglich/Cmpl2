@@ -85,6 +85,8 @@ namespace cmpl
 
         _intOutOfRangeMode = INT_OPER_OORANGE_ERROR;
         _echoDuration = false;
+        _nmPrefSep = 0;
+        _nmPrefAfter = -1;
 
         _resModel = NULL;
 
@@ -104,6 +106,9 @@ namespace cmpl
 
 #define OPTION_INTERPRETER_INT_ECHO_DUR     21
 
+#define OPTION_INTERPRETER_NAMEPREFSEP      22
+#define OPTION_INTERPRETER_NAMEPREFAFTER    23
+
 #define OPTION_INTERPRETER_FILEALIAS        30
 
 	//TODO
@@ -120,7 +125,10 @@ namespace cmpl
         REG_CMDL_OPTION( OPTION_INTERPRETER_INT_OORANGE_MODE, "int-out-of-range", 1, 1, CMDL_OPTION_NEG_ERROR, true );
 
         REG_CMDL_OPTION( OPTION_INTERPRETER_INT_THREADS, "threads", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
-        REG_CMDL_OPTION( OPTION_INTERPRETER_INT_ECHO_DUR, "duration", 0, 0, CMDL_OPTION_NEG_NO_ARG, true );
+        REG_CMDL_OPTION( OPTION_INTERPRETER_INT_ECHO_DUR, "echoduration", 0, 0, CMDL_OPTION_NEG_NO_ARG, true );
+
+        REG_CMDL_OPTION( OPTION_INTERPRETER_NAMEPREFSEP, "name-prefix-separator", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
+        REG_CMDL_OPTION( OPTION_INTERPRETER_NAMEPREFSEP, "name-prefix-after", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
 
         REG_CMDL_OPTION( OPTION_INTERPRETER_FILEALIAS, "filealias", 0, -1, CMDL_OPTION_NEG_ERROR, false );
 
@@ -167,6 +175,14 @@ namespace cmpl
                 _echoDuration = !(opt->neg());
                 return true;
 
+            case OPTION_INTERPRETER_NAMEPREFSEP:
+                _nmPrefSep = (opt->neg() ? 0 : _data->globStrings()->storeInd((*opt)[0]));
+                return true;
+
+            case OPTION_INTERPRETER_NAMEPREFAFTER:
+                _nmPrefAfter = (opt->neg() ? -1 : (int) _data->globStrings()->storeInd((*opt)[0]));
+                return true;
+
             case OPTION_INTERPRETER_FILEALIAS:
                 parseFileAliases(opt, _fileAlias, _fileAliasPrio);
                 return true;
@@ -206,6 +222,8 @@ namespace cmpl
         s << "  -int-out-of-range <mode>      mode for handling integer operation results out of range (ignore/error/convert)" << endl;
         s << "  -threads <n>                  use maximal n concurrently running worker threads (0: no threading)" << endl;
         s << "  -echoduration                 include duration since start in all outputs of echo function" << endl;
+        s << "  -name-prefix-separator <s>    use string s as separator between line name prefixes" << endl;
+        s << "  -name-prefix-after <s>        use string s as separator only after line name prefix (if not given then -name-prefix-separator is used)" << endl;
         s << "  -filealias <from1>=<to1> ...  defines aliases for data file names" << endl;
 
         //TODO
@@ -258,11 +276,8 @@ namespace cmpl
 	{
 		_ctrl->errHandler().setExecStep("init symbols");
 
-        _realTypeVar.set(TP_DATA_TYPE, new ValTypeReal());
-        _intTypeVar.set(TP_DATA_TYPE, new ValTypeInt());
-        _binTypeVar.set(TP_DATA_TYPE, new ValTypeBin());
-
-        _defTypeVar.copyFrom(_realTypeVar, true, false);
+        initDataTypes();
+        _defTypeVar.copyFrom(_dataTypes[TP_REAL], true, false);
 
 		// array for global symbols
 		if (_symbolInfo->size() > 0) {
@@ -303,6 +318,28 @@ namespace cmpl
         _ctrl->runExtension(this, EXT_STEP_INTERPRET_INIT_FINAL);
 	}
 
+    /**
+     * initialize map _dataTypes
+     */
+    void Interpreter::initDataTypes()
+    {
+        _dataTypes.emplace(TP_REAL, CmplVal(TP_DATA_TYPE, new ValTypeReal()));
+        _dataTypes.emplace(TP_INT, CmplVal(TP_DATA_TYPE, new ValTypeInt()));
+        _dataTypes.emplace(TP_BIN, CmplVal(TP_DATA_TYPE, new ValTypeBin()));
+
+        _dataTypes.emplace(TP_STR, CmplVal(TP_DATA_TYPE, new ValTypeString()));
+        _dataTypes.emplace(TP_TUPLE, CmplVal(TP_DATA_TYPE, new ValTypeTuple()));
+        _dataTypes.emplace(TP_SET_INF_SET, CmplVal(TP_DATA_TYPE, new ValTypeSet()));
+        _dataTypes.emplace(TP_INTERVAL, CmplVal(TP_DATA_TYPE, new ValTypeInterval()));
+
+        _dataTypes.emplace(TP_FORMULA, CmplVal(TP_DATA_TYPE, new ValTypeFormula()));
+        _dataTypes.emplace(TP_FUNCTION, CmplVal(TP_DATA_TYPE, new ValTypeFunction()));
+        _dataTypes.emplace(TP_CONTAINER, CmplVal(TP_DATA_TYPE, new ValTypeContainer()));
+
+        _dataTypes.emplace(TP_DATA_TYPE, CmplVal(TP_DATA_TYPE, new ValTypeType()));
+        _dataTypes.emplace(TP_OBJECT_TYPE, CmplVal(TP_DATA_TYPE, new ValTypeObjecttype()));
+    }
+
 	/**
 	 * initialize predefined values
 	 * @param sv		pointer to symbol value
@@ -337,15 +374,15 @@ namespace cmpl
 
 				// data types
 				case PREDEFSYMVAL_DATATYPE_REAL:
-                    sv->simpleConstVal().copyFrom(_realTypeVar, true, false);
+                    sv->simpleConstVal().copyFrom(_dataTypes[TP_REAL], true, false);
 					break;
 
 				case PREDEFSYMVAL_DATATYPE_INT:
-                    sv->simpleConstVal().copyFrom(_intTypeVar, true, false);
+                    sv->simpleConstVal().copyFrom(_dataTypes[TP_INT], true, false);
 					break;
 
 				case PREDEFSYMVAL_DATATYPE_BIN:
-                    sv->simpleConstVal().copyFrom(_binTypeVar, true, false);
+                    sv->simpleConstVal().copyFrom(_dataTypes[TP_BIN], true, false);
 					break;
 
 				case PREDEFSYMVAL_DATATYPE_NUMERIC:
@@ -353,11 +390,11 @@ namespace cmpl
 					break;
 
 				case PREDEFSYMVAL_DATATYPE_FORMULA:
-					sv->simpleConstVal().set(TP_DATA_TYPE, new ValTypeFormula());
+                    sv->simpleConstVal().copyFrom(_dataTypes[TP_FORMULA], true, false);
 					break;
 
 				case PREDEFSYMVAL_DATATYPE_STRING:
-					sv->simpleConstVal().set(TP_DATA_TYPE, new ValTypeString());
+                    sv->simpleConstVal().copyFrom(_dataTypes[TP_STR], true, false);
 					break;
 
 				case PREDEFSYMVAL_DATATYPE_INDEXPART:
@@ -365,31 +402,31 @@ namespace cmpl
 					break;
 
 				case PREDEFSYMVAL_DATATYPE_TUPLE:
-					sv->simpleConstVal().set(TP_DATA_TYPE, new ValTypeTuple());
+                    sv->simpleConstVal().copyFrom(_dataTypes[TP_TUPLE], true, false);
 					break;
 
 				case PREDEFSYMVAL_DATATYPE_SET:
-					sv->simpleConstVal().set(TP_DATA_TYPE, new ValTypeSet());
+                    sv->simpleConstVal().copyFrom(_dataTypes[TP_SET_INF_SET], true, false);
 					break;
 
 				case PREDEFSYMVAL_DATATYPE_INTERVAL:
-					sv->simpleConstVal().set(TP_DATA_TYPE, new ValTypeInterval());
+                    sv->simpleConstVal().copyFrom(_dataTypes[TP_INTERVAL], true, false);
 					break;
 
 				case PREDEFSYMVAL_DATATYPE_FUNCTION:
-					sv->simpleConstVal().set(TP_DATA_TYPE, new ValTypeFunction());
+                    sv->simpleConstVal().copyFrom(_dataTypes[TP_FUNCTION], true, false);
 					break;
 
 				case PREDEFSYMVAL_DATATYPE_CONTAINER:
-					sv->simpleConstVal().set(TP_DATA_TYPE, new ValTypeContainer());
+                    sv->simpleConstVal().copyFrom(_dataTypes[TP_CONTAINER], true, false);
 					break;
 
 				case PREDEFSYMVAL_DATATYPE_TYPE:
-					sv->simpleConstVal().set(TP_DATA_TYPE, new ValTypeType());
+                    sv->simpleConstVal().copyFrom(_dataTypes[TP_DATA_TYPE], true, false);
 					break;
 
 				case PREDEFSYMVAL_DATATYPE_OBJTYPE:
-					sv->simpleConstVal().set(TP_DATA_TYPE, new ValTypeObjecttype());
+                    sv->simpleConstVal().copyFrom(_dataTypes[TP_OBJECT_TYPE], true, false);
 					break;
 
 				// special values
@@ -466,7 +503,11 @@ namespace cmpl
 					sv->simpleConstVal().set(TP_FUNCTION, new ValFunctionInternRank());
 					break;
 
-				case PREDEFSYMVAL_FUNC_ECHO:
+                case PREDEFSYMVAL_FUNC_ARRAY:
+                    sv->simpleConstVal().set(TP_FUNCTION, new ValFunctionInternArray());
+                    break;
+
+                case PREDEFSYMVAL_FUNC_ECHO:
 					sv->simpleConstVal().set(TP_FUNCTION, new ValFunctionInternEcho());
 					break;
 

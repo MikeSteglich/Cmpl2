@@ -548,7 +548,7 @@ namespace cmpl {
     enum
     {
       yyeof_ = 0,
-      yylast_ = 1057,     ///< Last index in yytable_.
+      yylast_ = 1113,     ///< Last index in yytable_.
       yynnts_ = 59,  ///< Number of nonterminal symbols.
       yyfinal_ = 16, ///< Termination state number.
       yyterror_ = 1,

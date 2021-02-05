@@ -249,27 +249,28 @@ namespace cmpl
 	#define ICS_SPECIAL_ARG				1		// value of pseudo symbol $arg
 	#define ICS_SPECIAL_THIS			2		// value of pseudo symbol $this
     #define ICS_SPECIAL_CURTUPLE		3		// value of pseudo symbol $curTuple
-	#define ICS_SPECIAL_CURDESTNAME		4		// value of pseudo symbol $curDestName
-    #define ICS_SPECIAL_CURDESTTUPLE	5		// value of pseudo symbol $curDestTuple
+    #define ICS_SPECIAL_CURFULLTUPLE	4		// value of pseudo symbol $curFullTuple
+    #define ICS_SPECIAL_CURDESTNAME		5		// value of pseudo symbol $curDestName
+    #define ICS_SPECIAL_CURDESTTUPLE	6		// value of pseudo symbol $curDestTuple
 
-	#define ICS_SPECIAL_VARBYNAME		6		// value of pseudo symbol $varByName
-	#define ICS_SPECIAL_VARBYNO			7		// value of pseudo symbol $varByNo
-	#define ICS_SPECIAL_CONBYNAME		8		// value of pseudo symbol $conByName
-	#define ICS_SPECIAL_CONBYNO			9		// value of pseudo symbol $conByNo
+    #define ICS_SPECIAL_VARBYNAME		7		// value of pseudo symbol $varByName
+    #define ICS_SPECIAL_VARBYNO			8		// value of pseudo symbol $varByNo
+    #define ICS_SPECIAL_CONBYNAME		9		// value of pseudo symbol $conByName
+    #define ICS_SPECIAL_CONBYNO			10		// value of pseudo symbol $conByNo
 
-    #define ICS_SPECIAL_OBJECTTYPE		10		// value of pseudo subsymbol $objectType
-    #define ICS_SPECIAL_DATATYPE		11		// value of pseudo subsymbol $dataType
-    #define ICS_SPECIAL_TYPEBASE		12		// value of pseudo subsymbol $typeBase
-    #define ICS_SPECIAL_TYPEPAR			13		// value of pseudo subsymbol $typePar
-    #define ICS_SPECIAL_ISREADONLY		14		// value of pseudo subsymbol $isReadOnly
+    #define ICS_SPECIAL_OBJECTTYPE		11		// value of pseudo subsymbol $objectType
+    #define ICS_SPECIAL_DATATYPE		12		// value of pseudo subsymbol $dataType
+    #define ICS_SPECIAL_TYPEBASE		13		// value of pseudo subsymbol $typeBase
+    #define ICS_SPECIAL_TYPEPAR			14		// value of pseudo subsymbol $typePar
+    #define ICS_SPECIAL_ISREADONLY		15		// value of pseudo subsymbol $isReadOnly
 
-    #define ICS_SPECIAL_DESTNAME		15		// value of pseudo subsymbol $destName
-    #define ICS_SPECIAL_DESTTUPLE		16		// value of pseudo subsymbol $destTuple
-    #define ICS_SPECIAL_DESTNAMETUPLE	17		// value of pseudo subsymbol $destNameTuple
-    #define ICS_SPECIAL_DESTFULLNAME	18		// value of pseudo subsymbol $destFullName
+    #define ICS_SPECIAL_DESTNAME		16		// value of pseudo subsymbol $destName
+    #define ICS_SPECIAL_DESTTUPLE		17		// value of pseudo subsymbol $destTuple
+    #define ICS_SPECIAL_DESTNAMETUPLE	18		// value of pseudo subsymbol $destNameTuple
+    #define ICS_SPECIAL_DESTFULLNAME	19		// value of pseudo subsymbol $destFullName
 
-    #define ICS_SPECIAL_FULLFORMULA		19		// value of pseudo subsymbol $fullFormula
-    #define ICS_SPECIAL_FORMULAARRAY	20		// value of pseudo subsymbol $formulaArray
+    #define ICS_SPECIAL_FULLFORMULA		20		// value of pseudo subsymbol $fullFormula
+    #define ICS_SPECIAL_FORMULAARRAY	21		// value of pseudo subsymbol $formulaArray
 
 	// parameters: same as for INTCODE_FETCH
 

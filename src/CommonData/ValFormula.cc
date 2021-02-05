@@ -58,6 +58,21 @@ namespace cmpl
     }
 
     /**
+     * set model properties from this constraint
+     * @param prop          properties of optimization model
+     */
+    void ValFormulaVar::setModelProperties(OptModel::Properties& prop) const
+    {
+        if (_optVar.t == TP_OPT_VAR) {
+            OptVar *v = _optVar.optVar();
+            if (v->binVar() && prop.vartypes == 0)
+                prop.vartypes = 1;
+            else if (v->intVar() && !v->binVar())
+                prop.vartypes = 2;
+        }
+    }
+
+    /**
      * fills coefficients from this constraint for linear or quadratic model per column
      * @param row			identity number of this row
      * @param coeffs		array to fill with vector of coefficients per column
@@ -217,7 +232,7 @@ namespace cmpl
                         OptVar *v = _terms[i].optVar();
                         if (v->binVar() && prop.vartypes == 0)
                             prop.vartypes = 1;
-                        else if (v->intVar())
+                        else if (v->intVar() && !v->binVar())
                             prop.vartypes = 2;
                     }
                 }

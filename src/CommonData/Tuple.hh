@@ -177,6 +177,13 @@ namespace cmpl
          */
         static void constructTuple(CmplVal& res, const CmplVal& fi, const CmplVal& sc);
 
+        /**
+         * construct new tuple by concatenation of tuples
+         * @param res           return result
+         * @param src           source tuples
+         */
+        static void constructTuple(CmplVal& res, const vector<CmplValAuto>& src);
+
 		/**
 		 * get type of this tuple
 		 */

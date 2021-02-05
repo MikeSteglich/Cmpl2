@@ -214,11 +214,70 @@ namespace cmpl
         for (unsigned r = 0; r < rr; r++) {
             const CmplVal *v = (r < rfi ? Tuple::at(fi, r) : Tuple::at(sc, r - rfi));
             tpl->at(r)->copyFrom(v, true, false);
+            if (!v->isScalarIndex())
+                itpl = false;
         }
 
         if (itpl) {
             res.t = TP_ITUPLE;
         }
+    }
+
+    /**
+     * construct new tuple by concatenation of tuples
+     * @param res           return result
+     * @param src           source tuples
+     */
+    void Tuple::constructTuple(CmplVal& res, const vector<CmplValAuto>& src)
+    {
+        unsigned rr = 0;
+        for (const CmplValAuto& t : src)
+            rr += (t.isTuple() ? Tuple::rank(t) : (t ? 1 : 0));
+
+        if (rr == 0) {
+            res.set(TP_ITUPLE_NULL);
+            return;
+        }
+        else if (rr == 1) {
+            for (const CmplValAuto& t : src) {
+                if (t && (!t.isTuple() || Tuple::rank(t) > 0)) {
+                    if (t.isTuple() || t.isScalarIndex()) {
+                        if (t.isTuple())
+                            res.copyFrom(t);
+                        else
+                            res.set(TP_INDEX_VAL_TUPLE(t.t), t.v.i);
+
+                        return;
+                    }
+                }
+            }
+        }
+
+        Tuple *tpl = new Tuple(rr);
+        res.set(TP_TUPLE, tpl);
+
+        bool itpl = true;
+        unsigned r = 0;
+        for (const CmplValAuto& t : src) {
+            unsigned sr = (t.isTuple() ? Tuple::rank(t) : (t ? 1 : 0));
+            if (sr) {
+                if (sr == 1) {
+                    tpl->at(r)->copyFrom(t, true, false);
+                    r++;
+                }
+                else {
+                    Tuple *st = t.tuple();
+                    for (unsigned i = 0; i < sr; i++, r++)
+                        tpl->at(r)->copyFrom(st->at(i), true, false);
+                }
+
+                if (!t.isScalarIndex() && !t.isITuple())
+                    itpl = false;
+            }
+        }
+
+        if (itpl)
+            res.t = TP_ITUPLE;
     }
 
 
