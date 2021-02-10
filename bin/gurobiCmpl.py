@@ -195,18 +195,21 @@ def main():
 
     modFile=""
     for arg in sys.argv:
-            #print "%i %s\n" % (i, arg)
+            print( "%i %s\n" % (i, arg) )
 
             if i == 1:
                     solutionPool = arg
             if i == 2:
                     modFile = cleanBlanks(arg)
-                    #model = read(cleanBlanks(arg))
+                    model = read(modFile)
             if i == 3:
                     solFile = cleanBlanks(arg)
             if i > 3:
-                    s = 'model.params.%s' % arg
-                    exec(s)
+                    try:
+                        s = 'model.params.%s' % arg
+                        exec(s)
+                    except:
+                        print("wrong gurobi parameter %s" % arg)
             i += 1
 
 
@@ -214,7 +217,7 @@ def main():
 
     try:
 
-        model = read(modFile)
+        #model = read(modFile)
         model.optimize()
 
         solutions=[]
