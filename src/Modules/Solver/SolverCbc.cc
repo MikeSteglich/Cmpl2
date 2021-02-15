@@ -107,12 +107,9 @@ void SolverCbc::run()
     GET_DATA(OptModel,om);
 
 
-
-
     if (_solverName=="CBC" && !om->exportOnly() && om->cols().size()>0) {
 
         _ctrl->errHandler().setExecStep("run");
-
 
         if (!om->isLinearModel())
             _ctrl->errHandler().internalError("CBC cannot solve a nonlinear model"  );

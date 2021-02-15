@@ -32,7 +32,7 @@
 #ifndef MAINCONTROL_HH
 #define MAINCONTROL_HH
 
-#define CMPL_VERSION		"2.0.0 (alpha)"
+#define CMPL_VERSION		"2.0.0 (beta)"
 
 #include <iostream>
 #include <string>

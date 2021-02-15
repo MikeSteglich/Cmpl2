@@ -40,6 +40,7 @@
 #include <cstdio>
 
 
+
 namespace cmpl
 {
 
@@ -56,10 +57,14 @@ void Solver::init(MainControl *ctrl, MainData *data, const char *name)
     _solverName="CBC";
     _solverBinName = "";
 
+#ifdef _WIN32
+    _instanceBaseName = FileBase::getTmpPath()+FileBase::getTmpFileName("_cmpl_",100000);
+
+#else
     char tmpFilename[L_tmpnam];
     std::tmpnam(tmpFilename);
-
     _instanceBaseName = tmpFilename;
+#endif
 
     _instanceFileName = _instanceBaseName+".mps";
     _instanceSolName = _instanceBaseName+".sol";
@@ -202,6 +207,7 @@ void Solver::readOptFile() {
     char dirSepChar = (_ctrl->binFullName() ? FileBase::getDirSepChar(_ctrl->binFullName()->c_str()) : '\0');
     string fileName(FileBase::replFileInPath(_ctrl->binFullName(), &_optFileName, dirSepChar));
 
+
     try {
         FileInput inFile;
         istream *inStr = NULL;
@@ -209,7 +215,7 @@ void Solver::readOptFile() {
         inFile.setFile(_data, IO_MODE_FILE, &fileName, NULL, true);
         inStr = inFile.open();
 
-        int col, line = 0;
+        int line = 0;
         string lineStr, s;
 
         while (getline(*inStr, lineStr)) {
@@ -225,9 +231,10 @@ void Solver::readOptFile() {
 
                 string dirSep(1,dirSepChar);
 
-                if ( !StringStore::startsWith(solverPath, dirSep ) ) {
+                /*if ( !StringStore::startsWith(solverPath, dirSep ) && !(solverPath.substr(1,1)==":")) {
                     solverPath = FileBase::replFileInPath(_ctrl->binFullName() , &solverPath, dirSepChar);
                 }
+                */
 
                 _implementedSolvers.push_back(solver);
                 _solverBinNames[solver]=solverPath;
@@ -315,12 +322,13 @@ void Solver::deleteTmpFiles() {
  * @brief Neccessary to setting up the binary
  */
 void Solver::replaceFullBinName() {
+
     char dirSepChar = (_ctrl->binFullName() ? FileBase::getDirSepChar(_ctrl->binFullName()->c_str()) : '\0');
 
     string sep;
     sep.push_back(dirSepChar);
 
-    if (!StringStore::startsWith(_solverBinName,sep))
+    if (!StringStore::startsWith(_solverBinName,sep)  && !(_solverBinName.substr(1,1)==":"))
         _solverBinName= FileBase::replFileInPath(_ctrl->binFullName(), &_solverBinName, dirSepChar);
 }
 
@@ -330,7 +338,7 @@ void Solver::replaceFullBinName() {
  */
 int Solver::solve() {
 
-    int buffSize = 128;
+    int buffSize = 1024;
     char buffer[buffSize];
     int ret;
 
@@ -352,9 +360,12 @@ int Solver::solve() {
             _ctrl->errHandler().internalError(_ctrl->printBuffer("Cannot execute solver '%s'", _solverName.c_str()) );
         }
 
-        while (fgets(buffer, 128, pipe) != NULL) {
-            if (!_isSilent)
-                cout << buffer;
+        while (fgets(buffer, 1024, pipe) != NULL) {
+            if (!_isSilent) {
+                cout << buffer ;//<< endl;
+                cout << flush ;
+            }
+
         }
 
         if (!_isSilent)
