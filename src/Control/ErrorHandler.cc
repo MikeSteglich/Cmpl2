@@ -101,10 +101,10 @@ namespace cmpl
 
             _ctrl->data()->addError(level, cont, msg, orgExc, _curModule, _execStep, loc);
 
-            if (_errOut || (!_errOut && !_cmplMsgOut) ) {
+            if (_errOut || (!_errOut && !_cmplMsgOut) || ((_errOut || _cmplMsgOut) && ERROR_LVL_FATAL)) {
                 LockGlobalGuard(true, LockGlobalGuard::coutLock);
                 ostream *oOut = openOutput();
-
+    
                 if (!cont) {
                     *oOut << _errorLevelName[level] << " (module " << _curModule;
                     if (_execStep)
