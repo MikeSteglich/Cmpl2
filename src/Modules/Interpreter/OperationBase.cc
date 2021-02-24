@@ -2858,7 +2858,7 @@ namespace cmpl
     void ValFormulaCondOp::insPart(CmplValAuto& pc, vector<CmplValAuto>& ncs, CmplValAuto& v)
     {
         if (_parts.empty() || _binary)
-            _binary = (v.t == TP_BIN || v.t == TP_INT || (v.t == TP_FORMULA && v.valFormula()->isBool()));
+            _binary = (v.t == TP_BIN || v.t == TP_INT || (v.t == TP_FORMULA && v.valFormula()->isBool()) || (v.t == TP_OPT_VAR && v.optVar()->binVar()));
 
         if (_parts.empty() || _optRow)
             _optRow = (v.t == TP_FORMULA && v.valFormula()->canOptRow(false));

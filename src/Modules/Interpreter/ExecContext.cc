@@ -522,7 +522,7 @@ namespace cmpl
         }
         else {
             //TODO: Pruefung auf Mapping
-            VarCondMapVS *map = (_curVarCondMap ? checkGetMappedVS(symval, false): NULL);
+            VarCondMapVS *map = (_curVarCondMap ? checkGetMappedVS(symval): NULL);
 
             if (cd->v.c.par & ICPAR_FETCH_INCDEC) {
                 intType i;
@@ -661,8 +661,9 @@ namespace cmpl
 		bool assignConst = cd->v.c.par & ICPAR_ASSIGN_CONST;
 		bool assignOrdered = cd->v.c.par & ICPAR_ASSIGN_ORDERED;
         bool assignInitial = cd->v.c.par & ICPAR_ASSIGN_INITIAL;    //TODO
+        bool assignNocond = cd->v.c.par & ICPAR_ASSIGN_NOCOND;
 		bool setResName = cd->v.c.par & ICPAR_ASSIGN_RESNAME;
-        PROTO_MOD_OUTL(_modp, "  cntLhs " << cntLhs << "; assignConst " << assignConst << "; assignInitial " << assignInitial << "; assignOrdered " << assignOrdered << "; setResName " << setResName);
+        PROTO_MOD_OUTL(_modp, "  cntLhs " << cntLhs << "; assignConst " << assignConst << "; assignInitial " << assignInitial << "; assignNocond " << assignNocond << "; assignOrdered " << assignOrdered << "; setResName " << setResName);
 
 		// get object type and data type
         _assObjType = -1;
@@ -744,7 +745,7 @@ namespace cmpl
                         valueError("internal error: lvalue expected on stack, but not given", _assRhs, ERROR_LVL_FATAL);
                     if (_assRhs->hasIndex())
                         valueError("right hand side of ref assignment cannot have indexation", _assRhs);
-                    if (_curVarCondMap)
+                    if (_curVarCondMap && !assignNocond)
                         valueError("ref assignment not possible within codeblock with condition over optimization variables", _assRhs);
                     _assObjType = -1;
                     _assDataType = NULL;
@@ -790,9 +791,10 @@ namespace cmpl
 
                         VarCondMapVS *map = NULL;
                         if (_curVarCondMap) {
-                            map = checkGetMappedVS(sym, (cd->v.c.minor != ICS_ASSIGN_ASSERT && !assignConst /*TODO: && !nocond-Modificator*/));
-                            if (map && (assignConst /*TODO: || nocond-Modificator*/)) {
-                                valueError("inconsistent mix of assignments within a codeblock part with conditions over optimization variables", svLhs);
+                            bool ncerr;
+                            map = checkGetMappedVS(sym, (cd->v.c.minor != ICS_ASSIGN_ASSERT && !assignConst && !assignNocond), assignNocond, ncerr);
+                            if (ncerr || (map && assignConst)) {
+                                valueError("inconsistent mix of conditional and non-conditional assignments within a codeblock part with conditions over optimization variables", svLhs);
                                 map = NULL;
                             }
                         }
@@ -1254,7 +1256,7 @@ namespace cmpl
                 sv = stackCur();
                 v = sv->simpleValue();
 
-                if (v && (v->t == TP_CBHEAD_ITER || (v->t == TP_FORMULA && v->valFormula()->isBool()) || v->toBool(b, typeConversionAll, _modp))) {
+                if (v && (v->t == TP_CBHEAD_ITER || (v->t == TP_FORMULA && v->valFormula()->isBool()) || (v->t == TP_OPT_VAR && v->optVar()->binVar()) || v->toBool(b, typeConversionAll, _modp))) {
                     bool nextPart = false;
 
                     if (v->t == TP_CBHEAD_ITER) {
@@ -1280,7 +1282,7 @@ namespace cmpl
                                 valueError("mix of iterations and conditions over optimization variables is not allowed in same codeblock", sv);
                         }
                     }
-                    else if (v->t == TP_FORMULA) {
+                    else if (v->t == TP_FORMULA || v->t == TP_OPT_VAR) {
                         if (cbHeader) {
                             cbhRes.copyFrom(v);
                         }
@@ -1432,14 +1434,16 @@ namespace cmpl
 
 		if (sv > _stack) {
 			if (!sv->_val.isList() || sv->_val.t == TP_REF_LIST) {
-				PROTO_MOD_OUTL(_modp, "  -> " << sv[-1].val());
-				return sv - 1;
+                StackValue *r = sv - 1;
+                PROTO_MOD_OUTL(_modp, "  -> " << r->val());
+                return r;
 			}
 
             unsigned long cnt = stackListTotalCnt(sv);
             if ((unsigned long)(sv - _stack) >= cnt) {
-                PROTO_MOD_OUTL(_modp, "  -> " << sv[-cnt].val());
-                return sv - cnt;
+                StackValue *r = sv - cnt;
+                PROTO_MOD_OUTL(_modp, "  -> " << r->val());
+                return r;
 			}
 		}
 
@@ -1995,7 +1999,7 @@ namespace cmpl
      * start mapping for codeblock part with conditions over optimization variables
      * @param cb        codeblock context
      * @param cbp       number of current codeblock part
-     * @param varCond   condition formula ver optimization variables (must be TP_FORMULA or TP_BIN with value true)
+     * @param varCond   condition formula ver optimization variables (must be TP_FORMULA, TP_OPT_VAR or TP_BIN with value true)
      * @param lsf       number of first symbol within array _localSymbols that doesn't need mapping
      * @param init      init new mapping object (if false then there must be a current mapping object matching the codeblock)
      */
@@ -2060,10 +2064,13 @@ namespace cmpl
      * check if mapping is needed and given, and get the mapped value store
      * @param sym       mapping for the value store of this symbol
      * @param nw        if mapping is needed but doesn't exist, then create a new mapped value store
+     * @param nocond    nocond modificator is given for assignment
+     * @param ncerr     return whether error of mixing conditional and non-conditional assignments
      * @return          mapping info for the value store / NULL: no mapping
      */
-    VarCondMapVS *ExecContext::checkGetMappedVS(SymbolValue *sym, bool nw)
+    VarCondMapVS *ExecContext::checkGetMappedVS(SymbolValue *sym, bool nw, bool nocond, bool& ncerr)
     {
+        ncerr = false;
         if (!_curVarCondMap)
             return NULL;
 
@@ -2076,13 +2083,13 @@ namespace cmpl
 
         ValueStore *vs = sym->valueStore();
         if (!vs) {
-            if (nw && sym->isUninitialized())
+            if ((nw || nocond) && sym->isUninitialized())
                 vs = sym->valueStore(true);
             else
                 return NULL;
         }
 
-        return _curVarCondMap->getMappedVSRec(0, this, locSymNo, vs, nw);
+        return _curVarCondMap->getMappedVSRec(0, this, locSymNo, vs, nw, nocond, ncerr);
     }
 
 
@@ -2397,7 +2404,7 @@ namespace cmpl
     /**
      * start of execution for one codeblock part
      * @param cbp       number of current codeblock part
-     * @param varCond   condition formula ver optimization variables (must be TP_FORMULA or TP_BIN with value true)
+     * @param varCond   condition formula ver optimization variables (must be TP_FORMULA, TP_OPT_VAR or TP_BIN with value true)
      */
     void VarCondMapping::startPart(int cbp, CmplVal& varCond)
     {
@@ -2405,7 +2412,13 @@ namespace cmpl
             _execContext->internalError("inconsistent start of codeblock part in mapping info for execution within a codeblock part with conditions over optimization variables");
 
         _curCBPart = cbp;
-        _partVarCond[cbp].copyFrom(varCond);
+        if (varCond.t == TP_OPT_VAR) {
+            OptVar *ov = varCond.optVar();
+            _partVarCond[cbp].dispSet(TP_FORMULA, new ValFormulaVarOp(ov->syntaxElem(), ov));
+        }
+        else {
+            _partVarCond[cbp].copyFrom(varCond);
+        }
 
         if (varCond.t == TP_BIN)
             _trueCondPart = cbp;
@@ -2440,13 +2453,31 @@ namespace cmpl
      * @param locSymNo  symbol no of local symbol within ctxOrg / -1: no local symbol
      * @param srcVS     source value store of mapping
      * @param nw        if mapping doesn't exist, then insert new mapping
-     * @param sv        stack value, only for error handling
+     * @param nocond    nocond modificator is given for assignment
+     * @param ncerr     return whether error of mixing conditional and non-conditional assignments
      * @return          mapping info for the value store / NULL: no mapping
      */
-    VarCondMapVS *VarCondMapping::getMappedVSRec(unsigned lvl, ExecContext *ctxOrg, int locSymNo, ValueStore *srcVS, bool nw)
+    VarCondMapVS *VarCondMapping::getMappedVSRec(unsigned lvl, ExecContext *ctxOrg, int locSymNo, ValueStore *srcVS, bool nw, bool nocond, bool& ncerr)
     {
         //TODO: Sperren so ausreichend und richtig?
         //  (Sperre fuer Symbol schon durch Aufrufer gesetzt; Sperre fuer ValueStore hier gesetzt, bevor daraus kopiert wird)
+
+        if (nocond) {
+            if (!_nocond.count(srcVS)) {
+                _nocond.insert(srcVS);
+                ncerr = _mapVS.count(srcVS);
+
+                if (!ncerr && _parent && (locSymNo < 0 || ((!_execContext->_fctContext || _execContext == _parent->_execContext) && (unsigned)locSymNo < _parent->_unmappedLSFrom)))
+                    _parent->getMappedVSRec(lvl+1, ctxOrg, locSymNo, srcVS, nw, nocond, ncerr);
+            }
+
+            return NULL;
+        }
+        else {
+            ncerr = _nocond.count(srcVS);
+            if (ncerr)
+                return NULL;
+        }
 
         VarCondMapVS *map = (_mapVS.count(srcVS) ? _mapVS[srcVS] : NULL);
         if (map && map->getDstVS())
@@ -2454,7 +2485,7 @@ namespace cmpl
 
         VarCondMapVS *parmap = NULL;
         if (_parent && (locSymNo < 0 || ((!_execContext->_fctContext || _execContext == _parent->_execContext) && (unsigned)locSymNo < _parent->_unmappedLSFrom)))
-            parmap = _parent->getMappedVSRec(lvl+1, ctxOrg, locSymNo, srcVS, nw);
+            parmap = _parent->getMappedVSRec(lvl+1, ctxOrg, locSymNo, srcVS, nw, nocond, ncerr);
 
         if (!nw || _curCBPart < 0)
             return parmap;

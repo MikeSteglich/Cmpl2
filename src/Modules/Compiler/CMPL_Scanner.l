@@ -133,6 +133,8 @@ SYM_NAME		[a-zA-Z_$][a-zA-Z0-9_]*
 <SC_Cmpl,SC_CmplAM,SC_ArrCast>declare								{ if (YY_START==SC_ArrCast) { BEGIN(SC_Cmpl); } yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorDeclare;  yylval->s._name = "declare";  PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ASSIGN); }					
 <SC_Cmpl,SC_CmplAM,SC_ArrCast>initial/[[:space:]]*[([{]				|
 <SC_Cmpl,SC_CmplAM,SC_ArrCast>initial								{ if (YY_START==SC_ArrCast) { BEGIN(SC_Cmpl); } yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorInitial;  yylval->s._name = "initial";  PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ASSIGN); }
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>nocond/[[:space:]]*[([{]				|
+<SC_Cmpl,SC_CmplAM,SC_ArrCast>nocond								{ if (YY_START==SC_ArrCast) { BEGIN(SC_Cmpl); } yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorNocond;   yylval->s._name = "nocond";   PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ASSIGN); }
 <SC_Cmpl,SC_CmplAM,SC_ArrCast>ref/[[:space:]]*[([{]					|
 <SC_Cmpl,SC_CmplAM,SC_ArrCast>ref									{ if (YY_START==SC_ArrCast) { BEGIN(SC_Cmpl); } yylval->s.init(); yylval->s._u.i = (int)cmpl::modificatorRef;      yylval->s._name = "ref";      PARSE_CONTEXT.resetScanPrevTokenType(); return(token::MOD_ASSIGN); }
 <SC_Cmpl,SC_CmplAM,SC_ArrCast>break/[[:space:]]*[([{]				|

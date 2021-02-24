@@ -933,14 +933,22 @@ namespace cmpl
 		}
 		else {
 			// strip quotes
+            string str(s+1, strlen(s)-2);
+            if (str.find("\\\"") != string::npos)
+                str = StringStore::replaceAll(str, "\\\"", "\"");
+
+            i = data()->globStrings()->storeInd(str);
+
+            /*
 			char *n = new char[strlen(s)];
 			strncpy(n, s+1, strlen(s)-2);
 			n[strlen(s)-2] = '\0';
 
 			bool found;
-			i = data()->globStrings()->searchInsert(n, false, true, found);
+            i = data()->globStrings()->searchInsert(str, false, true, found);
 			delete n;
-		}
+            */
+        }
 
 		bool sepArg = (i < 0 || i > USHRT_MAX);
 		compCmd(elem, INTCODE_LIT_VAL, minor, (sepArg ? 0 : (unsigned short)i), (sepArg ? 1 : 0));
@@ -1231,7 +1239,9 @@ namespace cmpl
 			par += ICPAR_ASSIGN_ORDERED;
         if (e->isInitialAssign())
             par += ICPAR_ASSIGN_INITIAL;
-		if ((op && *op == ':' && op[1] == '\0') || !expRhs || !expLhs)
+        if (e->isNocondAssign())
+            par += ICPAR_ASSIGN_NOCOND;
+        if ((op && *op == ':' && op[1] == '\0') || !expRhs || !expLhs)
 			par += ICPAR_ASSIGN_RESNAME;
 
 		// object type and data type

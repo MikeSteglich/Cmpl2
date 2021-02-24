@@ -100,12 +100,13 @@ namespace cmpl
 
                 unsigned long cnt = ExecContext::stackListTotalCnt(arg) - 1;
                 for (unsigned long i = cnt; i > 0; i--) {
-                    CmplVal *s = arg[-i].simpleValue();
+                    StackValue *sv = arg - i;
+                    CmplVal *s = sv->simpleValue();
                     if (s && !s->isList()) {
                         operCallSimple(ctx, res, *s, true, arg->syntaxElem(), info);
                     }
-                    else if (arg[-i].val().t == TP_ARRAY || arg[-i].val().t == TP_REF_LIST) {
-                        callForArrayAggrRek(ctx, res, arg - i, info);
+                    else if (sv->val().t == TP_ARRAY || sv->val().t == TP_REF_LIST) {
+                        callForArrayAggrRek(ctx, res, sv, info);
                     }
                 }
             }

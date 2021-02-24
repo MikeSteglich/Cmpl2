@@ -131,7 +131,7 @@ namespace cmpl
 
     /**
      * add a conditions over optimization variable for the current codeblock part
-     * @param v             value with the condition formula (must be TP_FORMULA or TP_BIN with value true)
+     * @param v             value with the condition formula (must be TP_FORMULA, TP_OPT_VAR or TP_BIN with value true)
      * @param se            syntax element of v
      */
     void CodeBlockContext::addCurVarCondition(CmplVal *v, unsigned se)
@@ -145,15 +145,15 @@ namespace cmpl
             return;
         }
 
-        if ((v->t != TP_FORMULA && v->t != TP_BIN) || (v->t == TP_BIN && v->v.i == 0))
+        if ((v->t != TP_FORMULA && v->t != TP_OPT_VAR && v->t != TP_BIN) || (v->t == TP_BIN && v->v.i == 0))
             _execContext->internalError("wrong value type for condition over optimization variables");
-        if (v->t == TP_FORMULA && !(v->valFormula()->isBool()))
+        if ((v->t == TP_FORMULA && !(v->valFormula()->isBool())) || (v->t == TP_OPT_VAR && !v->optVar()->binVar()))
             _execContext->internalError("condition over optimization variables must be a boolean expression");
 
-        if (_curVarCondition.t != TP_FORMULA) {
+        if (_curVarCondition.t != TP_FORMULA && _curVarCondition.t != TP_OPT_VAR) {
             _curVarCondition.copyFrom(v);
         }
-        else if (v->t == TP_FORMULA) {
+        else if (v->t == TP_FORMULA || v->t == TP_OPT_VAR) {
             CmplValAuto r;
             OperationBase::execBinaryOper(_execContext, &r, se, ICS_OPER_AND, false, &_curVarCondition, v);
             _curVarCondition.moveFrom(r, true);
@@ -278,7 +278,7 @@ namespace cmpl
      */
     bool CodeBlockContext::endPart()
     {
-        return (_execPart == _curPart && _curVarCondition.t != TP_FORMULA);
+        return (_execPart == _curPart && _curVarCondition.t != TP_FORMULA && _curVarCondition.t != TP_OPT_VAR);
     }
 
 

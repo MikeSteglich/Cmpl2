@@ -33,6 +33,7 @@
 #define EXECCONTEXT_HH
 
 #include <map>
+#include <set>
 
 #include "../../CommonData/CmplVal.hh"
 #include "../../CommonData/IntCode.hh"
@@ -618,9 +619,17 @@ namespace cmpl
          * check if mapping is needed and given, and get the mapped value store
          * @param sym       mapping for the value store of this symbol
          * @param nw        if mapping is needed but doesn't exist, then create a new mapped value store
+         * @param nocond    nocond modificator is given for assignment
+         * @param ncerr     return whether error of mixing conditional and non-conditional assignments
          * @return          mapping info for the value store / NULL: no mapping
          */
-        VarCondMapVS *checkGetMappedVS(SymbolValue *sym, bool nw);
+        VarCondMapVS *checkGetMappedVS(SymbolValue *sym, bool nw, bool nocond, bool &ncerr);
+
+        /**
+         * check if mapping is needed and given, and get the mapped value store
+         * @param sym       mapping for the value store of this symbol
+         */
+        VarCondMapVS *checkGetMappedVS(SymbolValue *sym)            { bool ncerr; return checkGetMappedVS(sym, false, false, ncerr); }
 
 
         /****** assignment ****/
@@ -725,6 +734,8 @@ namespace cmpl
         vector<CmplValAuto> *_mapCBRes;             ///< mapping for codeblock result / NULL: not used or not initialized
         map<ValueStore *, VarCondMapVS *> _mapVS;   ///< mapping per mapped value store object (key is non-owning reference, but value is owning reference)
 
+        set<ValueStore *> _nocond;                  ///< set of value store objects which are assigned with the nocond modificator (element is non-owning reference)
+
         /*
             Mapping-Objekt:
                 Gibt an, dass bei Zugriff auf einen ValueStore nicht dieser, sondern eine Kopie davon zu verwenden ist
@@ -796,9 +807,17 @@ namespace cmpl
             Neuer assign-Modificator "nocond":
                 Wenn angegeben, dann kein Mapping verwenden; Mischung mit gemappten Zuweisungen ist Fehler (nur soweit Mischung tatsaechlich auftritt)
                     (solange nicht innerhalb von Variablenbedingung, macht Angabe keinen Unterschied)
-                - Beschreibung anpassen
-                - Compiler anpassen
-                - Zwischencode anpassen
+                    dafuer:
+                        Kennzeichen ob nocond muss fuer getMappedVSRec mitgegeben werden
+                        wenn ja:
+                            Suche nach vorhandenem Mapping im aktuellen oder vorhergehenden Codeblockteilen, wenn gefunden, dann fehlerhafte Vermischung
+                            Kennzeichen, dass mit nocond zugewiesen, merken
+                        wenn nein:
+                            Pruefung ob Kennzeichen, dass mit nocond zugewiesen, gesetzt ist, wenn ja, dann fehlerhafte Vermischung
+                - Beschreibung anpassen     -> erledigt
+                - Syntax-Coloring anpassen  -> erledigt
+                - Compiler anpassen         -> erledigt
+                - Zwischencode anpassen     -> erledigt
          */
 
         /**
@@ -854,9 +873,11 @@ namespace cmpl
          * @param locSymNo  symbol no of local symbol within ctxOrg / -1: no local symbol
          * @param srcVS     source value store of mapping
          * @param nw        if mapping doesn't exist, then insert new mapping
+         * @param nocond    nocond modificator is given for assignment
+         * @param ncerr     return whether error of mixing conditional and non-conditional assignments
          * @return          mapping info for the value store / NULL: no mapping
          */
-        VarCondMapVS *getMappedVSRec(unsigned lvl, ExecContext *ctxOrg, int locSymNo, ValueStore *srcVS, bool nw);
+        VarCondMapVS *getMappedVSRec(unsigned lvl, ExecContext *ctxOrg, int locSymNo, ValueStore *srcVS, bool nw, bool nocond, bool &ncerr);
 
         /**
          * set codeblock result

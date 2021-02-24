@@ -146,11 +146,20 @@ namespace cmpl
 				else
 					redef = true;
 			}
-			else if (mod == modificatorOrdered) {
+            else if (mod == modificatorNocond) {
+                if (_defIsNocond == assignModLevelUndefined) {
+                    _defIsNocond = assignModLevelAssign;
+                    _locIsNocond = *loc;
+                    _isNocond = true;
+                }
+                else
+                    redef = true;
+            }
+            else if (mod == modificatorOrdered) {
 				if (_defIsOrdered == assignModLevelUndefined) {
 					_defIsOrdered = assignModLevelAssign;
 					_locIsOrdered = *loc;
-					_isOrdered = (mod == modificatorOrdered);
+                    _isOrdered = true;
 				}
 				else
 					redef = true;
@@ -236,6 +245,12 @@ namespace cmpl
 			_isDeclare = mod._isDeclare;
 		}
 
+        if (_defIsNocond == assignModLevelUndefined && mod._defIsNocond != assignModLevelUndefined) {
+            _defIsNocond = mod._defIsNocond;
+            _locIsNocond = mod._locIsNocond;
+            _isNocond = mod._isNocond;
+        }
+
 		if (_defIsOrdered == assignModLevelUndefined && mod._defIsOrdered != assignModLevelUndefined) {
 			_defIsOrdered = mod._defIsOrdered;
 			_locIsOrdered = mod._locIsOrdered;
@@ -287,7 +302,10 @@ namespace cmpl
 		if (_defIsDeclare != assignModLevelUndefined)
 			_defIsDeclare = lvl;
 
-		if (_defIsOrdered != assignModLevelUndefined)
+        if (_defIsNocond != assignModLevelUndefined)
+            _defIsNocond = lvl;
+
+        if (_defIsOrdered != assignModLevelUndefined)
 			_defIsOrdered = lvl;
 
 		if (_defControlCB != assignModLevelUndefined) {
@@ -332,7 +350,8 @@ namespace cmpl
 		// no other assign modificator can be used together with a codeblock control command (save _defIsOrdered)
 		if (_defObjType != assignModLevelUndefined || _defDataType != assignModLevelUndefined || _defSymScope != assignModLevelUndefined ||
 				_defIsConst != assignModLevelUndefined || _defIsNew != assignModLevelUndefined || _defIsExtern != assignModLevelUndefined ||
-                _defIsInitial != assignModLevelUndefined || _defIsRef != assignModLevelUndefined || _defIsAssert != assignModLevelUndefined || _defIsDeclare != assignModLevelUndefined) {
+                _defIsInitial != assignModLevelUndefined || _defIsRef != assignModLevelUndefined || _defIsAssert != assignModLevelUndefined ||
+                _defIsDeclare != assignModLevelUndefined || _defIsNocond != assignModLevelUndefined) {
 			ERRHANDLERCOMPC->error(ERROR_LVL_NORMAL, "codeblock control modificator cannot be combined with other assign modificators", _locControlCB);
 			_defControlCB = assignModLevelUndefined;
 			return false;
@@ -1237,7 +1256,8 @@ namespace cmpl
 		if (_assignMod->_defControlCB != assignModLevelUndefined &&
 				(_assignMod->_defObjType != assignModLevelUndefined || _assignMod->_defDataType != assignModLevelUndefined || _assignMod->_defSymScope != assignModLevelUndefined
 				 || _assignMod->_defIsConst != assignModLevelUndefined || _assignMod->_defIsNew != assignModLevelUndefined || _assignMod->_defIsExtern != assignModLevelUndefined
-                 || _assignMod->_defIsInitial != assignModLevelUndefined || _assignMod->_defIsRef != assignModLevelUndefined || _assignMod->_defIsAssert != assignModLevelUndefined || _assignMod->_defIsDeclare != assignModLevelUndefined)) {
+                 || _assignMod->_defIsInitial != assignModLevelUndefined || _assignMod->_defIsRef != assignModLevelUndefined || _assignMod->_defIsAssert != assignModLevelUndefined
+                 || _assignMod->_defIsDeclare != assignModLevelUndefined || _assignMod->_defIsNocond != assignModLevelUndefined)) {
 			ERRHANDLERCOMPC->error(ERROR_LVL_NORMAL, "assignment cannot have codeblock control modificator combined with other modificators", _assignMod->_locControlCB);
 			_assignMod->_defControlCB = assignModLevelUndefined;
 		}
@@ -1298,7 +1318,7 @@ namespace cmpl
 				ERRHANDLERCOMPC->error(ERROR_LVL_NORMAL, "'assert'", _assignMod->_locIsAssert, "cannot be used with 'extern' modificator", _assignMod->_locIsExtern);
 				_assignMod->_defIsAssert = assignModLevelUndefined;
 			}
-		}
+        }
 
         // "declare" only allowed without right hand side, and not in combination with "new", "extern", "initial", "ref"
 		if (_assignMod->_defIsDeclare != assignModLevelUndefined && _assignMod->_isDeclare) {
@@ -1322,7 +1342,14 @@ namespace cmpl
 				ERRHANDLERCOMPC->error(ERROR_LVL_NORMAL, "'declare'", _assignMod->_locIsDeclare, "cannot be used with 'extern' modificator", _assignMod->_locIsExtern);
 				_assignMod->_defIsDeclare = assignModLevelUndefined;
 			}
-		}
+        }
+
+        // "nocond" not allowed without right hand side
+        if (_assignMod->_defIsNocond != assignModLevelUndefined && _assignMod->_isNocond) {
+            if (!locOp) {
+                ERRHANDLERCOMPC->error(ERROR_LVL_NORMAL, "assignment with 'nocond' must have a right hand side", _assignMod->_locIsNocond);
+            }
+        }
 
 
 		// assign symbols

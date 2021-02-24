@@ -132,7 +132,8 @@ namespace cmpl
         modificatorRef,						///< modificator keyword "ref"
 		modificatorAssert,					///< modificator keyword "assert"
 		modificatorDeclare,					///< modificator keyword "declare"
-		modificatorOrdered,					///< modificator keyword "ordered"
+        modificatorNocond,					///< modificator keyword "nocond"
+        modificatorOrdered,					///< modificator keyword "ordered"
 		modificatorBreak,					///< modificator keyword "break"
 		modificatorContinue,				///< modificator keyword "continue"
 		modificatorRepeat,					///< modificator keyword "repeat"
@@ -247,6 +248,10 @@ namespace cmpl
 		LocationInfo _locIsDeclare;			///< location of declare symbol definition or not
 		bool _isDeclare;					///< declare symbol definition or not
 
+        AssignModLevel _defIsNocond;		///< setting of nocond assignment or not
+        LocationInfo _locIsNocond;			///< location of nocond assignment or not
+        bool _isNocond;                     ///< nocond assignment or not
+
 		AssignModLevel _defIsOrdered;		///< setting of ordered assign or not
 		LocationInfo _locIsOrdered;			///< location of ordered assign or not
 		bool _isOrdered;					///< ordered assign or not
@@ -264,7 +269,7 @@ namespace cmpl
 		/**
 		 * initialize
 		 */
-        inline void init()					{ _defObjType = assignModLevelUndefined; _defDataType = assignModLevelUndefined; _defSymScope = assignModLevelUndefined; _defIsConst = assignModLevelUndefined; _defIsNew = assignModLevelUndefined; _defIsExtern = assignModLevelUndefined; _defIsInitial = assignModLevelUndefined;  _defIsRef = assignModLevelUndefined; _defIsAssert = assignModLevelUndefined; _defIsDeclare = assignModLevelUndefined; _defIsOrdered = assignModLevelUndefined; _defControlCB = assignModLevelUndefined; }
+        inline void init()					{ _defObjType = assignModLevelUndefined; _defDataType = assignModLevelUndefined; _defSymScope = assignModLevelUndefined; _defIsConst = assignModLevelUndefined; _defIsNew = assignModLevelUndefined; _defIsExtern = assignModLevelUndefined; _defIsInitial = assignModLevelUndefined;  _defIsRef = assignModLevelUndefined; _defIsAssert = assignModLevelUndefined; _defIsDeclare = assignModLevelUndefined; _defIsNocond = assignModLevelUndefined; _defIsOrdered = assignModLevelUndefined; _defControlCB = assignModLevelUndefined; }
 
 		/**
 		 * set assign modificators for use with codeblock symbols
@@ -275,7 +280,7 @@ namespace cmpl
 		 * test whether nothing is set
 		 * @param so			don't check for object type
 		 */
-        inline bool empty(bool so = false)	{ return ((_defObjType == assignModLevelUndefined || so) && _defDataType == assignModLevelUndefined && _defSymScope == assignModLevelUndefined && _defIsConst == assignModLevelUndefined && _defIsNew == assignModLevelUndefined && _defIsExtern == assignModLevelUndefined && _defIsInitial == assignModLevelUndefined && _defIsRef == assignModLevelUndefined && _defIsAssert == assignModLevelUndefined && _defIsDeclare == assignModLevelUndefined && _defIsOrdered == assignModLevelUndefined && _defControlCB == assignModLevelUndefined); }
+        inline bool empty(bool so = false)	{ return ((_defObjType == assignModLevelUndefined || so) && _defDataType == assignModLevelUndefined && _defSymScope == assignModLevelUndefined && _defIsConst == assignModLevelUndefined && _defIsNew == assignModLevelUndefined && _defIsExtern == assignModLevelUndefined && _defIsInitial == assignModLevelUndefined && _defIsRef == assignModLevelUndefined && _defIsAssert == assignModLevelUndefined && _defIsDeclare == assignModLevelUndefined && _defIsNocond == assignModLevelUndefined && _defIsOrdered == assignModLevelUndefined && _defControlCB == assignModLevelUndefined); }
 
 		/**
 		 * set a modificator.
@@ -1056,6 +1061,11 @@ namespace cmpl
 		 * get whether assign modificators indicate a const assignment
 		 */
 		inline bool isConstAssign()										{ return (_assignMod && _assignMod->_defIsConst != assignModLevelUndefined && _assignMod->_isConst); }
+
+        /**
+         * get whether assign modificators indicate an nocond assignment
+         */
+        inline bool isNocondAssign()									{ return (_assignMod && _assignMod->_defIsNocond != assignModLevelUndefined && _assignMod->_isNocond); }
 
 		/**
 		 * get whether assign modificators indicate an ordered assignment

@@ -88,7 +88,7 @@ namespace cmpl
         bool _lastPart;                             ///< current part is the last part of this codeblock
 
         bool _hasVarCond;                           ///< code block has condition over optimization variables
-        CmplValAuto _curVarCondition;               ///< condition over optimization variables for current part of the codeblock (must be boolean TP_FORMULA) / TP_EMPTY: no such condition
+        CmplValAuto _curVarCondition;               ///< condition over optimization variables for current part of the codeblock (must be boolean TP_FORMULA or TP_OPT_VAR) / TP_EMPTY: no such condition
 
         CBHeaderIterInfo *_startIter;               ///< initial iteration info for current part of this codeblock / NULL: no iteration
         CodeBlockIteration *_startIterObj;          ///< initial iteration object for current part of this codeblock (only set while executing a codeblock body with iteration)

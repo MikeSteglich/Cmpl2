@@ -609,9 +609,9 @@ namespace cmpl
 			if (eqc) {
                 // all subsets are equal, use the first subset for all elements
 				if (SetUtil::subSetFirst(p++, fSub, eqr, true)) {
-					if (p[-1]) {
+                    if (*arr) {
 						for (unsigned long j = 1; j < cnt2; j++, p++)
-							p->copyFrom(p-1, true, false);
+                            p->copyFrom(arr, true, false);
 					}
 					else {
 						allEmpty = true;

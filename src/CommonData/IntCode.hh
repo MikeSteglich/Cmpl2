@@ -295,11 +295,13 @@ namespace cmpl
 	#define ICS_ASSIGN_ASSERT			10		// assert symbol definition (without right hand side)
 
 	// parameters
-    #define ICPAR_ASSIGN_CNTLHS			0x03ff	// bit 0 - 9: bit mask for count of left hand side values
+    #define ICPAR_ASSIGN_CNTLHS			0x00ff	// bit 0 - 7: bit mask for count of left hand side values
 
-    #define ICPAR_ASSIGN_CONST			0x0400	// bit 10: mark symbol and assigned values as readonly
-    #define ICPAR_ASSIGN_ORDERED		0x0800	// bit 11: execute assign in strict order
-    #define ICPAR_ASSIGN_INITIAL        0x1000  // bit 12: execute only initializing assignment
+    #define ICPAR_ASSIGN_CONST			0x0100	// bit  8: mark symbol and assigned values as readonly
+    #define ICPAR_ASSIGN_ORDERED		0x0200	// bit  9: execute assign in strict order
+    #define ICPAR_ASSIGN_INITIAL        0x0400  // bit 10: execute only initializing assignment
+    #define ICPAR_ASSIGN_NOCOND         0x0800  // bit 11: execute non-conditional even in conditional context
+
     #define ICPAR_ASSIGN_RESNAME		0x2000	// bit 13: also set result object name if appropriate object type
     #define ICPAR_ASSIGN_OBJTYPE_LOCAL	0x4000	// bit 14: given object type is local symbol (false: no object type given or given as global symbol)
     #define ICPAR_ASSIGN_DATATYPE_LOCAL	0x8000	// bit 15: given data type is local symbol (false: no data type given or given as global symbol)
