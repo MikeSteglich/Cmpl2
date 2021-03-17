@@ -692,7 +692,13 @@ namespace cmpl
          * @param v2		value to add (must be isScalarNumber())
          * @param neg		substract value v2
          */
-        void numAdd(CmplVal& v2, bool neg = false);
+        void numAdd(const CmplVal& v2, bool neg = false);
+
+        /**
+         * multiply another numeric value to this numeric value (this must be isScalarNumber())
+         * @param v2		value to multiply (must be isScalarNumber())
+         */
+        void numMult(const CmplVal &v2);
 
         /**
          * compare numerical values
@@ -708,6 +714,13 @@ namespace cmpl
          * @return          -1 if first value lesser second value / 0 if both are equal / 1 if first value greater second value
          */
         int numCmp(const CmplVal& v2) const                            { return numCmp(*this, v2); }
+
+        /**
+         * compare numerical values, this is first value (must be TP_INT, TP_BIN, TP_REAL or TP_INFINITE)
+         * @param i2        second value
+         * @return          -1 if first value lesser second value / 0 if both are equal / 1 if first value greater second value
+         */
+        int numCmp(int i2) const                                        { CmplVal v2(TP_INT, (intType)i2); return numCmp(*this, v2); }
 
 		/**
 		 * try to get this value as a string value

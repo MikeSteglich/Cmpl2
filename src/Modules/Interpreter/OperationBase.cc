@@ -130,7 +130,7 @@ namespace cmpl
                     }
                 }
                 else {
-                    if (op == ICS_OPER_ADD || ICS_OPER_MUL || ICS_OPER_AND || ICS_OPER_OR) {
+                    if (op == ICS_OPER_ADD || op == ICS_OPER_MUL || op == ICS_OPER_AND || op == ICS_OPER_OR) {
                         res.copyFrom(a2->val());
                         return true;
                     }
@@ -2840,9 +2840,9 @@ namespace cmpl
         if (op != ICS_OPER_AND && op != ICS_OPER_OR)
             return 0;
         else if (!_logNeg && ((op == ICS_OPER_OR && _logOr) || (op == ICS_OPER_AND && !_logOr)))
-            return 99;
+            return 45;
         else
-            return 90;
+            return 40;
     }
 
 
@@ -2860,8 +2860,14 @@ namespace cmpl
         if (_parts.empty() || _binary)
             _binary = (v.t == TP_BIN || v.t == TP_INT || (v.t == TP_FORMULA && v.valFormula()->isBool()) || (v.t == TP_OPT_VAR && v.optVar()->binVar()));
 
-        if (_parts.empty() || _optRow)
-            _optRow = (v.t == TP_FORMULA && v.valFormula()->canOptRow(false));
+        if (_parts.empty() || _numeric)
+            _numeric = (v.isScalarNumber() || v.t == TP_OPT_VAR || (v.t == TP_FORMULA && v.valFormula()->isNumeric()));
+
+        if (_parts.empty() || _optCon)
+            _optCon = (v.t == TP_FORMULA && v.valFormula()->canOptRow(false));
+
+        if (_parts.empty() || _optObj)
+            _optObj = (v.t == TP_FORMULA && v.valFormula()->canOptRow(true));
 
         if (v.t == TP_OPT_VAR) {
             OptVar *ov = v.optVar();
@@ -2886,5 +2892,380 @@ namespace cmpl
         }
     }
 
+    /**
+     * get priority of calling the binary operation at this formula object
+     * @param op			operation code (binary operation)
+     * @param fa			this is the first argument of the operation
+     * @param oa			other argument of the operation
+     * @return				priority level to call execution of the operation at this instead of the other argument (at least 2), or 0 if the formula doesn't implement the operation
+     */
+    unsigned ValFormulaCondOp::formulaOperPrio(unsigned short op, bool fa, CmplVal *oa)
+    {
+        if (op == ICS_OPER_AND || op == ICS_OPER_OR) {
+            if (_binary)
+                return 50;
+            else
+                return 0;
+        }
+        else {
+            if (_numeric)
+                return 50;
+            else
+                return 0;
+        }
+    }
+
+    /**
+     * negation of formula
+     * @param ctx			execution context
+     * @param res			store for result definition set
+     * @param se			syntax element id of operation
+     */
+    void ValFormulaCondOp::negF(ExecContext *ctx, CmplVal *res, unsigned se)
+    {
+        if (!_numeric) {
+            CmplValAuto v(TP_FORMULA, dynamic_cast<ValFormula *>(this));
+            ctx->valueError("argument is not a number", v, se);
+        }
+        else if (_numericVar) {
+            OperationBase::neg(ctx, res, se, &_numericVar);
+        }
+        else {
+            ValFormulaCondOp *f = (refCnt() > 1 ? new ValFormulaCondOp(this) : this);
+            res->set(TP_FORMULA, f);
+
+            CmplValAuto pr;
+            for (Part& p: f->_parts) {
+                if (p._val) {
+                    OperationBase::neg(ctx, &pr, se, &(p._val));
+                    p._val.moveFrom(pr, true);
+                }
+            }
+        }
+    }
+
+    /**
+     * addition of formulas
+     * @param ctx			execution context
+     * @param res			store for result definition set
+     * @param se			syntax element id of operation
+     * @param a2			argument two
+     */
+    void ValFormulaCondOp::plusF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2)
+    {
+        ValFormulaCondOp *a2cond;
+        bool err;
+        if (checkUseNumericVar(ctx, se, a2, true, true, true, a2cond, err))
+            OperationBase::plus(ctx, res, se, &_numericVar, (a2cond ? &(a2cond->_numericVar) : a2));
+        else if (!err)
+            execOperForParts(ctx, res, se, ICS_OPER_ADD, false, a2, a2cond);
+    }
+
+    /**
+     * minus of formulas
+     * @param ctx			execution context
+     * @param res			store for result definition set
+     * @param se			syntax element id of operation
+     * @param a2			argument two
+     * @param rev			substract this from a2
+     */
+    void ValFormulaCondOp::minusF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2, bool rev)
+    {
+        ValFormulaCondOp *a2cond;
+        bool err;
+        if (checkUseNumericVar(ctx, se, a2, true, true, true, a2cond, err)) {
+            if (!rev)
+                OperationBase::minus(ctx, res, se, &_numericVar, (a2cond ? &(a2cond->_numericVar) : a2));
+            else
+                OperationBase::minus(ctx, res, se, (a2cond ? &(a2cond->_numericVar) : a2), &_numericVar);
+        }
+        else if (!err) {
+            execOperForParts(ctx, res, se, ICS_OPER_SUB, rev, a2, a2cond);
+        }
+    }
+
+    /**
+     * multiplication of formulas
+     * @param ctx			execution context
+     * @param res			store for result definition set
+     * @param se			syntax element id of operation
+     * @param a2			argument two
+     * @param noReuseArg    don't reuse argument even if it has only one reference
+     */
+    void ValFormulaCondOp::multF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2, bool noReuseArg)
+    {
+        ValFormulaCondOp *a2cond;
+        bool err;
+        if (checkUseNumericVar(ctx, se, a2, false, false, false, a2cond, err))
+            OperationBase::mult(ctx, res, se, &_numericVar, (a2cond ? &(a2cond->_numericVar) : a2), noReuseArg);
+        else if (!err)
+            execOperForParts(ctx, res, se, ICS_OPER_MUL, false, a2, a2cond, noReuseArg);
+    }
+
+    /**
+     * compare for formula
+     * @param ctx			execution context
+     * @param res			store for result definition set
+     * @param se			syntax element id of operation
+     * @param a2			argument two
+     * @param ge			compare for greater equal (together with le: compare for equality)
+     * @param le			compare for lesser equal (together with le: compare for equality)
+     * @param neg			negate comparison
+     */
+    void ValFormulaCondOp::compF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2, bool ge, bool le, bool neg)
+    {
+        ValFormulaCondOp *a2cond;
+        bool err;
+        if (checkUseNumericVar(ctx, se, a2, true, false, true, a2cond, err)) {
+            OperationBase::comp(ctx, res, se, &_numericVar, (a2cond ? &(a2cond->_numericVar) : a2), ge, le, neg, false);
+        }
+        else if (!err) {
+            unsigned short op = (!neg ? (ge && le ? ICS_OPER_EQ : (ge ? ICS_OPER_GE : ICS_OPER_LE)) : (ge && le ? ICS_OPER_NE : (ge ? ICS_OPER_LT : ICS_OPER_GT)));
+            execOperForParts(ctx, res, se, op, false, a2, a2cond);
+        }
+    }
+
+    /**
+     * logical Not for formula
+     * @param ctx			execution context
+     * @param res			store for result value
+     * @param se			syntax element id of operation
+     */
+    void ValFormulaCondOp::notF(ExecContext *ctx, CmplVal *res, unsigned se)
+    {
+        CmplValAuto t;
+        if (convertToFormulaLogCon(ctx, &t, se))
+            OperationBase::execUnaryOper(ctx, res, se, ICS_OPER_NOT, &t);
+    }
+
+    /**
+     * logical And or Or for formula
+     * @param ctx			execution context
+     * @param res			store for result value
+     * @param se			syntax element id of operation
+     * @param a2			argument two
+     * @param logOr			logical Or or logical And
+     */
+    void ValFormulaCondOp::logAndOrF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2, bool logOr)
+    {
+        CmplValAuto t1, t2;
+        if (convertToFormulaLogCon(ctx, &t1, se)) {
+            ValFormulaCondOp *f2 = (a2->t == TP_FORMULA ? dynamic_cast<ValFormulaCondOp *>(a2->valFormula()) : NULL);
+            if (f2) {
+                if (!f2->convertToFormulaLogCon(ctx, &t2, se))
+                    return;
+            }
+            else {
+                t2.copyFrom(a2);
+            }
+
+            OperationBase::execBinaryOper(ctx, res, se, (logOr ? ICS_OPER_OR : ICS_OPER_AND), false, &t1, &t2);
+        }
+    }
+
+    /**
+     * check whether an operation must be performed on replacement variables
+     * @param ctx			execution context
+     * @param se			syntax element id of operation
+     * @param a2			argument two
+     * @param usevar        replacement variables must be used if one of the arguments already has one
+     * @param complete      replacement variables must be used if one of the arguments is a non-complete conditional value
+     * @param formula       replacement variables must be used if the second argument is not a scalar number
+     * @param a2cond        return of second argument if it is a conditional value
+     * @param err           return whether the arguments are invalid
+     * @return              true if the operation must be performed on replacement variables
+     */
+    bool ValFormulaCondOp::checkUseNumericVar(ExecContext *ctx, unsigned se, CmplVal *a2, bool usevar, bool complete, bool formula, ValFormulaCondOp *&a2cond, bool &err)
+    {
+        a2cond = (a2->t == TP_FORMULA ? dynamic_cast<ValFormulaCondOp *>(a2->valFormula()) : NULL);
+
+        // arguments must be numeric
+        err = (!_numeric || !(a2cond ? a2cond->_numeric : (a2->t == TP_FORMULA ? a2->valFormula()->isNumeric() : (a2->isScalarNumber() || a2->t == TP_OPT_VAR))));
+        if (err) {
+            if (!_numeric) {
+                CmplValAuto ev(TP_FORMULA, this);
+                ctx->valueError("argument for operation must be numeric", ev, se);
+            }
+            else {
+                ctx->valueError("argument for operation must be numeric", *a2, se);
+            }
+            return false;
+        }
+
+        bool eqcond;
+        if (a2cond) {
+            eqcond = (_parts.size() == a2cond->_parts.size());
+            if (eqcond) {
+                for (unsigned i = 0; i < _parts.size(); i++) {
+                    if (!_parts[i].eqCond(a2cond->_parts[i])) {
+                        eqcond = false;
+                        break;
+                    }
+                }
+            }
+        }
+        else {
+            eqcond = false;
+        }
+
+        bool res =
+            (a2cond && !eqcond) ||
+            (usevar && (_numericVar || (a2cond && a2cond->_numericVar))) ||
+            (complete && !eqcond && (!_complete || (a2cond && !(a2cond->_complete)))) ||
+            (formula && !a2cond && !a2->isScalarNumber());
+
+        if (res) {
+            checkCreateNumericVar(ctx, se);
+            if (a2cond)
+                a2cond->checkCreateNumericVar(ctx, se);
+        }
+
+        return res;
+    }
+
+    /**
+     * test whether _numericVar already exists, and if not then create it
+     * @param ctx           execution context
+     * @param se            syntax element id of operation
+     * @return              true if _numericVar is new created
+     */
+    bool ValFormulaCondOp::checkCreateNumericVar(ExecContext *ctx, unsigned se)
+    {
+        if (!_numericVar) {
+            CmplValAuto lb, ub;
+            getBounds(lb, ub, false);
+
+            CmplVal& dt = ctx->modp()->realTypeVar();
+            OptVar *v = new OptVar(ctx->modp()->getResModel(), dt, false, se);
+            _numericVar.set(TP_FORMULA, new ValFormulaVarOp(se, v));
+
+            dt.valType()->setForOptVar(v);
+            if (lb)
+                v->setLowBound(lb);
+            if (ub)
+                v->setUppBound(ub);
+
+            CmplValAuto cv(TP_FORMULA, this);
+            v->setAddProp(new AddPropOptVarConValCond(cv));
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * convert this conditional value (must be binary) to a logical formula
+     * @param ctx           execution context
+     * @param res           store for result value
+     * @param se            syntax element id of operation
+     * @return              true if conversion is successful
+     */
+    bool ValFormulaCondOp::convertToFormulaLogCon(ExecContext *ctx, CmplVal *res, unsigned se)
+    {
+        if (!_binary) {
+            CmplValAuto ev(TP_FORMULA, this);
+            ctx->valueError("argument for operation must be boolean", ev, se);
+            return false;
+        }
+
+        if (!_binaryFormula) {
+            // every part has the logical formula: val || !pC || nC1 || nC2 ...
+            // and the formulas for all parts are connected by &&
+            ValFormulaLogConOp *rf = new ValFormulaLogConOp(syntaxElem(), false, (_parts.size() == 1));
+            _binaryFormula.set(TP_FORMULA, rf);
+
+            for (unsigned i = 0; i < _parts.size(); i++) {
+                const ValFormulaCond::Part& p = _parts[i];
+
+                ValFormulaLogConOp *pf = (_parts.size() == 1 ? rf : new ValFormulaLogConOp(syntaxElem(), false, true));
+                CmplValAuto pv(TP_FORMULA, pf);
+
+                ValFormulaCondOp *sub = (p._val.t == TP_FORMULA ? dynamic_cast<ValFormulaCondOp *>(p._val.valFormula()) : NULL);
+                if (sub) {
+                    CmplValAuto subv;
+                    if (sub->convertToFormulaLogCon(ctx, &subv, se))
+                        pf->formulas().emplace_back(subv);
+                    else
+                        return false;
+                }
+                else if (p._val.t == TP_FORMULA && p._val.valFormula()->isBool()) {
+                    pf->formulas().emplace_back(p._val);
+                }
+                else {
+                    bool bv;
+                    if (!p._val.toBool(bv, typeConversionAll, ctx->modp())) {
+                        CmplValAuto ev(p._val);
+                        ctx->valueError("all parts of conditional value argument must be boolean", ev, se);
+                        return false;
+                    }
+
+                    if (bv)
+                        continue;
+                }
+
+                if (p._posCond) {
+                    ValFormulaLogConOp *nf = new ValFormulaLogConOp(syntaxElem(), true, false);
+                    pf->formulas().emplace_back(TP_FORMULA, nf);
+                    nf->formulas().emplace_back(p._posCond);
+                }
+
+                for (unsigned j = 0; j < p._negConds.size(); j++) {
+                    pf->formulas().emplace_back(p._negConds[j]);
+                }
+
+                if (_parts.size() > 1)
+                    rf->formulas().emplace_back(pv);
+            }
+
+            if (rf->formulas().size() == 0)
+                _binaryFormula.dispSet(TP_BIN, true);
+        }
+
+        res->copyFrom(_binaryFormula);
+        return true;
+    }
+
+    /**
+     * execute binary operation for every part of the conditional value
+     * @param ctx			execution context
+     * @param res			store for result value
+     * @param se			syntax element id of operation
+     * @param op			operation code (one of the minor codes for INTCODE_OPERATION)
+     * @param rev           swap operands
+     * @param a2            second operand
+     * @param a2cond        if given, then use parts of this conditional value instead of a2
+     * @param noReuseArg    don't reuse argument even if it has only one reference
+     */
+    void ValFormulaCondOp::execOperForParts(ExecContext *ctx, CmplVal *res, unsigned se, unsigned short op, bool rev, CmplVal *a2, ValFormulaCondOp *a2cond, bool noReuseArg)
+    {
+        ValFormulaCondOp *f = (noReuseArg || refCnt() > 1 || _numericVar || _binaryFormula ? new ValFormulaCondOp(this) : this);
+        res->set(TP_FORMULA, f, true);
+
+        f->_numericVar.dispUnset();
+        f->_binaryFormula.dispUnset();
+        f->_optCon = f->_optObj = (f->_parts.size() > 0);
+
+        f->_numeric = (op >= ICS_OPER_ADD && op <= ICS_OPER_POW);
+        f->_binary = (op >= ICS_OPER_AND && op <= ICS_OPER_GE);
+
+        CmplValAuto pr;
+        for (unsigned i = 0; i < f->_parts.size(); i++) {
+            CmplVal *pa1 = &(f->_parts[i]._val);
+            CmplVal *pa2 = (a2cond ? &(a2cond->_parts[i]._val) : a2);
+
+            if (rev)
+                OperationBase::execBinaryOper(ctx, &pr, se, op, false, pa2, pa1);
+            else
+                OperationBase::execBinaryOper(ctx, &pr, se, op, false, pa1, pa2);
+
+            if (f->_optCon && (pr.t != TP_FORMULA || !(pr.valFormula()->canOptRow(false))))
+                f->_optCon = false;
+            if (f->_optObj && (pr.t != TP_FORMULA || !(pr.valFormula()->canOptRow(true))))
+                f->_optObj = false;
+
+            f->_parts[i]._val.moveFrom(pr, true);
+        }
+    }
 }
 

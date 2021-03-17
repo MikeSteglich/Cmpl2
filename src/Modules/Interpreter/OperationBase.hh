@@ -687,6 +687,11 @@ namespace cmpl
          */
         void mergeLast(unsigned cnt);
 
+        /**
+         * set whether the condition of one part is fulfilled in any case
+         */
+        void setComplete(bool c)            { _complete = c; }
+
         //TODO
 
 
@@ -697,7 +702,62 @@ namespace cmpl
          * @param oa			other argument of the operation
          * @return				priority level to call execution of the operation at this instead of the other argument (at least 2), or 0 if the formula doesn't implement the operation
          */
-        unsigned formulaOperPrio(unsigned short op, bool fa, CmplVal *oa) override       { /*TODO*/ return 0; }
+        unsigned formulaOperPrio(unsigned short op, bool fa, CmplVal *oa) override;
+
+        void negF(ExecContext *ctx, CmplVal *res, unsigned se) override;                                        ///< negation of formula
+        void plusF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2) override;                          ///< addition for formula
+        void minusF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2, bool rev) override;               ///< minus for formula
+        void multF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2, bool noReuseArg = false) override;	///< multiplication for formula
+
+        void compF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2, bool ge, bool le, bool neg) override;	///< compare for formula
+
+        void notF(ExecContext *ctx, CmplVal *res, unsigned se) override;                                        ///< logical Not for formula
+        void logAndOrF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2, bool logOr) override;          ///< logical And or Or for formula
+
+    private:
+        /**
+         * check whether an operation must be performed on replacement variables
+         * @param ctx			execution context
+         * @param se			syntax element id of operation
+         * @param a2			argument two
+         * @param usevar        replacement variables must be used if one of the arguments already has one
+         * @param complete      replacement variables must be used if one of the arguments is a non-complete conditional value
+         * @param formula       replacement variables must be used if the second argument is not a scalar number
+         * @param a2cond        return of second argument if it is a conditional value
+         * @param err           return whether the arguments are invalid
+         * @return              true if the operation must be performed on replacement variables
+         */
+        bool checkUseNumericVar(ExecContext *ctx, unsigned se, CmplVal *a2, bool usevar, bool complete, bool formula, ValFormulaCondOp *&a2cond, bool &err);
+
+        /**
+         * test whether _numericVar already exists, and if not then create it
+         * @param ctx           execution context
+         * @param se            syntax element id of operation
+         * @return              true if _numericVar is new created
+         */
+        bool checkCreateNumericVar(ExecContext *ctx, unsigned se);
+
+        /**
+         * convert this conditional value (must be binary) to a logical formula
+         * @param ctx           execution context
+         * @param res           store for result value
+         * @param se            syntax element id of operation
+         * @return              true if conversion is successful
+         */
+        bool convertToFormulaLogCon(ExecContext *ctx, CmplVal *res, unsigned se);
+
+        /**
+         * execute binary operation for every part of the conditional value
+         * @param ctx			execution context
+         * @param res			store for result value
+         * @param se			syntax element id of operation
+         * @param op			operation code (one of the minor codes for INTCODE_OPERATION)
+         * @param rev           swap operands
+         * @param a2            second operand
+         * @param a2cond        if given, then use parts of this conditional value instead of a2
+         * @param noReuseArg    don't reuse argument even if it has only one reference
+         */
+        void execOperForParts(ExecContext *ctx, CmplVal *res, unsigned se, unsigned short op, bool rev, CmplVal *a2, ValFormulaCondOp *a2cond, bool noReuseArg = false);
     };
 }
 

@@ -60,11 +60,30 @@ namespace cmpl
         _dataType.copyFrom(tp, true, false);
         _hasDataType = !defTp;
         _syntaxElem = se;
+        _addProp = NULL;
         _usedByCon = 0;
 
         ValueTreeRoot& vtr = om->cols();
         vtr.insertNewElem(this);
         incRef();
+    }
+
+    /**
+     * get lower and upper bound of the possible value range of this variable or constraint
+     * @param lb        return of lower bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+     * @param ub        return of upper bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+     */
+    void OptVar::getBounds(CmplVal& lb, CmplVal& ub) const
+    {
+        if (_lowBound)
+            lb.copyFrom(_lowBound);
+        else
+            lb.dispSet(TP_INFINITE, -1);
+
+        if (_uppBound)
+            ub.copyFrom(_uppBound);
+        else
+            ub.dispSet(TP_INFINITE, 1);
     }
 
 
@@ -83,6 +102,7 @@ namespace cmpl
         _formula.copyFrom(f, true, false);
         _objective = obj;
         _syntaxElem = se;
+        _addProp = NULL;
 
         ValueTreeRoot& vtr = om->rows();
         vtr.insertNewElem(this);
@@ -95,6 +115,16 @@ namespace cmpl
     bool OptCon::linearConstraint()
     {
         return (_formula.t == TP_FORMULA ? _formula.valFormula()->linearConstraint() : false);
+    }
+
+    /**
+     * get lower and upper bound of the possible value range of this variable or constraint
+     * @param lb        return of lower bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+     * @param ub        return of upper bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+     */
+    void OptCon::getBounds(CmplVal& lb, CmplVal& ub) const
+    {
+        ValFormula::getBounds(_formula, lb, ub, true);
     }
 
 

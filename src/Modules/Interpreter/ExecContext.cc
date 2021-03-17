@@ -2856,6 +2856,7 @@ namespace cmpl
         unsigned cnteq = 0;
         ValFormulaCondOp *resv = NULL;
         OptCon *oc = (tcv.isOptRow() ? tcv.optCon() : NULL);
+        bool complete = !tcv.isEmpty();
 
         for (unsigned p = pfrom; p < pend; p++) {
             if (_partVarCond[p]) {
@@ -2887,8 +2888,14 @@ namespace cmpl
                     cnteq++;
                 }
 
-                if (resv && !pv.isEmpty())
-                    resv->insPart(_partVarCond[p], *(_prvPartConds[p]), pv);
+                if (!pv.isEmpty()) {
+                    if (resv)
+                        resv->insPart(_partVarCond[p], *(_prvPartConds[p]), pv);
+                }
+                else {
+                    if (complete)
+                        complete = false;
+                }
             }
         }
 
@@ -2900,6 +2907,8 @@ namespace cmpl
                 if (cnteq)
                     resv->mergeLast(cnteq);
             }
+
+            resv->setComplete(complete);
         }
         else if (oc) {
             res.dispSet((oc->objective() ? TP_OPT_OBJ : TP_OPT_CON), oc);

@@ -65,6 +65,11 @@ namespace cmpl
         unsigned syntaxElem() const                 { return _syntaxElem; }
 
         /**
+         * get whether this formula is an expression with numeric value
+         */
+        virtual bool isNumeric() const              { return true; }
+
+        /**
          * get whether this formula is an expression with boolean value
          */
         virtual bool isBool() const                 { return false; }
@@ -103,6 +108,23 @@ namespace cmpl
          * get whether this formula is suitable for linear constraint or objective
          */
         virtual bool linearConstraint() const   	{ return false; }
+
+        /**
+         * get lower and upper bound of the possible value range of this formula
+         * @param lb        return of lower bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+         * @param ub        return of upper bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+         * @param con       bounds for the constraint using this formula
+         */
+        virtual void getBounds(CmplVal& lb, CmplVal& ub, bool con) const                  { lb.dispUnset(); ub.dispUnset(); }
+
+        /**
+         * get lower and upper bound of the possible value range for a value
+         * @param v         value (can be formula, optimization variable or constraint, or scalar number)
+         * @param lb        return of lower bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+         * @param ub        return of upper bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+         * @param con       bounds for the constraint using this formula
+         */
+        static void getBounds(const CmplVal &v, CmplVal& lb, CmplVal& ub, bool con);
 
         /**
          * set model properties from this constraint
@@ -315,6 +337,14 @@ namespace cmpl
         OptVar* asSingleBin(bool& neg) override;
 
         /**
+         * get lower and upper bound of the possible value range of this formula
+         * @param lb        return of lower bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+         * @param ub        return of upper bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+         * @param con       bounds for the constraint using this formula
+         */
+        void getBounds(CmplVal& lb, CmplVal& ub, bool con) const override;
+
+        /**
          * set model properties from this constraint
          * @param prop          properties of optimization model
          */
@@ -438,6 +468,14 @@ namespace cmpl
         CmplVal *getPart(unsigned i) override           { return (i == 0 ? &_factor : (i <= _optVars.size() ? &(_optVars[i-1]) : NULL)); }
 
         /**
+         * get lower and upper bound of the possible value range of this formula
+         * @param lb        return of lower bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+         * @param ub        return of upper bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+         * @param con       bounds for the constraint using this formula
+         */
+        void getBounds(CmplVal& lb, CmplVal& ub, bool con) const override;
+
+        /**
          * set model properties from this constraint
          * @param prop          properties of optimization model
          */
@@ -539,6 +577,14 @@ namespace cmpl
          * get whether this formula is suitable for linear constraint or objective
          */
         bool linearConstraint() const override          { return _linear; }
+
+        /**
+         * get lower and upper bound of the possible value range of this formula
+         * @param lb        return of lower bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+         * @param ub        return of upper bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+         * @param con       bounds for the constraint using this formula
+         */
+        void getBounds(CmplVal& lb, CmplVal& ub, bool con) const override;
 
         /**
          * set model properties from this constraint
@@ -681,10 +727,23 @@ namespace cmpl
         bool linearConstraint()	const override		{ return (!_compNeg && (_leftSide.t == TP_REAL || _leftSide.t == TP_INT || (_leftSide.t == TP_FORMULA && _leftSide.valFormula()->linearConstraint())) && (_rightSide.t == TP_REAL || _rightSide.t == TP_INT || (_rightSide.t == TP_FORMULA && _rightSide.valFormula()->linearConstraint())) && (_leftSide.t == TP_FORMULA || _rightSide.t == TP_FORMULA)); }
 
         /**
+         * get lower and upper bound of the possible value range of this formula (as if used as constraint)
+         * @param lb        return of lower bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+         * @param ub        return of upper bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+         * @param con       bounds for the constraint using this formula
+         */
+        void getBounds(CmplVal& lb, CmplVal& ub, bool con) const override;
+
+        /**
          * set model properties from this constraint
          * @param prop          properties of optimization model
          */
         void setModelProperties(OptModel::Properties& prop) const override;
+
+        /**
+         * get whether this formula is an expression with numeric value
+         */
+        bool isNumeric() const override             { return false; }
 
         /**
          * get whether this formula is an expression with boolean value
@@ -814,6 +873,14 @@ namespace cmpl
          * get whether this formula is suitable for linear constraint or objective
          */
         bool linearConstraint() const override		{ return (_formula.t == TP_FORMULA && _formula.valFormula()->linearConstraint()); }
+
+        /**
+         * get lower and upper bound of the possible value range of this formula
+         * @param lb        return of lower bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+         * @param ub        return of upper bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+         * @param con       bounds for the constraint using this formula
+         */
+        void getBounds(CmplVal& lb, CmplVal& ub, bool con) const override;
 
         /**
          * set model properties from this constraint
@@ -952,10 +1019,23 @@ namespace cmpl
         bool canOptRow(bool obj) const override		{ return !obj; }
 
         /**
+         * get lower and upper bound of the possible value range of this formula
+         * @param lb        return of lower bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+         * @param ub        return of upper bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+         * @param con       bounds for the constraint using this formula
+         */
+        void getBounds(CmplVal& lb, CmplVal& ub, bool con) const override;
+
+        /**
          * set model properties from this constraint
          * @param prop          properties of optimization model
          */
         void setModelProperties(OptModel::Properties& prop) const override;
+
+        /**
+         * get whether this formula is an expression with numeric value
+         */
+        bool isNumeric() const override             { return false; }
 
         /**
          * get whether this formula is an expression with boolean value
@@ -1014,26 +1094,67 @@ namespace cmpl
              * constructor
              */
             Part(CmplValAuto& pc, vector<CmplValAuto>& ncs, CmplValAuto& v): _posCond(pc), _negConds(ncs), _val(v)  { }
+
+            /**
+             * check whether conditions are the same as in another part
+             */
+            bool eqCond(Part& p2);
         };
 
     protected:
         vector<Part> _parts;                        ///< parts (there must be not more than one part with matching conditions)
+        bool _complete;                             ///< the condition of one part is fulfilled in any case
 
         bool _binary;                               ///< flag whether all parts of this formula can be used as boolean value
-        bool _optRow;                               ///< flag whether this formula is suitable as constraint
+        bool _numeric;                              ///< flag whether all parts of this formula have a numeric value
+
+        bool _optCon;                               ///< flag whether this formula is suitable as constraint
+        bool _optObj;                               ///< flag whether this formula is suitable as objective
+
+        CmplValAuto _numericVar;                    ///< optimization variable as proxy for the numeric value (can only be TP_FORMULA ValFormulaVar or TP_EMPTY) (can only be used if _numeric)
+        CmplValAuto _binaryFormula;                 ///< boolean formula that represents the value (can only be TP_FORMULA ValFormulaLogCon or TP_EMPTY) (can only be used if _binary)
+
+        //TODO:
+        //  _numericVar:
+        //      allgemein optVar-Objekt erweitern um Zusatzwert (AddPropOptVarConValCond) (Quellwert, wenn Variable als Ersatz für diesen Wert dient)
+        //      wenn _numericVar gebildet wird: ValFormulaCond-Objekt dort eintragen (erzeugt zirkulären Verweis, sollte aber nicht stören? (da Variablen sowieso bis zum Programmende existieren))
+        //      Bei Bestimmung Modelleigenschaften:
+        //          nach Variablen mit solchem Zusatzwert suchen, und je nach Art des Werts eine entsprechende Modelleigenschaft setzen
+        //          (auch nach constraints mit bestimmten Wertart suchen, ebenfalls innerhalb ValFormulaObjective)
+
+        //  ValFormulaCond als Teil anderer Formeln
+        //      Bei objTo-Operation wird erster Operand direkt verwendet, so dass ValFormulaCond Bestandteil von ValFormulaObjective wird
+        //      Alle anderen Formeln werden durch Operationen erzeugt, die formulaOperPrio() verwenden, dadurch kann dort nie ValFormulaCond Bestandteil sein
+        //          (denn die Operation wird in ValFormulaCond ausgeführt, wenn ein Operand ValFormulaCond ist, so dass Ergebnis dann auch direkt ValFormulaCond ist)
+
+        //  bei Linearisierung (separate Extension):
+        //      Durchgehen alle Modellzeilen und darin alle verwendeten Variablen
+        //          a) constraint hat selbst Formel ValFormulaCond:
+        //                  umwandeln in _binaryFormula, die ersetzt die constraint
+        //          b) objective hat entweder selbst Formel ValFormulaCond, oder ValFormulaObjective, deren erster Teil ValFormulaCond ist:
+        //                  noetigenfalls noch _numericVar erzeugen, und ValFormulaCond in objective damit ersetzen
+        //                  dann weiter mit c)
+        //          c) constraint/objective enthält Variable, die Zusatzwert vom Typ AddPropOptVarConValCond eingetragen hat
+        //                  nur soweit die Variable noch nicht behandelt wurde (! AddPropOptVarConValCond::_linearized)
+        //                  für Zusatzwert ausführen wie Vergleichsoperation EQ mit _numericVar als zweitem Operanden (dann natürlich _numericVar nicht als Ersatz für ersten Operanden verwenden)
+        //                  ergibt neues ValFormulaCond, dass in _binaryFormula umwandeln
+        //                  diese _binaryFormula als neue constraint dem Modell hinzufügen
+        //                  merken dass Variable abgearbeitet wurde (AddPropOptVarConValCond::_linearized = true)
+        //      (eigentliche Linearisierung damit noch nicht erledigt, entstandene constraints müssen dann noch von LinearLogCon linearisiert werden)
+        //          (wie muss das mit der Namensvergabe sein, insbesondere ob _ davor oder nicht?)
 
     public:
         /**
          * copy constructor
          * @param f			source formula
          */
-        inline ValFormulaCond(ValFormulaCond *f): ValFormula(f->syntaxElem()), _parts(f->_parts), _binary(f->_binary), _optRow(f->_optRow)		{ }
+        inline ValFormulaCond(ValFormulaCond *f): ValFormula(f->syntaxElem()), _parts(f->_parts), _complete(f->_complete), _binary(f->_binary), _numeric(f->_numeric), _optCon(f->_optCon), _optObj(f->_optObj), _numericVar(f->_numericVar), _binaryFormula(f->_binaryFormula)		{ }
 
         /**
          * constructor
          * @param se        id of syntax element in the cmpl text creating this formula value
          */
-        inline ValFormulaCond(unsigned se): ValFormula(se), _parts(), _binary(false), _optRow(false)         { }
+        inline ValFormulaCond(unsigned se): ValFormula(se), _parts(), _complete(false), _binary(false), _numeric(false), _optCon(false), _optObj(false)         { }
 
 
         /**
@@ -1041,13 +1162,26 @@ namespace cmpl
          * @param obj			true: as objective / false: as constraint
          * @return
          */
-        bool canOptRow(bool obj) const override		{ return (_optRow && !obj); }
+        bool canOptRow(bool obj) const override		{ return (obj ? _optObj : _optCon); }
+
+        /**
+         * get lower and upper bound of the possible value range of this formula
+         * @param lb        return of lower bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+         * @param ub        return of upper bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+         * @param con       bounds for the constraint using this formula
+         */
+        void getBounds(CmplVal& lb, CmplVal& ub, bool con) const override;
 
         /**
          * set model properties from this constraint
          * @param prop          properties of optimization model
          */
         //void setModelProperties(OptModel::Properties& prop) const override;
+
+        /**
+         * get whether this formula is an expression with numeric value
+         */
+        bool isNumeric() const override             { return _numeric; }
 
         /**
          * get whether this formula is an expression with boolean value

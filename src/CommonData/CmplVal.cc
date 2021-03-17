@@ -658,7 +658,7 @@ namespace cmpl
      * @param v2		value to add (must be isScalarNumber())
      * @param neg		substract value v2
      */
-    void CmplVal::numAdd(CmplVal& v2, bool neg)
+    void CmplVal::numAdd(const CmplVal& v2, bool neg)
     {
         // all values !isScalarNumber() are treated as numeric 0
         if (v2.isScalarNumber()) {
@@ -693,6 +693,56 @@ namespace cmpl
             else if (v2.t == TP_INFINITE && v.i != v2.v.i) {
                 t = TP_REAL;
                 v.r = 0;
+            }
+        }
+    }
+
+    /**
+     * multiply another numeric value to this numeric value (this must be isScalarNumber())
+     * @param v2		value to multiply (must be isScalarNumber())
+     */
+    void CmplVal::numMult(const CmplVal& v2)
+    {
+        // all values !isScalarNumber() are treated as numeric 1
+        if (v2.isScalarNumber() && !isNumNull()) {
+            if (!isScalarNumber() || isNumOne()) {
+                copyFrom(v2);
+            }
+            else if (v2.isNumNull()) {
+                if (t == TP_REAL)
+                    v.r = 0;
+                else
+                    set(TP_INT, 0);
+            }
+            else if (t == TP_REAL) {
+                if (v2.t == TP_REAL)
+                    v.r *= v2.v.r;
+                else if (v2.t != TP_INFINITE)
+                    v.r *= (realType)(v2.v.i);
+                else
+                    set(TP_INFINITE, ((v.r < 0) == (v2.v.i < 0) ? 1 : -1));
+            }
+            else if (t != TP_INFINITE) {
+                if (v2.t == TP_REAL) {
+                    t = TP_REAL;
+                    v.r = (realType)v.i * v2.v.r;
+                }
+                else if (v2.t != TP_INFINITE) {
+                    realType rr = (realType)(v.i) * (realType)(v2.v.i);
+                    if (rr > (realType)CMPLINT_MIN && rr < (realType)CMPLINT_MAX) {
+                        t = TP_INT;
+                        v.i *= v2.v.i;
+                    }
+                    else {
+                        set(TP_REAL, rr);
+                    }
+                }
+                else {
+                    set(TP_INFINITE, ((v.i < 0) == (v2.v.i < 0) ? 1 : -1));
+                }
+            }
+            else if ((v2.t == TP_REAL && v.r < 0) || (v2.t != TP_REAL && v.i < 0)) {
+                v.i = -v.i;
             }
         }
     }

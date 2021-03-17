@@ -108,6 +108,7 @@ namespace cmpl
                 Wenn erster variablenhaltiger Header gefunden wird:
                     wenn noch kein Codeblockkontext: neues initialisieren und eintragen
                     wenn aktueller Teil (entsprechend seinen Parametern) Iterationen hat oder repeat darauf zielt   -> Fehler
+                        TODO: Iteration davor im aktuellen Teil doch erlauben, wenn aktueller Teil der letzte Teil des Codeblocks ist (dann muss ganzes _curVarCondition-Handling separat für jeden Iterationsschritt ausgeführt werden)
                     Bedingung in _curVarCondition eintragen (weitere Bedingungen aus weiteren Headern im selben Teil werden dann dort hinzugefügt)
             weitere Auswertung Header, wenn _curVarCondition gesetzt:
                 Iterationsheader -> Fehler

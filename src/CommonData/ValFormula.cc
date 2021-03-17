@@ -35,6 +35,40 @@
 namespace cmpl
 {
 
+    /************** ValFormula **********/
+
+    /**
+     * get lower and upper bound of the possible value range for a value
+     * @param v         value (can be formula, optimization variable or constraint, or scalar number)
+     * @param lb        return of lower bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+     * @param ub        return of upper bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+     * @param con       bounds for the constraint using this formula
+     */
+    void ValFormula::getBounds(const CmplVal &v, CmplVal& lb, CmplVal& ub, bool con)
+    {
+        if (v.t == TP_FORMULA) {
+            v.valFormula()->getBounds(lb, ub, con);
+        }
+        else if (v.isOptRC()) {
+            v.optRC()->getBounds(lb, ub);
+        }
+        else if (v.isScalarNumber()) {
+            if (con) {
+                lb.dispSet(TP_INT, 0);
+                ub.dispSet(TP_INT, 0);
+            }
+            else {
+                lb.copyFrom(v);
+                ub.copyFrom(v);
+            }
+        }
+        else {
+            lb.dispUnset();
+            ub.dispUnset();
+        }
+    }
+
+
 
     /************** ValFormulaVar **********/
 
@@ -55,6 +89,35 @@ namespace cmpl
     OptVar* ValFormulaVar::asSingleBin(bool& neg)
     {
         return (isBool() ? _optVar.optVar() : NULL);
+    }
+
+    /**
+     * get lower and upper bound of the possible value range of this formula
+     * @param lb        return of lower bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+     * @param ub        return of upper bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+     * @param con       bounds for the constraint using this formula
+     */
+    void ValFormulaVar::getBounds(CmplVal& lb, CmplVal& ub, bool con) const
+    {
+        if (_optVar.t == TP_OPT_VAR) {
+            _optVar.optVar()->getBounds(lb, ub);
+
+            if (_factor.isScalarNumber() && !_factor.isNumOne()) {
+                lb.numMult(_factor);
+                ub.numMult(_factor);
+
+                if (_factor.numCmp(0) < 0) {
+                    CmplVal t;
+                    t.moveFrom(lb);
+                    lb.moveFrom(ub);
+                    ub.moveFrom(t);
+                }
+            }
+        }
+        else {
+            lb.dispUnset();
+            ub.dispUnset();
+        }
     }
 
     /**
@@ -126,6 +189,83 @@ namespace cmpl
 
 
     /************** ValFormulaVarProd **********/
+
+    /**
+     * get lower and upper bound of the possible value range of this formula
+     * @param lb        return of lower bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+     * @param ub        return of upper bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+     * @param con       bounds for the constraint using this formula
+     */
+    void ValFormulaVarProd::getBounds(CmplVal& lb, CmplVal& ub, bool con) const
+    {
+        bool res = false;
+        if (_optVars.size()) {
+            _optVars[0].optVar()->getBounds(lb, ub);
+            if (lb && ub) {
+                res = true;
+                for (unsigned i = 1; i < _optVars.size(); i++) {
+                    CmplValAuto vlb, vub;
+                    _optVars[i].optVar()->getBounds(vlb, vub);
+                    if (!vlb || !vub) {
+                        res = false;
+                        break;
+                    }
+
+                    CmplValAuto v1, v2;
+                    v1.copyFrom(lb);
+                    v1.numMult(vlb);
+                    v2.copyFrom(ub);
+                    v2.numMult(vub);
+
+                    if (lb.numCmp(0) >= 0 && vlb.numCmp(0) >= 0) {
+                        lb.moveFrom(v1, true);
+                        ub.moveFrom(v2, true);
+                    }
+                    else {
+                        CmplValAuto v3, v4;
+                        v3.copyFrom(lb);
+                        v3.numMult(vub);
+                        v4.copyFrom(ub);
+                        v4.numMult(vlb);
+
+                        lb.copyFrom(v1);
+                        ub.copyFrom(v2);
+
+                        if (lb.numCmp(v2) > 0)
+                            lb.copyFrom(v2);
+                        if (lb.numCmp(v3) > 0)
+                            lb.copyFrom(v3);
+                        if (lb.numCmp(v4) > 0)
+                            lb.copyFrom(v4);
+
+                        if (ub.numCmp(v1) < 0)
+                            ub.copyFrom(v1);
+                        if (ub.numCmp(v3) < 0)
+                            ub.copyFrom(v3);
+                        if (ub.numCmp(v4) < 0)
+                            ub.copyFrom(v4);
+                    }
+                }
+
+                if (res && _factor.isScalarNumber() && !_factor.isNumOne()) {
+                    lb.numMult(_factor);
+                    ub.numMult(_factor);
+
+                    if (_factor.numCmp(0) < 0) {
+                        CmplVal t;
+                        t.moveFrom(lb);
+                        lb.moveFrom(ub);
+                        ub.moveFrom(t);
+                    }
+                }
+            }
+        }
+
+        if (!res) {
+            lb.dispUnset();
+            ub.dispUnset();
+        }
+    }
 
     /**
      * set model properties from this constraint
@@ -218,6 +358,52 @@ namespace cmpl
 
 
     /************** ValFormulaLinearComb **********/
+
+    /**
+     * get lower and upper bound of the possible value range of this formula
+     * @param lb        return of lower bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+     * @param ub        return of upper bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+     * @param con       bounds for the constraint using this formula
+     */
+    void ValFormulaLinearComb::getBounds(CmplVal& lb, CmplVal& ub, bool con) const
+    {
+        if (!con && _constTerm) {
+            lb.copyFrom(_constTerm);
+            ub.copyFrom(_constTerm);
+        }
+        else {
+            lb.dispSet(TP_INT, 0);
+            ub.dispSet(TP_INT, 0);
+        }
+
+        for (unsigned i = 1; i < _terms.size(); i += 2) {
+            const CmplVal& factor = _terms[i-1];
+            if (!factor.isNumNull()) {
+                CmplValAuto tlb, tub;
+                ValFormula::getBounds(_terms[i], tlb, tub, con);
+                if (!tlb || !tub)
+                    break;
+
+                if (!factor.isNumOne()) {
+                    tlb.numMult(factor);
+                    tub.numMult(factor);
+
+                    if (factor.numCmp(0) < 0) {
+                        CmplVal t;
+                        t.moveFrom(tlb);
+                        tlb.moveFrom(tub);
+                        tub.moveFrom(t);
+                    }
+                }
+
+                lb.numAdd(tlb);
+                ub.numAdd(tub);
+
+                if (lb.t == TP_INFINITE && lb.v.i < 0 && ub.t == TP_INFINITE && ub.v.i > 0)
+                    break;
+            }
+        }
+    }
 
     /**
      * set model properties from this constraint
@@ -381,6 +567,37 @@ namespace cmpl
     /************** ValFormulaCompare **********/
 
     /**
+     * get lower and upper bound of the possible value range of this formula (as if used as constraint)
+     * @param lb        return of lower bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+     * @param ub        return of upper bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+     * @param con       bounds for the constraint using this formula
+     */
+    void ValFormulaCompare::getBounds(CmplVal& lb, CmplVal& ub, bool con) const
+    {
+        if (con) {
+            ValFormula::getBounds(_leftSide, lb, ub, true);
+
+            if (!_rightSide.isScalarNumber()) {
+                CmplValAuto rb1, rb2;
+                ValFormula::getBounds(_rightSide, rb1, rb2, con);
+                if (rb1 && rb2) {
+                    lb.numAdd(rb2, true);
+                    ub.numAdd(rb1, true);
+                }
+                else {
+                    lb.dispUnset();
+                    ub.dispUnset();
+                }
+            }
+        }
+
+        else {
+            lb.dispSet(TP_INT, 0);
+            ub.dispSet(TP_INT, 1);
+        }
+    }
+
+    /**
      * set model properties from this constraint
      * @param prop          properties of optimization model
      */
@@ -542,6 +759,17 @@ namespace cmpl
     }
 
     /**
+     * get lower and upper bound of the possible value range of this formula
+     * @param lb        return of lower bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+     * @param ub        return of upper bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+     * @param con       bounds for the constraint using this formula
+     */
+    void ValFormulaObjective::getBounds(CmplVal& lb, CmplVal& ub, bool con) const
+    {
+        ValFormula::getBounds(_formula, lb, ub, con);
+    }
+
+    /**
      * fills coefficients from this constraint for linear or quadratic model per column
      * @param row			identity number of this row
      * @param coeffs		array to fill with vector of coefficients per column
@@ -596,6 +824,26 @@ namespace cmpl
 
 
     /************** ValFormulaLogCon **********/
+
+    /**
+     * get lower and upper bound of the possible value range of this formula
+     * @param lb        return of lower bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+     * @param ub        return of upper bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+     * @param con       bounds for the constraint using this formula
+     */
+    void ValFormulaLogCon::getBounds(CmplVal& lb, CmplVal& ub, bool con) const
+    {
+        if (con) {
+            //TODO: gibt es hier irgendwie sinnvolle Werte?
+            // zumindest Fall beidseitig beschraenkter Restriktion gesondert beruecksichtigen (der hier als 2 Und-verknuepfte Vergleichsformeln erscheint)
+            lb.dispUnset();
+            ub.dispUnset();
+        }
+        else {
+            lb.dispSet(TP_INT, 0);
+            ub.dispSet(TP_INT, 1);
+        }
+    }
 
     /**
      * set model properties from this constraint
@@ -667,6 +915,72 @@ namespace cmpl
 
 
     /************** ValFormulaCond **********/
+
+    /**
+     * check whether conditions are the same as in another part
+     */
+    bool ValFormulaCond::Part::eqCond(Part& p2)
+    {
+        //TODO: inhaltlich vergleichen, nicht nur auf Objektidentitaet
+
+        if (_posCond != p2._posCond)
+            return false;
+
+        if (_negConds.size() != p2._negConds.size())
+            return false;
+
+        for (unsigned i = 0; i < _negConds.size(); i++) {
+            if (_negConds[i] != p2._negConds[i])
+                return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * get lower and upper bound of the possible value range of this formula
+     * @param lb        return of lower bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+     * @param ub        return of upper bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+     * @param con       bounds for the constraint using this formula
+     */
+    void ValFormulaCond::getBounds(CmplVal& lb, CmplVal& ub, bool con) const
+    {
+        lb.dispUnset();
+        ub.dispUnset();
+
+        for (unsigned i = 0; i < _parts.size(); i++) {
+            CmplValAuto plb, pub;
+            const CmplVal& pv = _parts[i]._val;
+
+            if (pv.t == TP_FORMULA) {
+                pv.valFormula()->getBounds(plb, pub, con);
+            }
+            else if (pv.isScalarNumber()) {
+                if (con) {
+                    plb.dispSet(TP_INT, 0);
+                    pub.dispSet(TP_INT, 0);
+                }
+                else {
+                    plb.copyFrom(pv);
+                    pub.copyFrom(pv);
+                }
+            }
+
+            if (!lb || (plb && plb.numCmp(lb) < 0))
+                lb.moveFrom(plb, true);
+            if (!ub || (pub && pub.numCmp(ub) > 0))
+                ub.moveFrom(pub, true);
+        }
+
+        if (!_complete && lb && ub) {
+            // extend range to 0
+            if (lb.numCmp(0) >= 0)
+                lb.dispSet(TP_INT, 0);
+            else if (ub.numCmp(0) <= 0)
+                ub.dispSet(TP_INT, 0);
+        }
+    }
+
     /**
      * write contents of the object to a stream
      * @param modp			calling module

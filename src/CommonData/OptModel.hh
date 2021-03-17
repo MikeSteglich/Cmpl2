@@ -51,26 +51,87 @@ namespace cmpl
     class ValFormula;
 
 
+    /**
+     * base class for additional properties of an optimization matrix element, especially for linearization
+     */
+    class AddPropOptVarConBase
+    {
+    protected:
+        CmplValAuto _srcVal;                ///< source value (typically TP_FORMULA) which has caused the optimization matrix element
+        bool _linearized;                   ///< necessary linearization is already done
+
+    protected:
+        /**
+         * constructor
+         * @param src       source value
+         */
+        AddPropOptVarConBase(CmplVal& src): _srcVal(src), _linearized(false)        { }
+
+        //TODO
+        //  (insbesondere virtual abstract Funktionen fuer Modelleigenschaften, fuer Linearisierung)
+    };
+
+    /**
+     * additional property for an optimization variable which is used as replacement for a conditional value
+     */
+    class AddPropOptVarConValCond : public AddPropOptVarConBase
+    {
+    public:
+        /**
+         * constructor
+         * @param src       source value, must be TP_FORMULA with ValFormulaCond
+         */
+        AddPropOptVarConValCond(CmplVal& src): AddPropOptVarConBase(src)            { }
+
+        //TODO
+    };
+
+
 	/**
 	 * base class for optimization matrix elements
 	 */
 	class OptVarConBase : public CmplObjBase, public ValueTreeElem
 	{
 	protected:
-        unsigned _syntaxElem;		///< id of syntax element in the cmpl text creating this matrix element
-        CmplValAuto _names;         ///< if set then TP_ARRAY of additional names usable for linearisation
+        unsigned _syntaxElem;               ///< id of syntax element in the cmpl text creating this matrix element
+        CmplValAuto _names;                 ///< if set then TP_ARRAY of additional names usable for linearisation
+
+        AddPropOptVarConBase *_addProp;     ///< if set then additional properties, especially for linearization (owning pointer)
+
         //TODO
 
     public:
         /**
+         * destructor
+         */
+        virtual ~OptVarConBase()                    { if (_addProp) delete _addProp; }
+
+        /**
          * get id of syntax element in the cmpl text creating this matrix element
          */
-        unsigned syntaxElem() const             { return _syntaxElem; }
+        unsigned syntaxElem() const                 { return _syntaxElem; }
 
         /**
          * get TP_ARRAY of additional names usable for linearisation
          */
-        CmplVal& names()                        { return _names; }
+        CmplVal& names()                            { return _names; }
+
+        /**
+         * get additional properties, especially for linearization
+         */
+        AddPropOptVarConBase *addProp() const       { return _addProp; }
+
+        /**
+         * set additional properties, especially for linearization
+         */
+        void setAddProp(AddPropOptVarConBase *a)    { _addProp = a; }
+
+        /**
+         * get lower and upper bound of the possible value range of this variable or constraint
+         * @param lb        return of lower bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+         * @param ub        return of upper bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+         */
+        virtual void getBounds(CmplVal& lb, CmplVal& ub) const  { }
 
         //TODO
 	};
@@ -89,7 +150,7 @@ namespace cmpl
         CmplVal _lowBound;								///< lower bound (can only be TP_EMPTY, TP_INT, TP_REAL)
         CmplVal _uppBound;								///< upper bound (can only be TP_EMPTY, TP_INT, TP_REAL)
 
-        int _usedByCon;                                ///< mark variable as used by at least one constraint: 0: not used, 1: used, -1: used only in constraint deleted by remodelation
+        int _usedByCon;                                 ///< mark variable as used by at least one constraint: 0: not used, 1: used, -1: used only in constraint deleted by remodelation
 
     public:
         /**
@@ -159,6 +220,13 @@ namespace cmpl
         inline void setUppBound(CmplVal& lb)		{ _uppBound.copyFrom(lb); }
 
         /**
+         * get lower and upper bound of the possible value range of this variable or constraint
+         * @param lb        return of lower bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+         * @param ub        return of upper bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+         */
+        void getBounds(CmplVal& lb, CmplVal& ub) const override;
+
+        /**
          * get whether variable is used by at least one constraint: 0: not used, 1: used, -1: used only in constraint deleted by remodelation
          */
         inline int usedByCon()                     { return _usedByCon; }
@@ -224,9 +292,15 @@ namespace cmpl
          */
         bool objective()                                { return _objective; }
 
-		//TODO
-	};
+        /**
+         * get lower and upper bound of the possible value range of this variable or constraint
+         * @param lb        return of lower bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+         * @param ub        return of upper bound (TP_INT, TP_REAL, TP_INFINITE, or TP_EMPTY when unknown)
+         */
+        void getBounds(CmplVal& lb, CmplVal& ub) const override;
 
+        //TODO
+	};
 
 
     /**
