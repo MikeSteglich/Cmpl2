@@ -337,17 +337,18 @@ namespace cmpl
 	 * @param pos       current position in string, start iteration with 0
 	 * @param quote     return if the word was quoted
 	 * @param qc        quote char / '\0' no quote char
-	 * @param sep       separating chars
-	 * @return          false if no more word found
+     * @param sep		separating chars
+     * @param msep      multiple consecutive separating chars count as one separator
+     * @return          false if no more word found
 	 */
-    bool StringStore::iterWords(const string& str, string& word, size_t& pos, bool& quote, char qc, const char *sep)
+    bool StringStore::iterWords(const string& str, string& word, size_t& pos, bool& quote, char qc, const char *sep, bool msep)
 	{
 		size_t start, end;
 		bool dquote = false;
 
 		// start of next word
-		if (pos != string::npos)
-			pos = str.find_first_not_of(sep, pos);
+        if (pos != string::npos && msep)
+            pos = str.find_first_not_of(sep, pos);
 
 		if (pos == string::npos) {
 			word.clear();
@@ -374,7 +375,7 @@ namespace cmpl
 				}
 				else if (pos == str.size() - 1 || str[pos+1] != qc) {
 					// closing quote ending the word
-					end = pos - 1;
+                    end = pos;
 				}
 				else {
 					// double quote is treated as one quote in the result word
@@ -406,7 +407,7 @@ namespace cmpl
 			}
 		}
 
-		pos = (end==string::npos ? string::npos : (quote ? end + 1 : end));
+        pos = (end==string::npos ? string::npos : ((quote ? end + 1 : end) + (msep ? 0 : 1)));
 
 		return true;
 	}

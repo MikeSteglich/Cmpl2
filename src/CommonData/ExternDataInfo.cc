@@ -304,9 +304,9 @@ namespace cmpl
 
 		while (getline(istr, line)) {
 			if (!line.empty()) {
-				pos = 0;
+                pos = 0;
 				nr = 1;
-				while (StringStore::iterWords(line, word, pos, quote, '"', sep)) {
+                while (StringStore::iterWords(line, word, pos, quote, '"', sep, false)) {
 					switch (nr) {
                         case 1: ns = word; break;
                         case 2: es = word; break;
@@ -319,10 +319,11 @@ namespace cmpl
                         case 9: sp = stol(word); break;
 					}
 
-                    insertExternInfo(data, ns.c_str(), es.c_str(), tp, sname.c_str(), (file != 0), (optval != 0), as1.c_str(), as2.c_str(), sp);
 					nr++;
 				}
-			}
+
+                insertExternInfo(data, ns.c_str(), es.c_str(), tp, sname.c_str(), (file != 0), (optval != 0), as1.c_str(), as2.c_str(), sp);
+            }
 		}
 	}
 

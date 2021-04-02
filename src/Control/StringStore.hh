@@ -294,10 +294,11 @@ namespace cmpl
 		 * @param str		string to iterate over
 		 * @param word		return of next word
 		 * @param pos		current position in string, start iteration with 0
-		 * @param ws		separating chars
+         * @param sep		separating chars
+         * @param msep      multiple consecutive separating chars count as one separator
 		 * @return			false if no more word found
 		 */
-        static bool iterWords(const string& str, string& word, size_t& pos, const char *sep = WHITE_SPACES)		{ bool quote; return iterWords(str, word, pos, quote, '\0', sep); }
+        static bool iterWords(const string& str, string& word, size_t& pos, const char *sep = WHITE_SPACES, bool msep = true)		{ bool quote; return iterWords(str, word, pos, quote, '\0', sep, msep); }
 
 		/**
 		 * iterates over words in a string, on each call the next word is given back, with regarding of quotes
@@ -306,10 +307,11 @@ namespace cmpl
 		 * @param pos		current position in string, start iteration with 0
 		 * @param quote		return if the word was quoted
 		 * @param qc		quote char / '\0' no quote char
-		 * @param ws		separating chars
-		 * @return			false if no more word found
+         * @param sep		separating chars
+         * @param msep      multiple consecutive separating chars count as one separator
+         * @return			false if no more word found
 		 */
-        static bool iterWords(const string& str, string& word, size_t& pos, bool& quote, char qc = '"', const char *sep = WHITE_SPACES);
+        static bool iterWords(const string& str, string& word, size_t& pos, bool& quote, char qc = '"', const char *sep = WHITE_SPACES, bool msep = true);
 
         /**
          * return a string suitable as name
