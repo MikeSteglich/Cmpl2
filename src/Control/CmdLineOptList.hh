@@ -315,8 +315,38 @@ namespace cmpl
 		/**
 		 * check if all options in _opts are used by modules
 		 * @param ctrl		main object
-		 */
-		void checkCmdLineOptUsed(MainControl *ctrl);
+         * @param mark      mark this command line options as used
+         * @param warn      output warning if a command line option ist not used
+         */
+        void checkCmdLineOptUsed(MainControl *ctrl, set<string> &mark, bool warn);
+
+        /**
+         * write all options to a command line option file
+         * @param ostr      stream for writing
+         * @param tp        type code (1: command line / 2: cmpl header)
+         * @param nowrite   don't write this options
+         * @param check     check if this option is written
+         * @return          whether checked option is written
+         */
+        bool writeToOptFile(ostream *ostr, int tp, set<string> &nowrite, const char *check);
+
+        /**
+         * write single option to a command line option file
+         * @param ostr      stream for writing
+         * @param tp        type code (1: command line / 2: cmpl header)
+         * @param opt       option to write
+         */
+        static void writeToOptFile(ostream *ostr, int tp, SingleOption *opt);
+
+        /**
+         * write single pseudo option to a command line option file
+         * @param ostr      stream for writing
+         * @param tp        type code (0: pseudo option)
+         * @param name      name option to write
+         * @param arg       argument for option / NULL: no argument
+         * @param fixloc    string for fixed location of option / NULL: no location
+         */
+        static void writeToOptFile(ostream *ostr, int tp, const char *name, const char *arg, const char *fixloc);
 
 
 		/****** functions for serialization ****/

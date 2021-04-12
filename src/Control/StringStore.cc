@@ -339,9 +339,10 @@ namespace cmpl
 	 * @param qc        quote char / '\0' no quote char
      * @param sep		separating chars
      * @param msep      multiple consecutive separating chars count as one separator
+     * @param esc       use escape with \ for embedded quotes (false: use doubled quote char)
      * @return          false if no more word found
 	 */
-    bool StringStore::iterWords(const string& str, string& word, size_t& pos, bool& quote, char qc, const char *sep, bool msep)
+    bool StringStore::iterWords(const string& str, string& word, size_t& pos, bool& quote, char qc, const char *sep, bool msep, bool esc)
 	{
 		size_t start, end;
 		bool dquote = false;
@@ -355,7 +356,15 @@ namespace cmpl
 			return false;
 		}
 
-		quote = (qc != '\0' && qc == str[pos]);
+        // discard whitespaces before quote char
+        quote = false;
+        if (qc) {
+            size_t qpos = str.find_first_not_of(WHITE_SPACES, pos);
+            if (qpos != string::npos && qc == str[qpos]) {
+                quote = true;
+                pos = qpos;
+            }
+        }
 
 		// end of next word
 		if (!quote) {
@@ -365,30 +374,39 @@ namespace cmpl
 		else {
 			start = pos + 1;
 			end = 0;
+            bool escf = false;
 
-			while (end == 0) {
-				pos = str.find(qc, pos+1);
+            while (end == 0) {
+                pos = str.find(qc, start);
+                if (esc) {
+                    size_t epos = str.find('\\', start);
+                    escf = (epos != string::npos && (pos == string::npos || pos > epos));
+                    if (escf)
+                        pos = epos;
+                }
 
-				if (pos == string::npos) {
-					// no closing quote
-					end = string::npos;
-				}
-				else if (pos == str.size() - 1 || str[pos+1] != qc) {
-					// closing quote ending the word
+                if (pos == string::npos) {
+                    // no closing quote
+                    end = string::npos;
+                }
+                else if ((!esc && (pos == str.size() - 1 || str[pos+1] != qc)) || (esc && (!escf || pos == str.size() - 1))) {
+                    // closing quote ending the word
                     end = pos;
-				}
-				else {
-					// double quote is treated as one quote in the result word
-					if (!dquote)
-						word = str.substr(start, pos + 1 - start);
-					else
-						word += str.substr(start, pos + 1 - start);
+                }
+                else {
+                    // double quote is treated as one quote in the result word
+                    if (!dquote)
+                        word = str.substr(start, pos + (escf ? 0 : 1) - start);
+                    else
+                        word += str.substr(start, pos + (escf ? 0 : 1) - start);
 
-					dquote = true;
-					start = pos + 2;
-					pos++;
-				}
-			}
+                    if (escf)
+                        word.push_back((str[pos+1] == 'n' ? '\n' : str[pos+1]));
+
+                    dquote = true;
+                    start = pos + 2;
+                }
+            }
 		}
 
 		// get next word
@@ -449,6 +467,65 @@ namespace cmpl
             return str.substr(0, mLen);
 
         return str;
+    }
+
+
+    /**
+     * @brief surround a string with quotes, and escape embedded quote chars and new line chars
+     * @param str       source string
+     * @param qc		quote char
+     * @return          quoted string
+     */
+    string StringStore::quoteString(const char *str, char qc)
+    {
+        string res(str);
+        string escchars("\n\\");
+        escchars.push_back(qc);
+
+        size_t p = 0, n;
+        while ((n = res.find_first_of(escchars, p)) != string::npos) {
+            if (res[n] == '\n')
+                res.replace(n, 1, "\\n");
+            else
+                res.insert(res.begin() + n, '\\');
+            p = n + 2;
+        }
+
+        res.insert(res.begin(), qc);
+        res.push_back(qc);
+
+        return res;
+    }
+
+    /**
+     * remove quotes from string, and unescape embedded quote chars and new line chars
+     * @param str       source string
+     * @param qc		quote char
+     * @return          unquoted string
+     */
+    string StringStore::unquoteString(const char *str, char qc)
+    {
+        string res(str);
+        res = StringStore::lrTrim(res);
+
+        if (res.size() >= 2 && res.front() == qc && res.back() == qc) {
+            res.erase(res.begin());
+            res.pop_back();
+
+            size_t p = 0, n;
+            while ((n = res.find('\\', p)) != string::npos) {
+                if (n < res.size() - 1 && (res[n+1] == qc || res[n+1] == 'n' || res[n+1] == '\\')) {
+                    if (res[n+1] == 'n')
+                        res.replace(n, 2, "\n");
+                    else
+                        res.erase(n);
+                }
+
+                p = n + 1;
+            }
+        }
+
+        return res;
     }
 }
 

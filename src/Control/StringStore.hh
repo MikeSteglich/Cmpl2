@@ -296,9 +296,10 @@ namespace cmpl
 		 * @param pos		current position in string, start iteration with 0
          * @param sep		separating chars
          * @param msep      multiple consecutive separating chars count as one separator
+         * @param esc       use escape with \ for embedded quotes (false: use doubled quote char)
 		 * @return			false if no more word found
 		 */
-        static bool iterWords(const string& str, string& word, size_t& pos, const char *sep = WHITE_SPACES, bool msep = true)		{ bool quote; return iterWords(str, word, pos, quote, '\0', sep, msep); }
+        static bool iterWords(const string& str, string& word, size_t& pos, const char *sep = WHITE_SPACES, bool msep = true, bool esc = false)		{ bool quote; return iterWords(str, word, pos, quote, '\0', sep, msep, esc); }
 
 		/**
 		 * iterates over words in a string, on each call the next word is given back, with regarding of quotes
@@ -309,9 +310,10 @@ namespace cmpl
 		 * @param qc		quote char / '\0' no quote char
          * @param sep		separating chars
          * @param msep      multiple consecutive separating chars count as one separator
+         * @param esc       use escape with \ for embedded quotes (false: use doubled quote char)
          * @return			false if no more word found
 		 */
-        static bool iterWords(const string& str, string& word, size_t& pos, bool& quote, char qc = '"', const char *sep = WHITE_SPACES, bool msep = true);
+        static bool iterWords(const string& str, string& word, size_t& pos, bool& quote, char qc = '"', const char *sep = WHITE_SPACES, bool msep = true, bool esc = false);
 
         /**
          * return a string suitable as name
@@ -321,7 +323,39 @@ namespace cmpl
          * @return
          */
         static string asName(const string& str, char rplSp, unsigned mLen);
-	};
+
+        /**
+         * @brief surround a string with quotes, and escape embedded quote chars and new line chars
+         * @param str       source string
+         * @param qc		quote char
+         * @return          quoted string
+         */
+        static string quoteString(const string& str, char qc = '"')     { return quoteString(str.c_str(), qc); }
+
+        /**
+         * @brief surround a string with quotes, and escape embedded quote chars and new line chars
+         * @param str       source string
+         * @param qc		quote char
+         * @return          quoted string
+         */
+        static string quoteString(const char *str, char qc = '"');
+
+        /**
+         * remove quotes from string, and unescape embedded quote chars and new line chars
+         * @param str       source string
+         * @param qc		quote char
+         * @return          unquoted string
+         */
+        static string unquoteString(const string& str, char qc = '"')   { return unquoteString(str.c_str(), qc); }
+
+        /**
+         * remove quotes from string, and unescape embedded quote chars and new line chars
+         * @param str       source string
+         * @param qc		quote char
+         * @return          unquoted string
+         */
+        static string unquoteString(const char *str, char qc = '"');
+    };
 }
 
 #endif // !STRINGSTORE_HH

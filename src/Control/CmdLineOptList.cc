@@ -373,15 +373,100 @@ namespace cmpl
 	/**
 	 * check if all options in _opts are used by modules
 	 * @param ctrl      main object
-	 */
-	void CmdLineOptList::checkCmdLineOptUsed(MainControl *ctrl)
+     * @param mark      mark this command line options as used
+     * @param warn      output warning if a command line option ist not used
+     */
+    void CmdLineOptList::checkCmdLineOptUsed(MainControl *ctrl, set<string>& mark, bool warn)
 	{
-		for (size_t i = 0; i < _opts.size(); i++) {
+        for (size_t i = 0; i < _opts.size(); i++) {
 			if (_opts[i]->_useCount == 0) {
-				ctrl->outWarnUnusedCmdLineOpt(_opts[i]);
+                if (mark.count(_opts[i]->opt()))
+                    _opts[i]->markUsed();
+                else if (warn)
+                    ctrl->outWarnUnusedCmdLineOpt(_opts[i]);
 			}
 		}
 	}
+
+    /**
+     * write all options to a command line option file
+     * @param ostr      stream for writing
+     * @param tp        type code (1: command line / 2: cmpl header)
+     * @param nowrite   don't write this options
+     * @param check     check if this option is written
+     * @return          whether checked option is written
+     */
+    bool CmdLineOptList::writeToOptFile(ostream *ostr, int tp, set<string> &nowrite, const char *check)
+    {
+        bool found = false;
+        for (size_t i = 0; i < _opts.size(); i++) {
+            SingleOption *opt = _opts[i];
+            if (check && opt->opt() == check)
+                found = true;
+
+            if (!nowrite.count(opt->opt()))
+                writeToOptFile(ostr, tp, opt);
+        }
+
+        return found;
+    }
+
+    /**
+     * write single option to a command line option file
+     * @param ostr      stream for writing
+     * @param tp        type code (1: command line / 2: cmpl header)
+     * @param opt       option to write
+     */
+    void CmdLineOptList::writeToOptFile(ostream *ostr, int tp, SingleOption *opt)
+    {
+        *ostr << opt->_opt << ';' << opt->_module << ';' << tp << ';';
+
+        const PositionInfo& p1 = opt->_locName.begin();
+        const PositionInfo& p2 = opt->_locOpt.end();
+        if (p1.type() == POSITION_TYPE_WORDARR && p2.hasCol())
+            *ostr << p1.col() << ';' << (p2.col() - 1) << ';';
+        else if ((p1.type() == POSITION_TYPE_FILE || p1.type() == POSITION_TYPE_STREAM) && p2.hasCol())
+            *ostr << StringStore::quoteString(p1.name()) << ',' << p1.line() << ',' << p1.col() << ';' << (p2.col() - 1) << ';';
+        else
+            *ostr << ";;";
+
+        *ostr << (opt->_neg ? 1 : 0) << ';' << opt->_prio << ';' << opt->_sepArgStart << ';' << opt->_useCount << ';' << opt->_args.size();
+
+        vector<string>::iterator its = opt->_args.begin();
+        vector<PositionInfo>::iterator itl = opt->_argPos.begin();
+        for (; its != opt->_args.end(); its++, itl++) {
+            *ostr << ';' << StringStore::quoteString(*its) << ';';
+            if (itl->hasCol())
+                *ostr << itl->col();
+        }
+
+        *ostr << endl;
+    }
+
+    /**
+     * write single pseudo option to a command line option file
+     * @param ostr      stream for writing
+     * @param tp        type code (0: pseudo option)
+     * @param name      name option to write
+     * @param arg       argument for option / NULL: no argument
+     * @param fixloc    string for fixed location of option / NULL: no location
+     */
+    void CmdLineOptList::writeToOptFile(ostream *ostr, int tp, const char *name, const char *arg, const char *fixloc)
+    {
+        *ostr << name << ';' << ';' << tp << ';';
+
+        if (fixloc)
+            *ostr << StringStore::quoteString(fixloc);
+        *ostr << ";;";
+
+        *ostr << "0;0;0;0;";
+        if (arg)
+            *ostr << "1;" << StringStore::quoteString(arg) << ';';
+        else
+            *ostr << "0";
+
+        *ostr << endl;
+    }
 
 
 	/****** functions for serialization ****/

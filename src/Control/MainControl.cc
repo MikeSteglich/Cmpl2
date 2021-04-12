@@ -44,6 +44,9 @@ namespace cmpl
 	 */
 	MainControl::~MainControl()
 	{
+        if (_optOutFile)
+            delete _optOutFile;
+
 		// free _modules
 		_itO = _modules.begin();
 		while (_itO != _modules.end()) {
@@ -113,6 +116,9 @@ namespace cmpl
 
 		_instanceName = "cmpl";	// default for instance name
 
+        _optOutFile = NULL;
+        _optWarnUnused = true;
+
         _printVersion = _printUsage = _usageAll = false;
 	}
 
@@ -143,6 +149,9 @@ namespace cmpl
 					usage(cout);
 			}
 			else {
+                //TODO: -i-opt behandeln
+                //  wenn angegeben, dann alle Optionen daraus entsprechend _startOpts bzw. _headerOpts hinzufuegen, bzw. als Ausnahme _basename auch direkt setzen
+
 				// search for file base name, then protocol output, and then module config file
 				parseControlOpts(_startOpts, false, true, false, false, false);
 #if PROTO
@@ -280,11 +289,16 @@ namespace cmpl
 
 
         // warning if unused command line options (only checked if no errors)
-		if (_data->errorLevelMax() <= ERROR_LVL_WARN) {
-			_startOpts->checkCmdLineOptUsed(this);
-			_modConfOpts.checkCmdLineOptUsed(this);
-			_headerOpts.checkCmdLineOptUsed(this);
-		}
+        bool warnUnused = (_data->errorLevelMax() <= ERROR_LVL_WARN && _optWarnUnused);
+        _startOpts->checkCmdLineOptUsed(this, _optMarkUsed, warnUnused);
+        _modConfOpts.checkCmdLineOptUsed(this, _optMarkUsed, warnUnused);
+        _headerOpts.checkCmdLineOptUsed(this, _optMarkUsed, warnUnused);
+
+        if (_optOutFile) {
+            writeOptFile(*_optOutFile);
+            delete _optOutFile;
+            _optOutFile = NULL;
+        }
 
         _ctrl->errHandler().writeCmplMsg();
 
@@ -305,8 +319,12 @@ namespace cmpl
 	/*********** handling of command line options **********/
 
 // defines for reference numbers of options
-#define OPTION_ERROR_HANDLE   10
-#define OPTION_ERROR_CMPLMSG   11
+#define OPTION_ERROR_HANDLE         10
+#define OPTION_ERROR_CMPLMSG        11
+
+#define OPTION_OPTS_OUTFILE         15
+#define OPTION_OPTS_WARN_UNUSED     16
+#define OPTION_OPTS_MARK_USED       17
 
 	/**
 	 * register command line options for delivery to this module
@@ -317,8 +335,21 @@ namespace cmpl
 		ModuleBase::regModOptions(modOptReg);
 		REG_CMDL_OPTION( OPTION_ERROR_HANDLE, "e", 0, 1, CMDL_OPTION_NEG_ERROR, true );
         REG_CMDL_OPTION( OPTION_ERROR_CMPLMSG, "cmsg", 0, 1, CMDL_OPTION_NEG_ERROR, true );
+
+        REG_CMDL_OPTION( OPTION_OPTS_OUTFILE, "o-opt", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
+        REG_CMDL_OPTION( OPTION_OPTS_WARN_UNUSED, "warn-unused", 0, 0, CMDL_OPTION_NEG_DELIV, true );
+        REG_CMDL_OPTION( OPTION_OPTS_MARK_USED, "mark-used", 0, -1, CMDL_OPTION_NEG_DELIV, false );
 	}
 
+    /**
+     * get names of command line options which are not to write to a command line option file
+     * @return              set with names of these command line options
+     */
+    set<string> MainControl::noWriteOptions()
+    {
+        set<string> res({ "h", "help", "v", "config", "instance", "o-opt", "i-opt", "warn-unused", "mark-used", "modules" });
+        return res;
+    }
 
 	/**
 	 * parse single option from command line options, this function is called for every delivered option
@@ -355,6 +386,34 @@ namespace cmpl
             //_errHandler.setCmplMsg(true);
             _errHandler.setCmplMsgOut(&_cmplMsgFile);
 
+            return true;
+
+        // write all command line options
+        case OPTION_OPTS_OUTFILE:
+            if (_optOutFile) {
+                delete _optOutFile;
+                _optOutFile = NULL;
+            }
+            if (!(opt->neg())) {
+                _optOutFile = new FileOutput();
+                _optOutFile->setFile(_data, IO_MODE_FILE, &((*opt)[0]), NULL, true);
+                _optOutFile->setLocSrc(opt->argPos(0));
+            }
+            return true;
+
+        // output warning if a command line option ist not used
+        case OPTION_OPTS_WARN_UNUSED:
+            _optWarnUnused = !opt->neg();
+            return true;
+
+        // mark command line options given as arguments as used
+        case OPTION_OPTS_MARK_USED:
+            for (size_t i = 0; i < opt->size(); i++) {
+                if (!(opt->neg()))
+                    _optMarkUsed.insert((*opt)[0]);
+                else
+                    _optMarkUsed.erase((*opt)[0]);
+            }
             return true;
         }
 
@@ -587,6 +646,41 @@ namespace cmpl
 	}
 
 
+    /**
+     * write command line options to file
+     * @param file      file to write
+     */
+    void MainControl::writeOptFile(FileOutput& file)
+    {
+        try {
+            PROTO_OUTL("write command line options to file '" << file.fileNameReplaced() << "'");
+
+            ostream *ostr = file.open();
+
+            set<string> nowrite = noWriteOptions();
+            for (const ModulesConf::ModDescr& mod : _modConf->_modDescr)
+                nowrite.insert(mod.name);
+
+            bool optbn = false;
+            if (_startOpts->writeToOptFile(ostr, 1, nowrite, "basename"))
+                optbn = true;
+            if (_headerOpts.writeToOptFile(ostr, 2, nowrite, "basename"))
+                optbn = true;
+
+            if (!optbn && _data->_cmplFileBase)
+                CmdLineOptList::writeToOptFile(ostr, 0, "basename", _data->_cmplFileBase, NULL);
+
+            file.close();
+        }
+        catch (FileException& e) {
+            errHandler().error(ERROR_LVL_NORMAL, printBuffer("%s: write command line options file '%s'", e.what(), e.filename().c_str()), file.locSrc());
+        }
+        catch (exception& ex) {
+            errHandler().error(ERROR_LVL_NORMAL, "write command line options file error", file.locSrc(), &ex);
+        }
+    }
+
+
 	/**
 	 * writes usage info for the module to stream
 	 * @param s             stream to write to
@@ -606,11 +700,16 @@ namespace cmpl
             s << "  -v                            print version info" << endl;
 			s << "  -p [<file>]                   output protocol messages of cmpl main control to <file> or stdout" << endl;
 			s << "  -e [<file>]                   output error messages to file or stderr" << endl;
+            s << "  -cmsg [<file>]                error handling via cmplMsg file" << endl;
 			s << "  -config <file>                use <file> for module configuration instead of " << modConfigFileDefault() << endl;
 			s << "  -basename <name>              use <name> to derive other file names. if not given then derive it from first cmpl input file" << endl;
 			s << "  -instance <name>              set <name for this cmpl instance, only used for tracking of module execution in a client/server environment" << endl;
-			s << "  -modules <mod1> ...           use this modules or module aggregations for execution" << endl;
-			s << "                                    you can also use every module name as a single option" << endl;
+            s << "  -o-opt <file>                 write all command line options to this file" << endl;
+            s << "  -i-opt <file>                 read command line options from this file" << endl;
+            s << "  -warn-unused                  output warning if a command line option ist not used (enabled by default)" << endl;
+            s << "  -mark-used <opt1> ...         mark command line options given as arguments as used" << endl;
+            s << "  -modules <mod1> ...           use this modules or module aggregations for execution" << endl;
+            s << "                                    you can also use every module name as a single option" << endl;
 
 			for (int ma = 0; ma < 2; ma++) {
 				if (ma==0)

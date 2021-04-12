@@ -266,16 +266,16 @@ namespace cmpl
             EIRecord *r = it->second;
 
             ostr << data->globStrings()->at(r->_intsym) << ';' << data->globStrings()->at(r->_extsym) << ';' << r->_srctype << ';'
-                 << '"' << data->globStrings()->at(r->_srcname) << '"' << ';'
+                 << StringStore::quoteString(data->globStrings()->at(r->_srcname)) << ';'
                  << (r->_srcfile ? 1 : 0) << ';' << (r->_optval ? 1 : 0) << ';';
 
             if (r->_addstr1 >= 0)
-                ostr << '"' << data->globStrings()->at(r->_addstr1) << '"' << ';';
+                ostr << StringStore::quoteString(data->globStrings()->at(r->_addstr1)) << ';';
             else
                 ostr << ';';
 
             if (r->_addstr2 >= 0)
-                ostr << '"' << data->globStrings()->at(r->_addstr2) << '"' << ';';
+                ostr << StringStore::quoteString(data->globStrings()->at(r->_addstr2)) << ';';
             else
                 ostr << ';';
 
@@ -306,7 +306,7 @@ namespace cmpl
 			if (!line.empty()) {
                 pos = 0;
 				nr = 1;
-                while (StringStore::iterWords(line, word, pos, quote, '"', sep, false)) {
+                while (StringStore::iterWords(line, word, pos, quote, '"', sep, false, true)) {
 					switch (nr) {
                         case 1: ns = word; break;
                         case 2: es = word; break;

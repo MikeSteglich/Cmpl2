@@ -115,6 +115,10 @@ namespace cmpl
 
         FileOutput _cmplMsgFile;					///< cmplMsg error file
 
+        FileOutput *_optOutFile;                    ///< file for output of command line options
+        bool _optWarnUnused;                        ///< output warning if a command line option ist not used
+        set<string> _optMarkUsed;                   ///< mark this command line options as used
+
 #if PROTO
 		StringStore _protoFileNames;				///< string store for names of protocol files
 		map<int, FileOutput *> _protoFiles;			///< protocol output files per number of filename in _protoFileNames
@@ -170,6 +174,12 @@ namespace cmpl
 		 * @param modOptReg		vector to register in
 		 */
 		virtual void regModOptions(vector<CmdLineOptList::RegOption> &modOptReg);
+
+        /**
+         * get names of command line options which are not to write to a command line option file
+         * @return              set with names of these command line options
+         */
+        set<string> noWriteOptions();
 
 		/**
 		 * parse single option from command line options, this function is called for every delivered option
@@ -388,6 +398,13 @@ namespace cmpl
 		 * @param cnt		count of elements within the section
 		 */
 		void deserializeCmdLineOptsFrom(MainData::SerializeInfo& si, const MainData *data, int cnt);
+
+    private:
+        /**
+         * write command line options to file
+         * @param file      file to write
+         */
+        void writeOptFile(FileOutput& file);
 
 
 		/****** functions for extensions ****/
