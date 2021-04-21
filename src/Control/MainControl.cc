@@ -140,7 +140,7 @@ namespace cmpl
             _startOpts = opts;
 
             // handle output of version or usage
-			parseControlOpts(opts, true, false, false, false, false);
+            parseControlOpts(opts, true, false, false, false, false, false);
 			if (_printVersion || _printUsage) {
 				if (_printVersion)
 					version(cout);
@@ -149,15 +149,15 @@ namespace cmpl
 					usage(cout);
 			}
 			else {
-                //TODO: -i-opt behandeln
-                //  wenn angegeben, dann alle Optionen daraus entsprechend _startOpts bzw. _headerOpts hinzufuegen, bzw. als Ausnahme _basename auch direkt setzen
+                // search for command line option file
+                parseControlOpts(opts, false, true, false, false, false, false);
 
 				// search for file base name, then protocol output, and then module config file
-				parseControlOpts(_startOpts, false, true, false, false, false);
+                parseControlOpts(_startOpts, false, false, true, false, false, false);
 #if PROTO
-				parseControlOpts(_startOpts, false, false, true, false, false);
+                parseControlOpts(_startOpts, false, false, false, true, false, false);
 #endif
-				parseControlOpts(_startOpts, false, false, false, true, false);
+                parseControlOpts(_startOpts, false, false, false, false, true, false);
 
 				// start main functionality
                 run();
@@ -336,7 +336,7 @@ namespace cmpl
 		REG_CMDL_OPTION( OPTION_ERROR_HANDLE, "e", 0, 1, CMDL_OPTION_NEG_ERROR, true );
         REG_CMDL_OPTION( OPTION_ERROR_CMPLMSG, "cmsg", 0, 1, CMDL_OPTION_NEG_ERROR, true );
 
-        REG_CMDL_OPTION( OPTION_OPTS_OUTFILE, "o-opt", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
+        REG_CMDL_OPTION( OPTION_OPTS_OUTFILE, "o-opt", 0, 1, CMDL_OPTION_NEG_NO_ARG, true );
         REG_CMDL_OPTION( OPTION_OPTS_WARN_UNUSED, "warn-unused", 0, 0, CMDL_OPTION_NEG_DELIV, true );
         REG_CMDL_OPTION( OPTION_OPTS_MARK_USED, "mark-used", 0, -1, CMDL_OPTION_NEG_DELIV, false );
 	}
@@ -396,8 +396,11 @@ namespace cmpl
             }
             if (!(opt->neg())) {
                 _optOutFile = new FileOutput();
-                _optOutFile->setFile(_data, IO_MODE_FILE, &((*opt)[0]), NULL, true);
-                _optOutFile->setLocSrc(opt->argPos(0));
+                _optOutFile->setFile(_data, IO_MODE_FILE, (opt->size() > 0 ? &((*opt)[0]) : NULL), IO_FILE_STANDARD_OOPT, true);
+                if (opt->size() > 0)
+                    _optOutFile->setLocSrc(opt->argPos(0));
+                else
+                    _optOutFile->setLocSrc(opt->loc(true));
             }
             return true;
 
@@ -434,20 +437,21 @@ namespace cmpl
 
 		// parse module names
 		if (step != CMDLINE_OPT_PARSE_MODCONF)
-			parseControlOpts(opts, false, false, false, false, true);
+            parseControlOpts(opts, false, false, false, false, false, true);
 	}
 
 
 	/**
 	 * parse special command line options only for MainControl
 	 * @param opts          command line options
-	 * @param vh			search for options for print version or usage
+     * @param vh			search for options for print version or usage
+     * @param io            search for option for command line option file
 	 * @param fbn			search for option for file base name and instance name
 	 * @param prt			search for option for protocol output
 	 * @param mcf			search for option for module config file
 	 * @param mod			search for options for module names
 	 */
-	void MainControl::parseControlOpts(CmdLineOptList *opts, bool vh, bool fbn, bool prt, bool mcf, bool mod)
+    void MainControl::parseControlOpts(CmdLineOptList *opts, bool vh, bool io, bool fbn, bool prt, bool mcf, bool mod)
 	{
 		// iteration over options in opts
 		int iter = -1;
@@ -474,6 +478,18 @@ namespace cmpl
 						_usageModule = (*opt)[0];
 				}
 			}
+
+            if (io) {
+                // command line option file
+                if (opt->opt() == "i-opt" && !opt->neg()) {
+                    if (opt->size() != 1)
+                        errHandler().error(ERROR_LVL_NORMAL, _ctrl->printBuffer("wrong argument count %d for command line option '%s'", (int)opt->size(), opt->opt().c_str()), opt->loc(true));
+                    else
+                        readFromOptFile((*opt)[0], opt->argPos(0), opt->loc(true));
+
+                    opt->markUsed();
+                }
+            }
 
 			if (fbn) {
 				// file base name
@@ -559,6 +575,38 @@ namespace cmpl
             _printUsage = true;
         }
 	}
+
+    /**
+     * read command line options from file
+     * @param fn            file name
+     * @param npos          position info for file name
+     * @param nloc          location info of option with file name
+     */
+    void MainControl::readFromOptFile(string &fn, PositionInfo &npos, LocationInfo &nloc)
+    {
+        FileInput file;
+        istream *inStr;
+
+        try {
+            file.setFile(_data, IO_MODE_FILE, &fn, NULL);
+            file.setLocSrc(npos);
+
+            inStr = file.open();
+        }
+        catch (FileException& e) {
+            errHandler().error(ERROR_LVL_NORMAL, _ctrl->printBuffer("%s: command line option file '%s'", e.what(), fn.c_str()), npos);
+        }
+
+        PositionInfo fpos(&nloc, POSITION_TYPE_FILE, fn.c_str());
+        try {
+            string bn = CmdLineOptList::readFromOptFile(this, inStr, fpos, *_startOpts, _headerOpts, "basename");
+            if (!bn.empty())
+                _data->setFileBaseBase(bn);
+        }
+        catch (FileException& e) {
+            errHandler().error(ERROR_LVL_NORMAL, _ctrl->printBuffer("%s within command line option file", e.what()), fpos);
+        }
+    }
 
 
 	/**
@@ -688,7 +736,7 @@ namespace cmpl
 	void MainControl::usage(ostream& s)
 	{
         // read module config file
-        parseControlOpts(_startOpts, false, false, false, true, false);
+        parseControlOpts(_startOpts, false, false, false, false, true, false);
         ModulesConf modConf(this, &_modConfigFile, _modConfLoc);
 
         if (_usageAll || _usageModule.empty()) {
@@ -704,8 +752,8 @@ namespace cmpl
 			s << "  -config <file>                use <file> for module configuration instead of " << modConfigFileDefault() << endl;
 			s << "  -basename <name>              use <name> to derive other file names. if not given then derive it from first cmpl input file" << endl;
 			s << "  -instance <name>              set <name for this cmpl instance, only used for tracking of module execution in a client/server environment" << endl;
-            s << "  -o-opt <file>                 write all command line options to this file" << endl;
-            s << "  -i-opt <file>                 read command line options from this file" << endl;
+            s << "  -o-opt [<file>]               write all command line options to <file>" << endl;
+            s << "  -i-opt <file>                 read command line options from <file>" << endl;
             s << "  -warn-unused                  output warning if a command line option ist not used (enabled by default)" << endl;
             s << "  -mark-used <opt1> ...         mark command line options given as arguments as used" << endl;
             s << "  -modules <mod1> ...           use this modules or module aggregations for execution" << endl;

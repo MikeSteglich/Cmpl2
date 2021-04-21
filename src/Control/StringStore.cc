@@ -340,9 +340,10 @@ namespace cmpl
      * @param sep		separating chars
      * @param msep      multiple consecutive separating chars count as one separator
      * @param esc       use escape with \ for embedded quotes (false: use doubled quote char)
+     * @param keepq     keep quotes and escapes in returned word
      * @return          false if no more word found
 	 */
-    bool StringStore::iterWords(const string& str, string& word, size_t& pos, bool& quote, char qc, const char *sep, bool msep, bool esc)
+    bool StringStore::iterWords(const string& str, string& word, size_t& pos, bool& quote, char qc, const char *sep, bool msep, bool esc, bool keepq)
 	{
 		size_t start, end;
 		bool dquote = false;
@@ -358,7 +359,7 @@ namespace cmpl
 
         // discard whitespaces before quote char
         quote = false;
-        if (qc) {
+        if (qc && !keepq) {
             size_t qpos = str.find_first_not_of(WHITE_SPACES, pos);
             if (qpos != string::npos && qc == str[qpos]) {
                 quote = true;
@@ -370,7 +371,32 @@ namespace cmpl
 		if (!quote) {
 			start = pos;
 			end = str.find_first_of(sep, start);
+
+            if (keepq && qc) {
+                bool inquote = false;
+                while (pos != string::npos) {
+                    size_t nxtq = str.find(qc, pos);
+                    if (nxtq == string::npos || (end != string::npos && nxtq > end)) {
+                        pos = string::npos;
+                    }
+                    else if ((esc && nxtq > pos && str[nxtq - 1] == '\\') || (!esc && nxtq < str.size() - 1 && str[nxtq + 1] == qc)) {
+                        pos = nxtq + (esc ? 1 : 2);
+                    }
+                    else {
+                        pos = nxtq + 1;
+                        if (!inquote) {
+                            inquote = true;
+                            end = string::npos;
+                        }
+                        else {
+                            inquote = false;
+                            end = str.find_first_of(sep, pos);
+                        }
+                    }
+                }
+            }
 		}
+
 		else {
 			start = pos + 1;
 			end = 0;
@@ -416,7 +442,7 @@ namespace cmpl
 			word += str.substr(start, (end==string::npos ? string::npos : (end - start)));
 
 		// if not quoted search for a quote inside of the word
-		if (!quote && qc != '\0') {
+        if (!quote && qc != '\0' && !keepq) {
 			pos = word.find(qc);
 			if (pos != string::npos) {
 				// word ends before the quote

@@ -703,3 +703,7 @@ src/Extensions/SolverSel/SolverSelect.cc
 src/Extensions/SolverSel/SolverSelect.hh
 src/Extensions/SolverSel/SolverSelectMod.cc
 src/Extensions/SolverSel/SolverSelectMod.hh
+src/Extensions/DataImport/ExternXlsDataFileMod.cc
+src/Extensions/DataImport/ExternXlsDataFileMod.hh
+src/Extensions/DataImport/ExternXlsDataFile.hh
+src/Extensions/DataImport/ExternXlsDataFile.cc

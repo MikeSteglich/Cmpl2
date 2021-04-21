@@ -11,6 +11,7 @@ MODULE_CLASS_REG( MODULE_CONF_ORDER_PREP,          inputFunctions,       "define
 MODULE_CLASS_REG( MODULE_CONF_ORDER_PREP,          classFunctions,       "defines utility functions for simple object orientation" )
 
 MODULE_CLASS_REG( MODULE_CONF_ORDER_PREP,		   externDataFile,		 "import of extern data from cmpl data file" )
+MODULE_CLASS_REG( MODULE_CONF_ORDER_PREP,		   externXlsDataFile,		 "import of extern data from cmpl data file, which is originated from Excel data" )
 
 MODULE_CLASS_REG( MODULE_CONF_ORDER_PREP,		   solverSelect,		 "configurable selection of solver and appropriate options" )
 

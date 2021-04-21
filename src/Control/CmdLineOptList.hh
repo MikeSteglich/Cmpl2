@@ -348,6 +348,29 @@ namespace cmpl
          */
         static void writeToOptFile(ostream *ostr, int tp, const char *name, const char *arg, const char *fixloc);
 
+        /**
+         * write all options from a command line option file
+         * @param ctrl		main object
+         * @param istr      stream for reading
+         * @param fpos      position info of command line option file
+         * @param opts1     command line option list for type code 1
+         * @param opts2     command line option list for type code 2
+         * @param resname   if a option with this name and type code 0 is found then return its first parameter
+         * @return          found parameter value according resname or empty string
+         */
+        static string readFromOptFile(MainControl *ctrl, istream *istr, PositionInfo &fpos, CmdLineOptList &opts1, CmdLineOptList &opts2, const char *resname);
+
+        /**
+         * parse location information for one option from a command line option file
+         * @param ctrl		main object
+         * @param opt       option
+         * @param tp        type code (1: command line / 2: cmpl header / 0: internal)
+         * @param ol        true: location for option, using locs1 and locs2 / false: position for argument of option, using only locs1
+         * @param locs1     first location info string
+         * @param locs2     second location info string
+         */
+        static void parseLocFromOptFile(MainControl *ctrl, SingleOption& opt, int tp, bool ol, string *locs1, string *locs2 = NULL);
+
 
 		/****** functions for serialization ****/
 

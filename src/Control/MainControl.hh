@@ -357,12 +357,21 @@ namespace cmpl
 		 * parse special command line options only for MainControl
 		 * @param opts          command line options
 		 * @param vh            search for options for print version or usage
+         * @param io            search for option for command line option file
 		 * @param fbn           search for option for file base name
 		 * @param prt			search for option for protocol output
 		 * @param mcf           search for option for module config file
 		 * @param mod           search for options for module names
 		 */
-		void parseControlOpts(CmdLineOptList *opts, bool vh, bool fbn, bool prt, bool mcf, bool mod);
+        void parseControlOpts(CmdLineOptList *opts, bool vh, bool io, bool fbn, bool prt, bool mcf, bool mod);
+
+        /**
+         * read command line options from file
+         * @param fn            file name
+         * @param pos           position info for file name
+         * @param nloc          location info of option with file name
+         */
+        void readFromOptFile(string& fn, PositionInfo& npos, LocationInfo& nloc);
 
 	public:
 		/**

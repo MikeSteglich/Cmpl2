@@ -311,9 +311,10 @@ namespace cmpl
          * @param sep		separating chars
          * @param msep      multiple consecutive separating chars count as one separator
          * @param esc       use escape with \ for embedded quotes (false: use doubled quote char)
+         * @param keepq     keep quotes and escapes in returned word
          * @return			false if no more word found
 		 */
-        static bool iterWords(const string& str, string& word, size_t& pos, bool& quote, char qc = '"', const char *sep = WHITE_SPACES, bool msep = true, bool esc = false);
+        static bool iterWords(const string& str, string& word, size_t& pos, bool& quote, char qc = '"', const char *sep = WHITE_SPACES, bool msep = true, bool esc = false, bool keepq = false);
 
         /**
          * return a string suitable as name

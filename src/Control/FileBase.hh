@@ -59,6 +59,7 @@ namespace cmpl
 #define IO_FILE_STANDARD_CDAT		"{}.cdat"			///< cmpl data file
 #define IO_FILE_STANDARD_OPRE		"{}.precmpl"		///< output file with precompiler result
 #define IO_FILE_STANDARD_EXTDATA	"{}.extdata"		///< output file with extern data info
+#define IO_FILE_STANDARD_OOPT       "{}.opt"            ///< output file with command line options
 #define IO_FILE_STANDARD_MPS		"{}.mps"			///< model output mps or free mps file
 #define IO_FILE_STANDARD_OSIL		"{}.osil"			///< model output osil file
 #define IO_FILE_STANDARD_MATRIX		"{}.mat"			///< model output  matrix file

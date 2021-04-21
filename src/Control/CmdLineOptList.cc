@@ -426,7 +426,7 @@ namespace cmpl
         if (p1.type() == POSITION_TYPE_WORDARR && p2.hasCol())
             *ostr << p1.col() << ';' << (p2.col() - 1) << ';';
         else if ((p1.type() == POSITION_TYPE_FILE || p1.type() == POSITION_TYPE_STREAM) && p2.hasCol())
-            *ostr << StringStore::quoteString(p1.name()) << ',' << p1.line() << ',' << p1.col() << ';' << (p2.col() - 1) << ';';
+            *ostr << StringStore::quoteString(p1.name()) << ',' << p1.line() << ',' << p1.col() << ';' << p2.col() << ';';
         else
             *ostr << ";;";
 
@@ -467,6 +467,161 @@ namespace cmpl
 
         *ostr << endl;
     }
+
+
+    /**
+     * write all options from a command line option file
+     * @param ctrl		main object
+     * @param istr      stream for reading
+     * @param fpos      position info of command line option file
+     * @param opts1     command line option list for type code 1
+     * @param opts2     command line option list for type code 2
+     * @param resname   if a option with this name and type code 0 is found then return its first parameter
+     * @return          found parameter value according resname or empty string
+     */
+    string CmdLineOptList::readFromOptFile(MainControl *ctrl, istream *istr, PositionInfo& fpos, CmdLineOptList& opts1, CmdLineOptList& opts2, const char *resname)
+    {
+        string res;
+        string l, word;
+        bool quote;
+        const char *sep = ";";
+
+        int line = 0;
+        while (getline(*istr, l)) {
+            fpos.set(++line);
+
+            if (!l.empty() && !isspace(l[0]) && l[0] != '#') {
+                int nr = 1;
+                size_t pos = 0;
+                fpos.setCol(pos + 1);
+
+                SingleOption opt(NULL);
+                int tp, cnt = -1;
+                string oloc1;
+
+                try {
+                    while (StringStore::iterWords(l, word, pos, quote, '"', sep, false, true, true)) {
+                        switch (nr) {
+                            case 1: opt._opt = word; break;
+                            case 2: opt._module = word; break;
+                            case 3: tp = stoi(word); break;
+                            case 4: oloc1 = word; break;
+                            case 5: parseLocFromOptFile(ctrl, opt, tp, true, &oloc1, &word); break;
+                            case 6: opt._neg = (stoi(word) != 0); break;
+                            case 7: opt._prio = stoi(word); break;
+                            case 8: opt._sepArgStart = stoi(word); break;
+                            case 9: opt._useCount = stoi(word); break;
+                            case 10: cnt = stoi(word); break;
+                            case 11: opt._args.push_back(StringStore::unquoteString(word)); break;
+                            case 12: parseLocFromOptFile(ctrl, opt, tp, false, &word); cnt--; nr -= 2; break;
+                        }
+
+                        nr++;
+                        fpos.setCol(pos + 1);
+                    }
+                }
+                catch (...) {
+                    throw FileException("invalid format", fpos.name());
+                }
+                if (cnt) {
+                    throw FileException("wrong count of arguments", fpos.name());
+                }
+
+                if (tp == 0 && resname && opt._opt == resname) {
+                    res = opt._args[0];
+                }
+                else {
+                    CmdLineOptList& optlst = (tp >= 2 ? opts2 : opts1);
+                    optlst._opts.push_back(new SingleOption(&opt, &optlst));
+                }
+            }
+        }
+
+        return res;
+    }
+
+    /**
+     * parse location information for one option from a command line option file
+     * @param ctrl		main object
+     * @param opt       option
+     * @param tp        type code (1: command line / 2: cmpl header / 0: internal)
+     * @param ol        true: location for option, using locs1 and locs2 / false: position for argument of option, using only locs1
+     * @param locs1     first location info string
+     * @param locs2     second location info string
+     */
+    void CmdLineOptList::parseLocFromOptFile(MainControl *ctrl, SingleOption& opt, int tp, bool ol, string *locs1, string *locs2)
+    {
+        if (!locs1 || locs1->empty() || StringStore::lrTrim(*locs1).empty())
+            locs1 = NULL;
+        if (!locs2 || locs2->empty() || StringStore::lrTrim(*locs2).empty())
+            locs2 = NULL;
+
+        if (ol) {
+            if (locs1) {
+                int nr = 0;
+                size_t pos = 0;
+                const char *sep = ",";
+                string word, s1, s2, s3;
+                bool quote, q1;
+
+                while (StringStore::iterWords(*locs1, word, pos, quote, '"', sep, false, true, false)) {
+                    nr++;
+                    switch (nr) {
+                        case 1: s1 = word; q1 = quote; break;
+                        case 2: s2 = word; break;
+                        case 3: s3 = word; break;
+                    }
+                }
+
+                if (nr == 3) {
+                    PositionInfo p(POSITION_TYPE_FILE, ctrl->data()->globStrings()->store(StringStore::unquoteString(s1)));
+                    p.set(stoi(s2), stoi(s3));
+
+                    opt._locName.setFrom(p, p);
+                    opt._locName.columns(opt._opt.size());
+
+                    opt._locOpt.setFrom(p, p);
+                    if (locs2)
+                        opt._locOpt.columns(stoi(*locs2) + 1 - stoi(s2));
+                    else
+                        opt._locOpt.columns(opt._opt.size());
+                }
+
+                else if (nr == 1 && q1) {
+                    PositionInfo p(POSITION_TYPE_DESCR, ctrl->data()->globStrings()->store(StringStore::unquoteString(s1)));
+                    opt._locName.setFrom(p, p);
+                    opt._locOpt.setFrom(p, p);
+                }
+
+                else if (nr == 1 && tp <= 1) {
+                    PositionInfo p(POSITION_TYPE_WORDARR, "command line");
+                    p.set(stoi(s1));
+
+                    opt._locName.setFrom(p, p);
+                    opt._locName.columns(1);
+
+                    opt._locOpt.setFrom(p, p);
+                    if (locs2)
+                        opt._locOpt.columns(stoi(*locs2) + 1 - stoi(s1));
+                    else
+                        opt._locOpt.columns(1);
+                }
+            }
+        }
+
+        else {
+            const PositionInfo& opos = opt._locOpt.begin();
+            if (opos.hasCol() && locs1) {
+                PositionInfo apos = opos;
+                apos.setCol(stoi(*locs1));
+                opt._argPos.push_back(apos);
+            }
+            else {
+                opt._argPos.emplace_back();
+            }
+        }
+    }
+
 
 
 	/****** functions for serialization ****/
