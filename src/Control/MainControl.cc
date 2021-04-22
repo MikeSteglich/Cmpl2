@@ -211,7 +211,7 @@ namespace cmpl
 			_modConf->parseCmdLineOptModule(defMod, true, defPos);
 		}
 
-        if (!_isSilent) {
+        if (!_isSilent and !_isSilentStart) {
             version(cout);
             CmplOutput(cout, "Interpreting Cmpl code");
         }

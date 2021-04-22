@@ -22,3 +22,4 @@ bin/cmpl
 *.user
 cmpl2.creator.user
 bin/cmpl
+*.d
