@@ -416,7 +416,7 @@ namespace cmpl
         }
 
         FileInput dataFile;
-        dataFile.setFile(ctrl()->data(), IO_MODE_FILE, fnp, IO_FILE_STANDARD_CDAT);
+        dataFile.setFile(ctrl()->data(), IO_MODE_FILE, fnp, ((ExternDataFile *)_ext)->cdatStandard());
         dataFile.setAliases(&(_mod->fileAlias()));
 
         // get directory name if necessary

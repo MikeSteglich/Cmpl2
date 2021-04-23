@@ -119,6 +119,8 @@ namespace cmpl
         bool _optWarnUnused;                        ///< output warning if a command line option ist not used
         set<string> _optMarkUsed;                   ///< mark this command line options as used
 
+        bool _isSilentStart;                        ///< suppresses output of start message
+
 #if PROTO
 		StringStore _protoFileNames;				///< string store for names of protocol files
 		map<int, FileOutput *> _protoFiles;			///< protocol output files per number of filename in _protoFileNames

@@ -59,6 +59,11 @@ namespace cmpl
          */
         ExternXlsDataFile(ModuleBase *mod, int est, int hp): ExternDataFile(mod, est, hp)  { }
 
+        /**
+         * get standard name for cmpl data file
+         */
+        const char *cdatStandard() override         { return IO_FILE_STANDARD_XDAT; }
+
 #if PROTO
 		/**
 		 * get name of the extension, only used for protocol output

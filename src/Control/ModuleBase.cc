@@ -53,7 +53,6 @@ namespace cmpl
 #endif
 
         _isSilent=false;
-        _isSilentStart=false;
         _deactivated = false;
         _startTime = chrono::system_clock::now();
 
@@ -213,8 +212,7 @@ namespace cmpl
 // defines for reference numbers of options
 #define OPTION_PROTO_FILE	1
 #define OPTION_SILENT       2
-#define OPTION_SILENT_START       3
-#define OPTION_DEACTIVATE   4
+#define OPTION_DEACTIVATE   3
 
 	/**
 	 * register command line options for delivery to this module
@@ -226,7 +224,6 @@ namespace cmpl
 		REG_CMDL_OPTION( OPTION_PROTO_FILE, "p", 0, 1, CMDL_OPTION_NEG_NO_ARG, true );
 #endif
         REG_CMDL_OPTION( OPTION_SILENT ,"silent", 0, 0, CMDL_OPTION_NEG_NO_ARG, false );
-        REG_CMDL_OPTION( OPTION_SILENT_START ,"silent-start", 0, 0, CMDL_OPTION_NEG_NO_ARG, false );
         REG_CMDL_OPTION( OPTION_DEACTIVATE ,"deactivate", 0, 0, CMDL_OPTION_NEG_NO_ARG, true );
     }
 
@@ -252,10 +249,6 @@ namespace cmpl
 
         case OPTION_SILENT:
             _isSilent = !opt->neg();
-            return true;
-
-        case OPTION_SILENT_START:
-            _isSilentStart = !opt->neg();
             return true;
 
         case OPTION_DEACTIVATE:
@@ -298,11 +291,11 @@ namespace cmpl
 	 */
 	void ModuleBase::usage(ostream& s)
 	{
+        s << "  -silent                       suppresses all outputs" << endl;
+        s << "  -deactivate                   deactivate the module" << endl;
 #if PROTO
 		s << "  -p [<file>]                   output protocol messages for this module to <file> or stdout" << endl;
 #endif
-        s << "  -silent                       suppresses all outputs" << endl;
-        s << "  -deactivate                   deactivate the module" << endl;
     }
 
 

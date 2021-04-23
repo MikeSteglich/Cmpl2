@@ -89,6 +89,11 @@ namespace cmpl
         inline const char *cdatDefault()                   { return _cdatDefault; }
 
         /**
+         * get standard name for cmpl data file
+         */
+        virtual const char *cdatStandard()                 { return IO_FILE_STANDARD_CDAT; }
+
+        /**
          * get whether read values for all symbols from a data file at once
          */
         inline bool readAll()                              { return _readAll; }

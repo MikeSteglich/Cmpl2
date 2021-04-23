@@ -118,6 +118,7 @@ namespace cmpl
 
         _optOutFile = NULL;
         _optWarnUnused = true;
+        _isSilentStart = false;
 
         _printVersion = _printUsage = _usageAll = false;
 	}
@@ -211,7 +212,7 @@ namespace cmpl
 			_modConf->parseCmdLineOptModule(defMod, true, defPos);
 		}
 
-        if (!_isSilent and !_isSilentStart) {
+        if (!_isSilent && !_isSilentStart) {
             version(cout);
             CmplOutput(cout, "Interpreting Cmpl code");
         }
@@ -326,6 +327,8 @@ namespace cmpl
 #define OPTION_OPTS_WARN_UNUSED     16
 #define OPTION_OPTS_MARK_USED       17
 
+#define OPTION_SILENT_START         18
+
 	/**
 	 * register command line options for delivery to this module
 	 * @param modOptReg     vector to register in
@@ -339,7 +342,9 @@ namespace cmpl
         REG_CMDL_OPTION( OPTION_OPTS_OUTFILE, "o-opt", 0, 1, CMDL_OPTION_NEG_NO_ARG, true );
         REG_CMDL_OPTION( OPTION_OPTS_WARN_UNUSED, "warn-unused", 0, 0, CMDL_OPTION_NEG_DELIV, true );
         REG_CMDL_OPTION( OPTION_OPTS_MARK_USED, "mark-used", 0, -1, CMDL_OPTION_NEG_DELIV, false );
-	}
+
+        REG_CMDL_OPTION( OPTION_SILENT_START ,"silent-start", 0, 0, CMDL_OPTION_NEG_NO_ARG, false );
+    }
 
     /**
      * get names of command line options which are not to write to a command line option file
@@ -417,6 +422,10 @@ namespace cmpl
                 else
                     _optMarkUsed.erase((*opt)[0]);
             }
+            return true;
+
+        case OPTION_SILENT_START:
+            _isSilentStart = !opt->neg();
             return true;
         }
 
@@ -746,7 +755,6 @@ namespace cmpl
 			s << "  -h [<module>]                 print this usage info or the usage info for a module" << endl;
             s << "  -help                         print this usage info and the usage info for all modules" << endl;
             s << "  -v                            print version info" << endl;
-			s << "  -p [<file>]                   output protocol messages of cmpl main control to <file> or stdout" << endl;
 			s << "  -e [<file>]                   output error messages to file or stderr" << endl;
             s << "  -cmsg [<file>]                error handling via cmplMsg file" << endl;
 			s << "  -config <file>                use <file> for module configuration instead of " << modConfigFileDefault() << endl;
@@ -756,6 +764,10 @@ namespace cmpl
             s << "  -i-opt <file>                 read command line options from <file>" << endl;
             s << "  -warn-unused                  output warning if a command line option ist not used (enabled by default)" << endl;
             s << "  -mark-used <opt1> ...         mark command line options given as arguments as used" << endl;
+            s << "  -silent-start                 suppresses output of start message" << endl;
+
+            ModuleBase::usage(s);
+
             s << "  -modules <mod1> ...           use this modules or module aggregations for execution" << endl;
             s << "                                    you can also use every module name as a single option" << endl;
 

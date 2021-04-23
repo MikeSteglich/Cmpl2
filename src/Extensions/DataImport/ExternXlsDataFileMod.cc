@@ -55,6 +55,7 @@ namespace cmpl
     {
         if (_regPrecompiler) {
             const char *m = (_registerMods.size() > 0 ? _registerMods[0].c_str() : "precompile");
+            REG_CMDL_OPTION_EXT(OPTION_EXT_EXEC_PRECOMP_DATFILE, "xdat", 1, 1, CMDL_OPTION_NEG_NO_ARG, true, id, m, EXT_CMDLOPT_PRECOMP_SIMPLE, ext);
             REG_CMDL_OPTION_EXT(OPTION_EXT_EXEC_PRECOMP_ASSARRSUB, "assert-array-sub", 0, 0, CMDL_OPTION_NEG_DELIV, true, id, m, EXT_CMDLOPT_PRECOMP_SIMPLE, ext);
 
             REG_CMDL_OPTION_EXT(OPTION_EXT_EXEC_PRECOMP_DATA, "xlsdata", 0, -1, CMDL_OPTION_NEG_ERROR, false, id, m, EXT_CMDLOPT_PRECOMP_PROC_DATA, ext);
@@ -75,6 +76,7 @@ namespace cmpl
     {
         DataImportBaseMod::usage(s);
 
+        s << "  -xdat <file>                  set name for default data file" << endl;
         s << "  -xlsdata <string>             string with data declaration, mainly for use in cmpl header" << endl;
         s << "  -xlsdata: <string>            synonym for '-xlsdata : <string>', mainly for use in cmpl header" << endl;
         s << "  -read-all                     read values for all symbols from a data file at once (default: false)" << endl;

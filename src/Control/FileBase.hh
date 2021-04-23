@@ -57,6 +57,7 @@ namespace cmpl
 // values for standard file names ("{}" is replaced by the base file name)
 #define IO_FILE_STANDARD_CMPL		"{}.cmpl"			///< cmpl input file
 #define IO_FILE_STANDARD_CDAT		"{}.cdat"			///< cmpl data file
+#define IO_FILE_STANDARD_XDAT		"{}.xdat"			///< cmpl data file for excel data
 #define IO_FILE_STANDARD_OPRE		"{}.precmpl"		///< output file with precompiler result
 #define IO_FILE_STANDARD_EXTDATA	"{}.extdata"		///< output file with extern data info
 #define IO_FILE_STANDARD_OOPT       "{}.opt"            ///< output file with command line options

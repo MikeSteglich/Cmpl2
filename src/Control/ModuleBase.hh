@@ -70,8 +70,7 @@ namespace cmpl
 		MainControl *_ctrl;						///< main object of execution
 		MainData *_data;						///< data object, filled inside the run method
 
-        bool _isSilent;
-        bool _isSilentStart;///< suppresses all outputs
+        bool _isSilent;                         ///< suppresses output messages
         bool _deactivated;                      ///< module is deactivated      //TODO: fuer Extensions auch spaeter ausliefern, damit auch ueber cmpl-Header? (dann auch in ExtensionBase geeignet beruecksichtigen)
 
 	private:
