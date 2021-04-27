@@ -34,7 +34,43 @@
 
 namespace cmpl
 {
-	/* empty, because identical to its base class */
+    /**
+     * read all symbols from a data file
+     * @param fh                file handling object
+     * @param inStr             stream for reading data file
+     * @param fn                name of data file
+     * @param nm                namespace name / -1: no namespace
+     * @param loc				location of data header line
+     */
+    void ExternXlsDataFile::readFileAllSymbols(ExternDataFileHandleOpt *fh, istream *inStr, string& fn, int nm, LocationInfo& loc)
+    {
+        string sep = StringStore::whiteSpaces() + "[<";
+        string l, s;
+        streampos p;
+        size_t i;
+
+        const char *inpstart = "@input";
+        bool inpsect = false;
+
+        while (getline(*inStr, l)) {
+            if (!l.empty() && (l[0] == '%' || l[0] == '@')) {
+                i = l.find_first_of(sep);
+
+                if (l[0] == '@') {
+                    inpsect = ((i == string::npos && l == inpstart) || (i == strlen(inpstart) && l.substr(0, i) == inpstart));
+                }
+
+                else if (inpsect) {
+                    p = inStr->tellg() - (streamoff)(inStr->gcount());
+
+                    s = (i != string::npos ? l.substr(1, i - 1) : l.substr(1));
+                    s = StringStore::lTrim(s);
+
+                    insertDataSymbol(fh, nm, s, fn, loc, (long)p);
+                }
+            }
+        }
+    }
 }
 
 

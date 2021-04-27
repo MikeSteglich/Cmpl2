@@ -137,6 +137,53 @@ namespace cmpl
     /************** import of data **********/
 
     /**
+     * read all symbols from a data file
+     * @param fh            file handling object
+     * @param inStr         stream for reading data file
+     * @param fn            name of data file
+     * @param nm            namespace name / -1: no namespace
+     * @param loc			location of data header line
+     */
+    void ExternDataFile::readFileAllSymbols(ExternDataFileHandleOpt *fh, istream *inStr, string& fn, int nm, LocationInfo& loc)
+    {
+        string sep = StringStore::whiteSpaces() + "[<";
+        string l, s;
+        streampos p;
+        size_t i;
+
+        while (getline(*inStr, l)) {
+            if (!l.empty() && l[0] == '%') {
+                p = inStr->tellg() - (streamoff)(inStr->gcount());
+
+                i = l.find_first_of(sep);
+                s = (i != string::npos ? l.substr(1, i - 1) : l.substr(1));
+                s = StringStore::lTrim(s);
+
+                insertDataSymbol(fh, nm, s, fn, loc, (long)p);
+            }
+        }
+    }
+
+    /**
+     * insert data symbol in info about extern data
+     * @param fh            file handling object
+     * @param nm            namespace name / -1: no namespace
+     * @param sym           symbol name
+     * @param fn            file name of cmpl data file
+     * @param loc           location of data symbol in input file
+     * @param sp            position of symbol in the data file / -1: not known
+     * @return              true if symbol is inserted to info
+     */
+    void ExternDataFile::insertDataSymbol(ExternDataFileHandleOpt *fh, int nm, string& sym, string& fn, LocationInfo& loc, long sp)
+    {
+        if (fh->insertDataSymbol(nm, sym, fn, loc, sp)) {
+            if (nm >= 0)
+                fh->_mod->resStream() << fh->data()->globStrings()->at(nm) << '.';
+            fh->_mod->resStream() << sym << "; ";
+        }
+    }
+
+    /**
      * import data values
      * @param mod       module calling the extension
      * @param ei		info about external data to import
@@ -495,28 +542,7 @@ namespace cmpl
             PROTO_OUTL("  open data file '" << dataFile.fileNameReplaced() << "' to read all symbols");
 
             istream *inStr = dataFile.open();
-
-            string sep = StringStore::whiteSpaces() + "[<";
-            string l, s;
-            streampos p;
-            size_t i;
-
-            while (getline(*inStr, l)) {
-                if (!l.empty() && l[0] == '%') {
-                    p = inStr->tellg() - (streamoff)(inStr->gcount());
-
-                    i = l.find_first_of(sep);
-                    s = (i != string::npos ? l.substr(1, i - 1) : l.substr(1));
-                    s = StringStore::lTrim(s);
-
-                    if (insertDataSymbol(nm, s, fn, loc, (long)p)) {
-                        if (nm >= 0)
-                            _mod->resStream() << data()->globStrings()->at(nm) << '.';
-                        _mod->resStream() << s << "; ";
-                    }
-                }
-            }
-
+            ((ExternDataFile *)_ext)->readFileAllSymbols(this, inStr, fn, nm, loc);
             dataFile.close();
         }
         catch (FileException& e) {
@@ -658,7 +684,6 @@ namespace cmpl
 
         return ret;
     }
-
 
 
 

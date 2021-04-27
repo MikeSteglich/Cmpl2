@@ -418,9 +418,9 @@ namespace cmpl
         case OPTION_OPTS_MARK_USED:
             for (size_t i = 0; i < opt->size(); i++) {
                 if (!(opt->neg()))
-                    _optMarkUsed.insert((*opt)[0]);
+                    _optMarkUsed.insert((*opt)[i]);
                 else
-                    _optMarkUsed.erase((*opt)[0]);
+                    _optMarkUsed.erase((*opt)[i]);
             }
             return true;
 

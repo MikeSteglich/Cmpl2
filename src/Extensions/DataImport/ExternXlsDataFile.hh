@@ -68,8 +68,19 @@ namespace cmpl
 		/**
 		 * get name of the extension, only used for protocol output
 		 */
-		virtual const char *extName()				{ return "externXlsDataFile"; }
+        const char *extName() override  			{ return "externXlsDataFile"; }
 #endif //PROTO
+
+    protected:
+        /**
+         * read all symbols from a data file
+         * @param fh                file handling object
+         * @param inStr             stream for reading data file
+         * @param fn                name of data file
+         * @param nm                namespace name / -1: no namespace
+         * @param loc				location of data header line
+         */
+        void readFileAllSymbols(ExternDataFileHandleOpt *fh, istream *inStr, string& fn, int nm, LocationInfo& loc) override;
     };
 }
 

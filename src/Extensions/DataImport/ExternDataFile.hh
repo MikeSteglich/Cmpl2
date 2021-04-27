@@ -45,6 +45,7 @@ using namespace std;
 
 namespace cmpl
 {
+    class ExternDataFileHandleOpt;
     class ExternDataFileImport;
     class ExecContext;
     struct ImportExternDataInfo;
@@ -69,6 +70,8 @@ namespace cmpl
 	class ExternDataFile : public DataImportBase
 	{
     protected:
+        friend class ExternDataFileHandleOpt;
+
         const char *_cdatDefault;   ///< default name for cmpl data file
         bool _readAll;              ///< read values for all symbols from a data file at once
         bool _assArraySub;          ///< accept for a given array assertion a definition set that is a subset of the given set / false: check for equality
@@ -157,9 +160,31 @@ namespace cmpl
         virtual ~ExternDataFile();
 
         /**
+         * read all symbols from a data file
+         * @param fh            file handling object
+         * @param inStr         stream for reading data file
+         * @param fn            name of data file
+         * @param nm            namespace name / -1: no namespace
+         * @param loc			location of data header line
+         */
+        virtual void readFileAllSymbols(ExternDataFileHandleOpt *fh, istream *inStr, string& fn, int nm, LocationInfo& loc);
+
+        /**
+         * insert data symbol in info about extern data
+         * @param fh            file handling object
+         * @param nm            namespace name / -1: no namespace
+         * @param sym           symbol name
+         * @param fn            file name of cmpl data file
+         * @param loc           location of data symbol in input file
+         * @param sp            position of symbol in the data file / -1: not known
+         * @return              true if symbol is inserted to info
+         */
+        void insertDataSymbol(ExternDataFileHandleOpt *fh, int nm, string& sym, string& fn, LocationInfo& loc, long sp);
+
+        /**
          * import data values
-         * @param mod       module calling the extension
-         * @param ei		info about external data to import
+         * @param mod           module calling the extension
+         * @param ei            info about external data to import
          */
         virtual void import(ModuleBase *mod, ImportExternDataInfo *ei);
 	};
@@ -171,6 +196,8 @@ namespace cmpl
     class ExternDataFileHandleOpt: public DataImportExtensionPar::InternalDataBase
     {
     protected:
+        friend class ExternDataFile;
+
         DataImportBase::TxtWord *_filename;         ///< filename of data file / NULL: not specified
         DataImportBase::TxtWord *_namespace;        ///< namespace name / NULL: not specified
 
@@ -180,7 +207,7 @@ namespace cmpl
 
         DataImportBase::ErrorInfo *_errorInfo;      ///< info about possible error / NULL: no error
         vector<LocationInfo*> _locations;           ///< locations used here
-
+        
     public:
         /**
          * constructor
