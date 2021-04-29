@@ -165,6 +165,8 @@ namespace cmpl
         if (_cmplMsgOut) {
 
             try {
+
+                _ctrl->CmplOutput(cout,"Writing CmplMessages to file > "+ _cmplMsgOut->fileNameReplaced()  );
                 ostream *oOut = _cmplMsgOut->open();
 
 
@@ -225,7 +227,7 @@ namespace cmpl
                 *oOut << "</CmplMessages>" << endl;
                 _cmplMsgOut->close();
 
-                _ctrl->CmplOutput(cout,"CmplMessages have been written to >"+ _cmplMsgOut->fileNameReplaced()  );
+
             }
 
             catch (exception& e) {

@@ -53,7 +53,6 @@
 
 #define MODULE_CONF_ORDER_OUTRES		100			// result output
 #define MODULE_CONF_ORDER_MATRIX		101			// generated matrix output
-#define MODULE_CONF_ORDER_CMPLINFO      102         // CmplInfo output
 
 #define MODULE_CONF_ORDER_SOLVERCBC		200			// solver cbc
 #define MODULE_CONF_ORDER_SOLVERGLPK	201 		// solver glpk

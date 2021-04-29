@@ -40,8 +40,6 @@ MODULE_CLASS_REG( MODULE_CONF_ORDER_CMPL_EXEC,     interpret,            "execut
 // output of generated model
 MODULE_CLASS_REG( MODULE_CONF_ORDER_OUTRES,        writeMps,             "writes the generated model to an MPS file" )
 MODULE_CLASS_REG( MODULE_CONF_ORDER_MATRIX,        writeMatrix,             "writes the generated matrix to an file" )
-MODULE_CLASS_REG( MODULE_CONF_ORDER_CMPLINFO,        writeCmplInfo,             "writes the generated infos to an file" )
-
 
 // solver
 MODULE_CLASS_REG( MODULE_CONF_ORDER_SOLVERCBC,        solverCbc,          "executes CBC as solver" )
