@@ -43,7 +43,6 @@ src/Modules/Interpreter/ValType.cc
 src/Modules/Interpreter/ValType.hh
 src/Modules/Interpreter/ValueStore.cc
 src/Modules/Interpreter/ValueStore.hh
-src/Modules/OutModel/OutCmplInfo.cc
 src/Modules/OutModel/OutCmplInfo.hh
 src/Modules/OutModel/OutModelExtData.cc
 src/Modules/OutModel/OutModelExtData.hh

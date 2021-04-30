@@ -1768,7 +1768,7 @@ namespace cmpl {
 #line 400 "CMPL_Parser.yy" // lalr1.cc:859
     { (yystack_[2].value.s)._u.exp->checkCbhAssignError(&PARSE_CONTEXT, yystack_[1].location);
 																				  (yylhs.value.s).init(); CMPLELEMENTRY_ALT((yylhs.value.s), SyntaxElementCompareOp, yystack_[2].location, yystack_[0].location, (yystack_[2].value.s)._name, "=="); CMPLELEM_CHILD2((yylhs.value.s), (yystack_[2].value.s), (yystack_[0].value.s)); NOT_USED((yystack_[1].value.s));
-																				  (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, ICS_OPER_EQ2, (yystack_[0].value.s)._u.exp, true));
+                                                                                  (yylhs.value.s).setExp((yystack_[2].value.s)._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CMP2, (yystack_[0].value.s)._u.exp, true));
 																				  COMP_OPERATION((yylhs.value.s)._elem, ICS_OPER_EQ, 2); }
 #line 1774 "_CMPL_Parser.cc" // lalr1.cc:859
     break;

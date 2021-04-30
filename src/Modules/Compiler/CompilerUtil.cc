@@ -1509,7 +1509,8 @@ namespace cmpl
 			}
 			else if (op == EXPR_INFO_OP_NUM || op == EXPR_INFO_OP_IN || op == EXPR_INFO_OP_SET || op == EXPR_INFO_OP_LOG || op == EXPR_INFO_OP_LOG_AND || op == EXPR_INFO_OP_CMP || op == EXPR_INFO_OP_CMP2) {
                 if ((_expOp == EXPR_INFO_OP_CMP || _expOp == EXPR_INFO_OP_CMP2) && (op == EXPR_INFO_OP_CMP || op == EXPR_INFO_OP_CMP2)) {
-                    comp->compSetCompareCont(_codeAddrNext);
+                    if (!comp->checkOnly())
+                        comp->compSetCompareCont(_codeAddrNext);
                     if (_expOp == EXPR_INFO_OP_CMP2 || op == EXPR_INFO_OP_CMP2)
                         ERRHANDLERCOMPC->error(ERROR_LVL_NORMAL, "continued compare operation is not allowed for '==' or '!='", e2->_loc);
                 }

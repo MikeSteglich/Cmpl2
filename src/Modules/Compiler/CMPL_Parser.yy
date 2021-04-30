@@ -399,7 +399,7 @@ blockBody		: directiveParts expression										{ $$.init(); CMPLELEMENTRY($$, S
 expressionWithCodeblockSymbolDef: expression									{ $$ = $1; $1._u.exp->checkLNPError(&PARSE_CONTEXT); }
 				| expression ASSIGN expression									{ $1._u.exp->checkCbhAssignError(&PARSE_CONTEXT, @2);
 																				  $$.init(); CMPLELEMENTRY_ALT($$, SyntaxElementCompareOp, @1, @3, $1._name, "=="); CMPLELEM_CHILD2($$, $1, $3); NOT_USED($2);
-																				  $$.setExp($1._u.exp->oper(&PARSE_CONTEXT, ICS_OPER_EQ2, $3._u.exp, true));
+                                                                                  $$.setExp($1._u.exp->oper(&PARSE_CONTEXT, EXPR_INFO_OP_CMP2, $3._u.exp, true));
 																				  COMP_OPERATION($$._elem, ICS_OPER_EQ, 2); }
 				;
 

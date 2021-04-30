@@ -180,7 +180,7 @@ namespace cmpl
 				}
 				if (!(opt->neg())) {
 					_externFile = new FileInput();
-					_externFile->setFile(_data, IO_MODE_FILE, (opt->size() > 0 ? &((*opt)[0]) : NULL), IO_FILE_STANDARD_OPRE, true);
+                    _externFile->setFile(_data, IO_MODE_FILE, (opt->size() > 0 ? &((*opt)[0]) : NULL), IO_FILE_STANDARD_EXTDATA, true);
 					if (opt->size() > 0)
 						_externFile->setLocSrc(opt->argPos(0));
 					else
