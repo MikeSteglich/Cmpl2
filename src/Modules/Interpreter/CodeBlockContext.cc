@@ -130,6 +130,15 @@ namespace cmpl
 
 
     /**
+     * get whether ordered execution for current part of this codeblock
+     */
+    bool CodeBlockContext::ordered() const
+    {
+        return ((_curPartPar & ICPAR_BLOCK_ORDERED) || _execContext->modp()->orderedIter());
+    }
+
+
+    /**
      * add a conditions over optimization variable for the current codeblock part
      * @param v             value with the condition formula (must be TP_FORMULA, TP_OPT_VAR or TP_BIN with value true)
      * @param se            syntax element of v

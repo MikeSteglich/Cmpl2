@@ -950,7 +950,8 @@ namespace cmpl
 
         for (unsigned i = 0; i < _parts.size(); i++) {
             CmplValAuto plb, pub;
-            const CmplVal& pv = _parts[i]._val;
+            const Part *p = dynamic_cast<Part *>(_parts[i].valFormula());
+            const CmplVal& pv = p->_val;
 
             if (pv.t == TP_FORMULA) {
                 pv.valFormula()->getBounds(plb, pub, con);
@@ -982,6 +983,34 @@ namespace cmpl
     }
 
     /**
+     * set model properties from this constraint
+     * @param prop          properties of optimization model
+     */
+    void ValFormulaCond::setModelProperties(OptModel::Properties& prop) const
+    {
+        if (prop.conditions <= 0)
+            prop.conditions = 1;
+
+        //TODO: wenn Teil keine Formel, sondern Einzelvariable ist, dann entsprechend behandeln
+        //          (vielleicht am besten direkt in OptVar auch passende Methode)
+        for (unsigned i = 0; i < _parts.size(); i++) {
+            const Part *p = dynamic_cast<Part *>(_parts[i].valFormula());
+
+            if (p->_posCond.t == TP_FORMULA)
+                p->_posCond.valFormula()->setModelProperties(prop);
+
+            for (unsigned n = 0; n < p->_negConds.size(); n++) {
+                const CmplVal& nc = p->_negConds[n];
+                if (nc.t == TP_FORMULA)
+                    nc.valFormula()->setModelProperties(prop);
+            }
+
+            if (p->_val.t == TP_FORMULA)
+                p->_val.valFormula()->setModelProperties(prop);
+        }
+    }
+
+    /**
      * write contents of the object to a stream
      * @param modp			calling module
      * @param mode			mode for output: 0=direct; 1=part of other value
@@ -994,22 +1023,22 @@ namespace cmpl
             if (i > 0)
                 ostr << ", ";
 
-            const Part& p = _parts[i];
+            const Part *p = dynamic_cast<Part *>(_parts[i].valFormula());
             ostr << '(';
 
-            if (p._posCond)
-                p._posCond.write(ostr, modp, 1);
+            if (p->_posCond)
+                p->_posCond.write(ostr, modp, 1);
 
-            for (unsigned n = 0; n < p._negConds.size(); n++) {
-                if (n > 0 || p._posCond)
+            for (unsigned n = 0; n < p->_negConds.size(); n++) {
+                if (n > 0 || p->_posCond)
                     ostr << " && ";
 
                 ostr << '!';
-                p._negConds[n].write(ostr, modp, 1);
+                p->_negConds[n].write(ostr, modp, 1);
             }
 
             ostr << " -> ";
-            p._val.write(ostr, modp, 1);
+            p->_val.write(ostr, modp, 1);
 
             ostr << ')';
         }

@@ -34,6 +34,7 @@
 
 #include <unordered_map>
 #include <list>
+#include <stack>
 
 #include "../Control/MainData.hh"
 #include "CmplVal.hh"
@@ -236,6 +237,13 @@ namespace cmpl
          */
         inline void setUsedByCon(int i)            { _usedByCon = i; }
 
+        /**
+         * iterates over all optimization variables found in formula or constraint
+         * @param fv        formula or constraint (only used in initializating call)
+         * @param stat      current internal iteration status, empty in initializating call
+         * @return          first (in initializating call) or next optimization variable, or NULL if iteration ended
+         */
+        static OptVar *iterInFormula(CmplVal& fv, stack<pair<ValFormula *, unsigned>>& stat);  // innerer Zustand: Liste/Stack von Tuples<Formula*, Index in formula->getPart> (im untersten Element ist Formel aus fv, sonst rekursiv aus darunterliegender)
         //TODO
 	};
 
@@ -596,12 +604,12 @@ namespace cmpl
             /**
              * get whether model has sos
              */
-            bool hasSos() { return sos>0;}
+            bool hasSos()           { return (sos > 0); }
 
             /**
              * get whether model has conditions
              */
-            bool hasConditions() { return conditions;}
+            bool hasConditions()    { return conditions; }
 
             /**
              * get model type (type with least linearizations)
@@ -707,47 +715,47 @@ namespace cmpl
          * sets whether the model runs in export or solving mode
          * @param exp		true for export mode
          */
-        inline void setExportOnly(bool exp) { _exportOnly=exp;}
+        inline void setExportOnly(bool exp)                     { _exportOnly = exp; }
 
         /**
          * gets indicator whether the model runs in export or solving mode
          * * @return        true for export mode
          */
-        inline bool exportOnly() { return _exportOnly; }
+        inline bool exportOnly()                                { return _exportOnly; }
 
         /**
          * sets row idx for the objective function
          * @param idx		row idx
          */
-        inline void setObjIdx(unsigned long idx) { _objIdx=idx;}
+        inline void setObjIdx(unsigned long idx)                { _objIdx = idx; }
 
         /**
          * gets row idx for the objective function
          */
-        inline unsigned long objIdx() {return _objIdx;}
+        inline unsigned long objIdx()                           { return _objIdx; }
 
 
         /**
          * sets name for the objective function
          * @param name		obj name
          */
-        inline void setObjName(string name) { _objName=name;}
+        inline void setObjName(string name)                     { _objName = name; }
 
         /**
          * gets the name for the objective function
          */
-        inline string objName() {return _objName;}
+        inline string objName()                                 { return _objName; }
 
         /**
          * sets sense for the objective function
          * @param name		obj name
          */
-        inline void setObjSense(string sense) { _objSense=sense;}
+        inline void setObjSense(string sense)                   { _objSense = sense; }
 
         /**
          * gets the sense for the objective function
          */
-        inline string objSense() {return _objSense;}
+        inline string objSense()                                { return _objSense; }
 
 
     private:

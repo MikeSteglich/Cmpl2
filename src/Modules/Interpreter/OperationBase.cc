@@ -2872,10 +2872,10 @@ namespace cmpl
         if (v.t == TP_OPT_VAR) {
             OptVar *ov = v.optVar();
             CmplValAuto fv(TP_FORMULA, new ValFormulaVarOp(ov->syntaxElem(), ov));
-            _parts.emplace_back(pc, ncs, fv);
+            _parts.emplace_back(TP_FORMULA, new Part(pc, ncs, fv, syntaxElem()));
         }
         else {
-            _parts.emplace_back(pc, ncs, v);
+            _parts.emplace_back(TP_FORMULA, new Part(pc, ncs, v, syntaxElem()));
         }
     }
 
@@ -2887,7 +2887,7 @@ namespace cmpl
     {
         while (cnt && _parts.size() >= 2) {
             _parts.pop_back();
-            _parts.back()._posCond.dispUnset();
+            dynamic_cast<Part *>(_parts.back().valFormula())->_posCond.dispUnset();
             cnt--;
         }
     }
@@ -2935,10 +2935,11 @@ namespace cmpl
             res->set(TP_FORMULA, f);
 
             CmplValAuto pr;
-            for (Part& p: f->_parts) {
-                if (p._val) {
-                    OperationBase::neg(ctx, &pr, se, &(p._val));
-                    p._val.moveFrom(pr, true);
+            for (CmplVal& vp: f->_parts) {
+                Part *p = dynamic_cast<Part *>(vp.valFormula());
+                if (p->_val) {
+                    OperationBase::neg(ctx, &pr, se, &(p->_val));
+                    p->_val.moveFrom(pr, true);
                 }
             }
         }
@@ -3034,7 +3035,7 @@ namespace cmpl
     void ValFormulaCondOp::notF(ExecContext *ctx, CmplVal *res, unsigned se)
     {
         CmplValAuto t;
-        if (convertToFormulaLogCon(ctx, &t, se))
+        if (convertToFormulaLogCon(ctx, &t, se, true))
             OperationBase::execUnaryOper(ctx, res, se, ICS_OPER_NOT, &t);
     }
 
@@ -3049,10 +3050,10 @@ namespace cmpl
     void ValFormulaCondOp::logAndOrF(ExecContext *ctx, CmplVal *res, unsigned se, CmplVal *a2, bool logOr)
     {
         CmplValAuto t1, t2;
-        if (convertToFormulaLogCon(ctx, &t1, se)) {
+        if (convertToFormulaLogCon(ctx, &t1, se, true)) {
             ValFormulaCondOp *f2 = (a2->t == TP_FORMULA ? dynamic_cast<ValFormulaCondOp *>(a2->valFormula()) : NULL);
             if (f2) {
-                if (!f2->convertToFormulaLogCon(ctx, &t2, se))
+                if (!f2->convertToFormulaLogCon(ctx, &t2, se, true))
                     return;
             }
             else {
@@ -3097,7 +3098,9 @@ namespace cmpl
             eqcond = (_parts.size() == a2cond->_parts.size());
             if (eqcond) {
                 for (unsigned i = 0; i < _parts.size(); i++) {
-                    if (!_parts[i].eqCond(a2cond->_parts[i])) {
+                    Part *p1 = dynamic_cast<Part *>(_parts[i].valFormula());
+                    Part *p2 = dynamic_cast<Part *>(a2cond->_parts[i].valFormula());
+                    if (!p1->eqCond(*p2)) {
                         eqcond = false;
                         break;
                     }
@@ -3127,10 +3130,13 @@ namespace cmpl
      * test whether _numericVar already exists, and if not then create it
      * @param ctx           execution context
      * @param se            syntax element id of operation
+     * @param nv            if not NULL then return here copy of _numericVar
      * @return              true if _numericVar is new created
      */
-    bool ValFormulaCondOp::checkCreateNumericVar(ExecContext *ctx, unsigned se)
+    bool ValFormulaCondOp::checkCreateNumericVar(ExecContext *ctx, unsigned se, CmplVal *nv)
     {
+        bool res = false;
+
         if (!_numericVar) {
             CmplValAuto lb, ub;
             getBounds(lb, ub, false);
@@ -3148,10 +3154,13 @@ namespace cmpl
             CmplValAuto cv(TP_FORMULA, this);
             v->setAddProp(new AddPropOptVarConValCond(cv));
 
-            return true;
+            res = true;
         }
 
-        return false;
+        if (nv)
+            nv->copyFrom(_numericVar);
+
+        return res;
     }
 
     /**
@@ -3159,13 +3168,15 @@ namespace cmpl
      * @param ctx           execution context
      * @param res           store for result value
      * @param se            syntax element id of operation
+     * @param err           output error message if not successful
      * @return              true if conversion is successful
      */
-    bool ValFormulaCondOp::convertToFormulaLogCon(ExecContext *ctx, CmplVal *res, unsigned se)
+    bool ValFormulaCondOp::convertToFormulaLogCon(ExecContext *ctx, CmplVal *res, unsigned se, bool err)
     {
         if (!_binary) {
             CmplValAuto ev(TP_FORMULA, this);
-            ctx->valueError("argument for operation must be boolean", ev, se);
+            if (err)
+                ctx->valueError("argument for operation must be boolean", ev, se);
             return false;
         }
 
@@ -3176,27 +3187,28 @@ namespace cmpl
             _binaryFormula.set(TP_FORMULA, rf);
 
             for (unsigned i = 0; i < _parts.size(); i++) {
-                const ValFormulaCond::Part& p = _parts[i];
+                const ValFormulaCond::Part *p = dynamic_cast<Part *>(_parts[i].valFormula());
 
                 ValFormulaLogConOp *pf = (_parts.size() == 1 ? rf : new ValFormulaLogConOp(syntaxElem(), false, true));
                 CmplValAuto pv(TP_FORMULA, pf);
 
-                ValFormulaCondOp *sub = (p._val.t == TP_FORMULA ? dynamic_cast<ValFormulaCondOp *>(p._val.valFormula()) : NULL);
+                ValFormulaCondOp *sub = (p->_val.t == TP_FORMULA ? dynamic_cast<ValFormulaCondOp *>(p->_val.valFormula()) : NULL);
                 if (sub) {
                     CmplValAuto subv;
-                    if (sub->convertToFormulaLogCon(ctx, &subv, se))
+                    if (sub->convertToFormulaLogCon(ctx, &subv, se, err))
                         pf->formulas().emplace_back(subv);
                     else
                         return false;
                 }
-                else if (p._val.t == TP_FORMULA && p._val.valFormula()->isBool()) {
-                    pf->formulas().emplace_back(p._val);
+                else if (p->_val.t == TP_FORMULA && p->_val.valFormula()->isBool()) {
+                    pf->formulas().emplace_back(p->_val);
                 }
                 else {
                     bool bv;
-                    if (!p._val.toBool(bv, typeConversionAll, ctx->modp())) {
-                        CmplValAuto ev(p._val);
-                        ctx->valueError("all parts of conditional value argument must be boolean", ev, se);
+                    if (!p->_val.toBool(bv, typeConversionAll, ctx->modp())) {
+                        CmplValAuto ev(p->_val);
+                        if (err)
+                            ctx->valueError("all parts of conditional value argument must be boolean", ev, se);
                         return false;
                     }
 
@@ -3204,14 +3216,14 @@ namespace cmpl
                         continue;
                 }
 
-                if (p._posCond) {
+                if (p->_posCond) {
                     ValFormulaLogConOp *nf = new ValFormulaLogConOp(syntaxElem(), true, false);
                     pf->formulas().emplace_back(TP_FORMULA, nf);
-                    nf->formulas().emplace_back(p._posCond);
+                    nf->formulas().emplace_back(p->_posCond);
                 }
 
-                for (unsigned j = 0; j < p._negConds.size(); j++) {
-                    pf->formulas().emplace_back(p._negConds[j]);
+                for (unsigned j = 0; j < p->_negConds.size(); j++) {
+                    pf->formulas().emplace_back(p->_negConds[j]);
                 }
 
                 if (_parts.size() > 1)
@@ -3251,8 +3263,12 @@ namespace cmpl
 
         CmplValAuto pr;
         for (unsigned i = 0; i < f->_parts.size(); i++) {
-            CmplVal *pa1 = &(f->_parts[i]._val);
-            CmplVal *pa2 = (a2cond ? &(a2cond->_parts[i]._val) : a2);
+            Part *p1 = dynamic_cast<Part *>(_parts[i].valFormula());
+            Part *p2 = (a2cond ? dynamic_cast<Part *>(a2cond->_parts[i].valFormula()) : NULL);
+            Part *pf = dynamic_cast<Part *>(f->_parts[i].valFormula());
+
+            CmplVal *pa1 = &(p1->_val);
+            CmplVal *pa2 = (p2 ? &(p2->_val) : a2);
 
             if (rev)
                 OperationBase::execBinaryOper(ctx, &pr, se, op, false, pa2, pa1);
@@ -3264,7 +3280,7 @@ namespace cmpl
             if (f->_optObj && (pr.t != TP_FORMULA || !(pr.valFormula()->canOptRow(true))))
                 f->_optObj = false;
 
-            f->_parts[i]._val.moveFrom(pr, true);
+            pf->_val.moveFrom(pr, true);
         }
     }
 }

@@ -729,23 +729,27 @@ namespace cmpl
          */
         bool checkUseNumericVar(ExecContext *ctx, unsigned se, CmplVal *a2, bool usevar, bool complete, bool formula, ValFormulaCondOp *&a2cond, bool &err);
 
+    public:
         /**
          * test whether _numericVar already exists, and if not then create it
          * @param ctx           execution context
          * @param se            syntax element id of operation
+         * @param nv            if not NULL then return here copy of _numericVar
          * @return              true if _numericVar is new created
          */
-        bool checkCreateNumericVar(ExecContext *ctx, unsigned se);
+        bool checkCreateNumericVar(ExecContext *ctx, unsigned se, CmplVal *nv = NULL);
 
         /**
          * convert this conditional value (must be binary) to a logical formula
          * @param ctx           execution context
          * @param res           store for result value
          * @param se            syntax element id of operation
+         * @param err           output error message if not successful
          * @return              true if conversion is successful
          */
-        bool convertToFormulaLogCon(ExecContext *ctx, CmplVal *res, unsigned se);
+        bool convertToFormulaLogCon(ExecContext *ctx, CmplVal *res, unsigned se, bool err);
 
+    private:
         /**
          * execute binary operation for every part of the conditional value
          * @param ctx			execution context

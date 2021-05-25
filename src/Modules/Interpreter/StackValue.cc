@@ -449,11 +449,11 @@ namespace cmpl
      * @param ref			reference assignment
      * @param cnst			mark destination as const
      * @param init          only initial assignment
-     * @param ord			ordered assignment
+     * @param ord			ordered assignment (0: no / 1: ordered / 2: ordered volatile)
      * @param srn			set row/col name for result matrix
      * @param map           mapping for assign destination / NULL: no mapping
      */
-    void StackValue::doAssign(ExecContext *ctx, char op, bool ref, bool cnst, bool init, bool ord, bool srn, VarCondMapVS *map)
+    void StackValue::doAssign(ExecContext *ctx, char op, bool ref, bool cnst, bool init, unsigned ord, bool srn, VarCondMapVS *map)
     {
         // this contains a SymbolValue
         SymbolValue *sym = (SymbolValue *)(_val.v.p);
@@ -563,8 +563,8 @@ namespace cmpl
                             return;
                         }
 
-                        //TODO: wenn ord, dann anders notwendig, weil jedes einzelne Element schon zugewiesen werden muss, bevor das naechste bestimmt wird
-                        rhs = popTo = fillAssignArray(ctx, *lhsInd, rhsSimple, rhs->syntaxElem(), ord);
+                        //TODO: wenn ord == 2, dann anders notwendig, weil jedes einzelne Element schon zugewiesen werden muss, bevor das naechste bestimmt wird
+                        rhs = popTo = fillAssignArray(ctx, *lhsInd, rhsSimple, rhs->syntaxElem(), (ord != 0));
                     }
 
                     else {
@@ -573,7 +573,7 @@ namespace cmpl
 
                     PROTO_MOD_OUTL(ctx->modp(), "  setValueStore: sym " << sym->defId());
                     ValueStore *store = (mapVS ?: sym->valueStore(true));
-                    store->setValue(ctx, rhs, false, (srn ? ctx->modp()->symbolInfo(sym->defId())->name() : NULL), NULL, 0, (map ? map->chgInfo() : NULL));
+                    store->setValue(ctx, rhs, false, (srn ? ctx->modp()->symbolInfo(sym->defId())->name() : NULL), NULL, 0, (map ? map->chgInfo() : NULL), (ord != 0));
                 }
             }
         }
@@ -594,8 +594,8 @@ namespace cmpl
                         return;
                     }
 
-                    //TODO: wenn ord, dann anders notwendig, weil jedes einzelne Element schon zugewiesen werden muss, bevor das naechste bestimmt wird
-                    rhs = popTo = fillAssignArray(ctx, *lhsInd, rhsSimple, rhs->syntaxElem(), ord);
+                    //TODO: wenn ord == 2, dann anders notwendig, weil jedes einzelne Element schon zugewiesen werden muss, bevor das naechste bestimmt wird
+                    rhs = popTo = fillAssignArray(ctx, *lhsInd, rhsSimple, rhs->syntaxElem(), (ord != 0));
                 }
                 else if (cnst) {
                     PROTO_MOD_OUTL(ctx->modp(), "  setSimpleConstVal: sym " << sym->defId());
@@ -622,7 +622,7 @@ namespace cmpl
                 ValueStore *store = (mapVS ?: sym->valueStore(true));
 
                 LockGuard<mutex> lckV((ctx->needLock() && store->refCnt() > 1), store->accMtx());
-                store->setValue(ctx, rhs, true, (srn ? ctx->modp()->symbolInfo(sym->defId())->name() : NULL), NULL, 0, (map ? map->chgInfo() : NULL));
+                store->setValue(ctx, rhs, true, (srn ? ctx->modp()->symbolInfo(sym->defId())->name() : NULL), NULL, 0, (map ? map->chgInfo() : NULL), (ord != 0));
 
                 if (cnst)
                     sym->setReadOnly();
@@ -639,9 +639,9 @@ namespace cmpl
      * @param ctx			execution context
      * @param op			assign operation (+,-,*,/) or '\0'
      * @param init          only initial assignment
-     * @param ord			ordered assignment
+     * @param ord			ordered assignment (0: no / 1: ordered / 2: ordered volatile)
      */
-    void StackValue::doAssignSpecial(ExecContext *ctx, char op, bool init, bool ord)
+    void StackValue::doAssignSpecial(ExecContext *ctx, char op, bool init, unsigned ord)
     {
         // this contains a pseudo symbol handling value
         ValSpecialBase *vsp = _val.valSpecial();
@@ -661,9 +661,9 @@ namespace cmpl
                 return;
             }
 
-            //TODO: wenn ord, dann anders notwendig, weil jedes einzelne Element schon zugewiesen werden muss, bevor das naechste bestimmt wird
+            //TODO: wenn ord == 2, dann anders notwendig, weil jedes einzelne Element schon zugewiesen werden muss, bevor das naechste bestimmt wird
             //  fuer Pseudosymbol aber wohl nie relevant
-            rhs = popTo = fillAssignArray(ctx, _addVal, rhsSimple, rhs->syntaxElem(), ord);
+            rhs = popTo = fillAssignArray(ctx, _addVal, rhsSimple, rhs->syntaxElem(), (ord != 0));
         }
 
         if (op) {
@@ -731,7 +731,7 @@ namespace cmpl
     }
 
     /**
-     * fill array to assign with scalar values
+     * create and fill array to assign with scalar values
      * @param ctx			execution context
      * @param ds			definition set of the array
      * @param frhs			first value to fill in
@@ -743,28 +743,13 @@ namespace cmpl
         CmplArray *arr = new CmplArray(ds);
 
         if (arr->size() > 0) {
-            bool allValid = (bool)(*frhs);
-
-            arr->at(0)->copyFrom(frhs);
-
-            for (unsigned long i = 1; i < arr->size(); i++) {
-                StackValue *sv = ctx->getCurAssignRhs(_syntaxElem);
-                CmplVal *v = sv->simpleValue();
-
-                if (v) {
-                    if (allValid && !(bool)(*v))
-                        allValid = false;
-
-                    arr->at(i)->copyFrom(v);
-                }
-                else {
-                    ctx->valueError("every part of right hand side in assignment must be scalar", sv);
-                    allValid = false;
-                    arr->at(i)->unset();
-                }
+            if (!ord || !SetBase::hasUserOrder(ds)) {
+                fillAssignArrayIter(ctx, arr, NULL, frhs);
             }
-
-            arr->setValidInfo(allValid);
+            else {
+                CmplArrayIterator iter(*arr, false, true);
+                fillAssignArrayIter(ctx, arr, &iter, frhs);
+            }
         }
 
         StackValue *res = ctx->pushPre(se);
@@ -772,6 +757,52 @@ namespace cmpl
         return res;
     }
 
+    /**
+     * fill array to assign with scalar values
+     * @param ctx			execution context
+     * @param arr			array to fill
+     * @param iter          array iterator with user order / NULL: don't use user order
+     * @param frhs			first value to fill in
+     */
+    void StackValue::fillAssignArrayIter(ExecContext *ctx, CmplArray *arr, CmplArrayIterator *iter, CmplVal *frhs)
+    {
+        bool allValid = (bool)(*frhs);
+        if (iter)
+            iter->begin();
+
+        for (unsigned long i = 0; i < arr->size(); i++) {
+            CmplVal *v;
+            if (i == 0) {
+                v = frhs;
+            }
+            else {
+                StackValue *sv = ctx->getCurAssignRhs(_syntaxElem);
+                v = sv->simpleValue();
+                if (!v) {
+                    ctx->valueError("every part of right hand side in assignment must be scalar", sv);
+                    allValid = false;
+                }
+            }
+
+            if (v) {
+                if (allValid && !(bool)(*v))
+                    allValid = false;
+
+                if (iter) {
+                    CmplVal *d = **iter;
+                    d->copyFrom(v);
+                }
+                else {
+                    arr->at(i)->copyFrom(v);
+                }
+            }
+
+            if (iter)
+                (*iter)++;
+        }
+
+        arr->setValidInfo(allValid);
+    }
 
     /**
      * assign one scalar value within the array of an already defined symbol
@@ -961,7 +992,7 @@ namespace cmpl
             sym->unset();
             ValueStore *store = sym->valueStore(true);
 
-            store->setValue(ctx, NULL, true, NULL, &v, se);
+            store->setValue(ctx, NULL, true, NULL, &v, se, NULL, ctx->modp()->orderedIter());
 
             if (cnst)
                 sym->setReadOnly();

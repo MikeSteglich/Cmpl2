@@ -220,8 +220,9 @@ namespace cmpl
      * @param va                value, alternative to <code>sv</code>
      * @param se                syntax element, only used if <code>va</code> is given
      * @param chgInfo           track changes in this object / NULL: no change tracking
+     * @param ord               use user order of definition set
      */
-    void ValueStore::setValue(ExecContext *ctx, StackValue *sv, bool disp, const char *srn, CmplVal *va, unsigned se, VSChangeInfo *chgInfo)
+    void ValueStore::setValue(ExecContext *ctx, StackValue *sv, bool disp, const char *srn, CmplVal *va, unsigned se, VSChangeInfo *chgInfo, bool ord)
 	{
         if (!sv && !va)
             return;
@@ -341,7 +342,7 @@ namespace cmpl
                     OptModel *resModel = ctx->modp()->getResModel();
                     CmplVal symName((srn ? TP_STR : TP_EMPTY), (intType)(srn ? ctx->modp()->data()->globStrings()->search(srn) : 0));
 
-                    CmplArrayIterator iter(*arr);
+                    CmplArrayIterator iter(*arr, false, ord);
                     for (iter.begin(); iter; iter++) {
                         CmplVal *v = *iter;
                         if (v->isOptRC())
@@ -362,7 +363,7 @@ namespace cmpl
 			}
 
             else {
-                CmplArrayIterator iter(*arr);
+                CmplArrayIterator iter(*arr, false, ord);
                 for (iter.begin(); iter; iter++) {
                     CmplVal *v = *iter;
                     setSingleValue(ctx, &(iter.curTuple()), 0, *v, (sv ? sv->syntaxElem() : se), srn, '\0', chgInfo);

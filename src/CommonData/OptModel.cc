@@ -87,6 +87,65 @@ namespace cmpl
     }
 
 
+    /**
+     * iterates over all optimization variables found in formula or constraint
+     * @param fv        formula or constraint (only used in initializating call)
+     * @param stat      current internal iteration status, empty in initializating call
+     * @return          first (in initializating call) or next optimization variable, or NULL if iteration ended
+     */
+    OptVar *OptVar::iterInFormula(CmplVal& fv, stack<pair<ValFormula *, unsigned>>& stat)
+    {
+        ValFormula *frm;
+        if (stat.empty()) {
+            // in initializating call
+            if (fv.t == TP_FORMULA || fv.isOptRC()) {
+                frm = (fv.t == TP_FORMULA ? fv.valFormula() : (fv.isOptRow() ? fv.optCon()->formula() : NULL));
+                stat.emplace(frm, 0);
+            }
+            else {
+                // no variable
+                return NULL;
+            }
+        }
+
+        frm = stat.top().first;
+        unsigned p = stat.top().second;
+
+        OptVar *res;
+        if (frm == NULL) {
+            // special handling if fv itself is optimization variable
+            stat.top().second = p + 1;
+            if (p == 0 && fv.t == TP_OPT_VAR)
+                res = fv.optVar();
+            else
+                res = NULL;
+        }
+
+        else {
+            unsigned pc = frm->partCount();
+            while (p < pc && !res) {
+                CmplVal *pv = frm->getPart(p++);
+                stat.top().second = p;
+
+                if (pv->t == TP_OPT_VAR) {
+                    res = pv->optVar();
+                }
+                else if (pv->t == TP_FORMULA) {
+                    stat.emplace(pv->valFormula(), 0);
+                    res = iterInFormula(fv, stat);
+                }
+            }
+        }
+
+        if (!res) {
+            stat.pop();
+            if (!stat.empty())
+                res = iterInFormula(fv, stat);
+        }
+
+        return res;
+    }
+
 
     /****** OptCon ****/
 

@@ -889,8 +889,9 @@ namespace cmpl
          * @param arg			argument value
          * @param maSe			syntax element id for new matrix element object
          * @param se			syntax element id, only used if arg is not given
+         * @param ord           use user order if exists
          */
-        static void convertTo(ExecContext *ctx, CmplVal& res, intType objType, StackValue *arg, unsigned maSe, unsigned se);
+        static void convertTo(ExecContext *ctx, CmplVal& res, intType objType, StackValue *arg, unsigned maSe, unsigned se, bool ord = false);
 
         /**
          * convert to object of given type or create object

@@ -64,6 +64,7 @@ namespace cmpl
         short _intOutOfRangeMode;                       ///< mode for handling literal integer values out of integer range (one of INT_OPER_OORANGE_*)
         ThreadHandler _threadHandler;                   ///< info for limiting the number of concurrently running threads
 
+        bool _orderedIter;                              ///< use ordered execution in all explicit and implicit iterations
         bool _echoDuration;                             ///< include duration since start in all outputs of echo function
 
         map<string, string> _fileAlias;					///< file name aliases for data files
@@ -116,6 +117,11 @@ namespace cmpl
          * info for limiting the number of concurrently running threads
          */
         inline ThreadHandler& threadHandler()                       { return _threadHandler; }
+
+        /**
+         * get whether to use ordered execution in all explicit and implicit iterations
+         */
+        inline bool orderedIter()                                   { return _orderedIter; }
 
         /**
          * get whether to include duration since start in all outputs of echo function

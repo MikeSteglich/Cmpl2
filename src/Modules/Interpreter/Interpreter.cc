@@ -103,11 +103,12 @@ namespace cmpl
 #define OPTION_INTERPRETER_INT_OORANGE_MODE	10
 
 #define OPTION_INTERPRETER_INT_THREADS      20
+#define OPTION_INTERPRETER_ORDERED          21
 
-#define OPTION_INTERPRETER_INT_ECHO_DUR     21
+#define OPTION_INTERPRETER_INT_ECHO_DUR     22
 
-#define OPTION_INTERPRETER_NAMEPREFSEP      22
-#define OPTION_INTERPRETER_NAMEPREFAFTER    23
+#define OPTION_INTERPRETER_NAMEPREFSEP      23
+#define OPTION_INTERPRETER_NAMEPREFAFTER    24
 
 #define OPTION_INTERPRETER_FILEALIAS        30
 
@@ -125,6 +126,7 @@ namespace cmpl
         REG_CMDL_OPTION( OPTION_INTERPRETER_INT_OORANGE_MODE, "int-out-of-range", 1, 1, CMDL_OPTION_NEG_ERROR, true );
 
         REG_CMDL_OPTION( OPTION_INTERPRETER_INT_THREADS, "threads", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
+        REG_CMDL_OPTION( OPTION_INTERPRETER_ORDERED, "ordered", 0, 0, CMDL_OPTION_NEG_NO_ARG, true );
         REG_CMDL_OPTION( OPTION_INTERPRETER_INT_ECHO_DUR, "echoduration", 0, 0, CMDL_OPTION_NEG_NO_ARG, true );
 
         REG_CMDL_OPTION( OPTION_INTERPRETER_NAMEPREFSEP, "name-prefix-separator", 1, 1, CMDL_OPTION_NEG_NO_ARG, true );
@@ -169,6 +171,10 @@ namespace cmpl
 
             case OPTION_INTERPRETER_INT_THREADS:
                 _threadHandler.setMaxThreads((unsigned)(opt->neg() ? 0 : opt->argAsInt(0, _ctrl)));
+                return true;
+
+            case OPTION_INTERPRETER_ORDERED:
+                _orderedIter = !(opt->neg());
                 return true;
 
             case OPTION_INTERPRETER_INT_ECHO_DUR:
@@ -221,6 +227,7 @@ namespace cmpl
 
         s << "  -int-out-of-range <mode>      mode for handling integer operation results out of range (ignore/error/convert)" << endl;
         s << "  -threads <n>                  use maximal n concurrently running worker threads (0: no threading)" << endl;
+        s << "  -ordered                      use ordered execution in all explicit and implicit iterations" << endl;
         s << "  -echoduration                 include duration since start in all outputs of echo function" << endl;
         s << "  -name-prefix-separator <s>    use string s as separator between line name prefixes" << endl;
         s << "  -name-prefix-after <s>        use string s as separator only after line name prefix (if not given then -name-prefix-separator is used)" << endl;

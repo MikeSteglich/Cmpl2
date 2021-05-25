@@ -190,7 +190,7 @@ namespace cmpl
         /**
          * get whether ordered execution for current part of this codeblock
          */
-        inline bool ordered() const                         { return (_curPartPar & ICPAR_BLOCK_ORDERED); }
+        bool ordered() const;
 
         /**
          * get count of codeblock parts

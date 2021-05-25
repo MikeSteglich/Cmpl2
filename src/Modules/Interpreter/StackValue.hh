@@ -178,20 +178,20 @@ namespace cmpl
          * @param ref			reference assignment
          * @param cnst			mark destination as const
          * @param init          only initial assignment
-         * @param ord			ordered assignment
+         * @param ord			ordered assignment (0: no / 1: ordered / 2: ordered volatile)
          * @param srn			set row/col name for result matrix
          * @param map           mapping for assign destination / NULL: no mapping
          */
-        void doAssign(ExecContext *ctx, char op, bool ref, bool cnst, bool init, bool ord, bool srn, VarCondMapVS *map);
+        void doAssign(ExecContext *ctx, char op, bool ref, bool cnst, bool init, unsigned ord, bool srn, VarCondMapVS *map);
 
         /**
          * perform assignment with this (being a TP_SPECIALSYM value) as assign destination
          * @param ctx			execution context
          * @param op			assign operation (+,-,*,/) or '\0'
          * @param init          only initial assignment
-         * @param ord			ordered assignment
+         * @param ord			ordered assignment (0: no / 1: ordered / 2: ordered volatile)
          */
-        void doAssignSpecial(ExecContext *ctx, char op, bool init, bool ord);
+        void doAssignSpecial(ExecContext *ctx, char op, bool init, unsigned ord);
 
         /**
          * set data type as fixed for optimization variables
@@ -200,7 +200,7 @@ namespace cmpl
 
     private:
         /**
-         * fill array to assign with scalar values
+         * create and fill array to assign with scalar values
          * @param ctx			execution context
          * @param ds			definition set of the array
          * @param frhs			first value to fill in
@@ -209,6 +209,15 @@ namespace cmpl
          * @return 				array on the stack
          */
         StackValue *fillAssignArray(ExecContext *ctx, CmplVal& ds, CmplVal *frhs, unsigned se, bool ord);
+
+        /**
+         * fill array to assign with scalar values
+         * @param ctx			execution context
+         * @param arr			array to fill
+         * @param iter          array iterator with user order / NULL: don't use user order
+         * @param frhs			first value to fill in
+         */
+        void fillAssignArrayIter(ExecContext *ctx, CmplArray *arr, CmplArrayIterator *iter, CmplVal *frhs);
 
         /**
          * assign one scalar value within the array of an already defined symbol

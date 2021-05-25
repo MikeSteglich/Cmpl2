@@ -1090,8 +1090,9 @@ namespace cmpl
      * @param arg			argument value / NULL: no argument
      * @param maSe			syntax element id for new matrix element object
      * @param se			syntax element id, only used if arg is not given
+     * @param ord           use user order if exists
      */
-    void ObjectTypeUtil::convertTo(ExecContext *ctx, CmplVal& res, intType objType, StackValue *arg, unsigned maSe, unsigned se)
+    void ObjectTypeUtil::convertTo(ExecContext *ctx, CmplVal& res, intType objType, StackValue *arg, unsigned maSe, unsigned se, bool ord)
     {
         if (arg) {
             CmplVal *s = arg->simpleValue();
@@ -1106,12 +1107,25 @@ namespace cmpl
                     CmplArray *arr = new CmplArray(arg->val().array()->defset());
                     arr->copyValidInfo(arg->val().array());
 
-                    CmplVal *r = arr->at(0);
-                    s = arg->val().array()->at(0);
+                    if (!ord || !SetBase::hasUserOrder(arr->defset())) {
+                        CmplVal *r = arr->at(0);
+                        s = arg->val().array()->at(0);
 
-                    for (unsigned long i = 0; i < arr->size(); i++, r++, s++)
-                        convertTo(ctx, *r, objType, s, maSe, se);
-                        //TODO: durch ctx->checkContainerConvSpecial() kann das hier gelieferte r wiederum ein TP_ARRAY sein, muss dieser Fall verboten oder besonders behandelt werden?
+                        for (unsigned long i = 0; i < arr->size(); i++, r++, s++)
+                            convertTo(ctx, *r, objType, s, maSe, se);
+                            //TODO: durch ctx->checkContainerConvSpecial() kann das hier gelieferte r wiederum ein TP_ARRAY sein, muss dieser Fall verboten oder besonders behandelt werden?
+                    }
+                    else {
+                        CmplArrayIterator itersrc(*(arg->val().array()), false, true);
+                        CmplArrayIterator iterdst(*arr, false, true);
+
+                        for (itersrc.begin(), iterdst.begin(); itersrc; itersrc++, iterdst++) {
+                            CmplVal *vs = *itersrc;
+                            CmplVal *vd = *iterdst;
+                            convertTo(ctx, *vd, objType, vs, maSe, se);
+                            //TODO: durch ctx->checkContainerConvSpecial() kann das hier gelieferte r wiederum ein TP_ARRAY sein, muss dieser Fall verboten oder besonders behandelt werden?
+                        }
+                    }
 
                     arr->setObjType(objType);
                     res.set(TP_ARRAY, arr);

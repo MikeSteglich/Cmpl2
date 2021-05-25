@@ -133,6 +133,7 @@ namespace cmpl
         unsigned _assSyntaxElem;					///< current assign: id of syntax element
         unsigned _assStartVolaRhs;					///< current assign: start position of code for the value of the right hand side, if another execution of this code may compute a changed value, else 0
         bool _assNextRhs;							///< current assign: next right hand side value needed
+        bool _assOrdered;                           ///< current assign: ordered assign
 
         volatile bool _cancel;                      ///< cancel flag
         volatile bool _cancelCont;                  ///< control command for cancel is "continue"

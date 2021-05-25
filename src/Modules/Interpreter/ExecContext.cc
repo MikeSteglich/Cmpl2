@@ -659,7 +659,7 @@ namespace cmpl
 		// get params
 		unsigned cntLhs = cd->v.c.par & ICPAR_ASSIGN_CNTLHS;
 		bool assignConst = cd->v.c.par & ICPAR_ASSIGN_CONST;
-		bool assignOrdered = cd->v.c.par & ICPAR_ASSIGN_ORDERED;
+        unsigned assignOrdered = (cd->v.c.par & ICPAR_ASSIGN_ORDERED ? 2 : (_modp->orderedIter() ? 1 : 0));
         bool assignInitial = cd->v.c.par & ICPAR_ASSIGN_INITIAL;    //TODO
         bool assignNocond = cd->v.c.par & ICPAR_ASSIGN_NOCOND;
 		bool setResName = cd->v.c.par & ICPAR_ASSIGN_RESNAME;
@@ -671,6 +671,7 @@ namespace cmpl
         _assSyntaxElem = cd->se;
         _assStartVolaRhs = 0;
         _assNextRhs = false;
+        _assOrdered = (assignOrdered != 0);
 
 		if (cd->v.c.cnt > 0) {
             bool locAssType = cd->v.c.par & ICPAR_ASSIGN_OBJTYPE_LOCAL;
@@ -697,8 +698,8 @@ namespace cmpl
                 _assStartVolaRhs = cd[2].v.n.n1;
 		}
 
-        if (assignOrdered && !_assStartVolaRhs)
-            assignOrdered = false;
+        if (assignOrdered == 2 && !_assStartVolaRhs)
+            assignOrdered = 1;
 
 		StackValue *svLhs;
         char op = '\0';
@@ -2152,7 +2153,7 @@ namespace cmpl
         // convert to object type
         if (_assObjType != -1) {
             res = pushPre(_assRhs ? _assRhs->syntaxElem() : se);
-            ObjectTypeUtil::convertTo(this, res->val(), _assObjType, _assRhs, _assSyntaxElem, res->syntaxElem());
+            ObjectTypeUtil::convertTo(this, res->val(), _assObjType, _assRhs, _assSyntaxElem, res->syntaxElem(), _assOrdered);
 
             if (_assObjType != VAL_OBJECT_TYPE_PAR)
                 volRes = true;

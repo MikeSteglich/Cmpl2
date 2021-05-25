@@ -241,8 +241,9 @@ namespace cmpl
          * @param va                value, alternative to <code>sv</code>
          * @param se                syntax element, only used if <code>va</code> is given
          * @param chgInfo           track changes in this object / NULL: no change tracking
+         * @param ord               use user order of definition set
          */
-        void setValue(ExecContext *ctx, StackValue *sv, bool disp, const char *srn = NULL, CmplVal *va = NULL, unsigned se = 0, VSChangeInfo *chgInfo = NULL);
+        void setValue(ExecContext *ctx, StackValue *sv, bool disp, const char *srn = NULL, CmplVal *va = NULL, unsigned se = 0, VSChangeInfo *chgInfo = NULL, bool ord = false);
 
         /**
          * set single value within the array

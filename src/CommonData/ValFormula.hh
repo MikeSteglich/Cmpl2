@@ -910,7 +910,12 @@ namespace cmpl
         /**
          * get formula to minimize or to maximize
          */
-        inline CmplVal& formula()                   { return _formula; }
+        CmplVal& formula()                          { return _formula; }
+
+        /**
+         * get true if formula is to maximize or false if it is to minimize
+         */
+        bool maximize()                             { return _maximize; }
 
         /**
          * write contents of the object to a stream
@@ -1078,7 +1083,10 @@ namespace cmpl
     class ValFormulaCond : public ValFormula
     {
     public:
-        class Part
+        /**
+         * part of ValFormulaCond, must not used as independent formula
+         */
+        class Part : public ValFormula
         {
             friend class ValFormulaCond;
             friend class ValFormulaCondOp;
@@ -1093,16 +1101,28 @@ namespace cmpl
             /**
              * constructor
              */
-            Part(CmplValAuto& pc, vector<CmplValAuto>& ncs, CmplValAuto& v): _posCond(pc), _negConds(ncs), _val(v)  { }
+            Part(CmplValAuto& pc, vector<CmplValAuto>& ncs, CmplValAuto& v, unsigned se): ValFormula(se), _posCond(pc), _negConds(ncs), _val(v)  { }
 
             /**
              * check whether conditions are the same as in another part
              */
             bool eqCond(Part& p2);
+
+            /**
+             * get count of direct parts of the formula
+             */
+            unsigned partCount() const override         { return 2 + _negConds.size(); }
+
+            /**
+             * get direct part
+             * @param i     number of part
+             * @return
+             */
+            CmplVal *getPart(unsigned i) override       { return (i == 0 ? &_val : (i == 1 ? &_posCond : (i < _negConds.size() + 2 ? &(_negConds.at(i - 2)) : NULL))); }
         };
 
     protected:
-        vector<Part> _parts;                        ///< parts (there must be not more than one part with matching conditions)
+        vector<CmplValAuto> _parts;                 ///< parts (all parts must be TP_FORMULA of type ValFormulaCond::Part) (there must be not more than one part with matching conditions)
         bool _complete;                             ///< the condition of one part is fulfilled in any case
 
         bool _binary;                               ///< flag whether all parts of this formula can be used as boolean value
@@ -1176,7 +1196,7 @@ namespace cmpl
          * set model properties from this constraint
          * @param prop          properties of optimization model
          */
-        //void setModelProperties(OptModel::Properties& prop) const override;
+        void setModelProperties(OptModel::Properties& prop) const override;
 
         /**
          * get whether this formula is an expression with numeric value
@@ -1205,7 +1225,7 @@ namespace cmpl
          * @param i     number of part
          * @return
          */
-        CmplVal *getPart(unsigned i) override       { return (i < _parts.size() ? &(_parts[i]._val) : NULL); }
+        CmplVal *getPart(unsigned i) override       { return (i < _parts.size() ? &(_parts[i]) : NULL); }
 
         /**
          * write contents of the object to a stream
