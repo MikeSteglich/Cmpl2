@@ -178,7 +178,7 @@ protected:
 
 private:
 
-
+    void getSolverNamePath(const string& str, string& name, string& path);
 
 
 

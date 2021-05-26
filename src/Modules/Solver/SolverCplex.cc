@@ -148,9 +148,7 @@ void SolverCplex::run()
  * @param om    pointer to OptModel object
  */
 void SolverCplex::writeCommandFile( OptModel* om){
-
     try {
-
         ofstream  cmdFile( _instanceCmdName.c_str() ) ;
 
         cmdFile <<  " read " << _instanceFileName << endl;
@@ -180,9 +178,8 @@ void SolverCplex::writeCommandFile( OptModel* om){
   * @param om   pointer to OptModel object
   */
 void SolverCplex::generateCmdLine(OptModel* om ) {
-
     writeCommandFile(om);
-    _solverCmdLine=_solverBinName+" -f " + _instanceCmdName + " 2>&1";
+    _solverCmdLine="\""+_solverBinName+"\" -f " + _instanceCmdName + " 2>&1";
 }
 
 /**

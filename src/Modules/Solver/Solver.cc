@@ -165,22 +165,16 @@ bool Solver::parseOption(int ref, int prio, CmdLineOptList::SingleOption *opt)
                         solOpt.value=optList[1];
                     else
                         solOpt.value="";
-
-                    _solverOpts.push_back(solOpt);
+                   _solverOpts.push_back(solOpt);
                 }
-
             }
         }
-
         return true;
 
     case OPTION_SOLVER_INTEGERRELAXATION:
         _integerRelaxation=true;
         return true;
-
-
     }
-
     return false;
 }
 
@@ -201,12 +195,8 @@ void Solver::usage(ostream& s)
 * @brief reads the Cmpl solver option file
 */
 void Solver::readOptFile() {
-
-    //bool solverFileNameFound=false;
-
     char dirSepChar = (_ctrl->binFullName() ? FileBase::getDirSepChar(_ctrl->binFullName()->c_str()) : '\0');
     string fileName(FileBase::replFileInPath(_ctrl->binFullName(), &_optFileName, dirSepChar));
-
 
     try {
         FileInput inFile;
@@ -224,46 +214,29 @@ void Solver::readOptFile() {
             if (!StringStore::startsWith(StringStore::lTrim(lineStr),"#") && (!StringStore::lrTrim(lineStr).empty())) {
 
                 string solver, solverPath;
-                StringStore::getOptionValue(lineStr, solver ,solverPath);
-
-                solver=StringStore::upperCase((StringStore::lrTrim(solver)));
-                solverPath=StringStore::lrTrim(solverPath);
-
-                string dirSep(1,dirSepChar);
-
-                /*if ( !StringStore::startsWith(solverPath, dirSep ) && !(solverPath.substr(1,1)==":")) {
-                    solverPath = FileBase::replFileInPath(_ctrl->binFullName() , &solverPath, dirSepChar);
-                }
-                */
+                getSolverNamePath(lineStr, solver ,solverPath);
+                solver=StringStore::upperCase(solver);
 
                 _implementedSolvers.push_back(solver);
                 _solverBinNames[solver]=solverPath;
-
             }
-
         }
-
         inFile.close();
     }
     catch (FileException& e) {
         _ctrl->errHandler().internalError(_ctrl->printBuffer("%s: option file '%s'", e.what(), fileName.c_str()) ,&e);
     }
-
 }
 
 /**
  * @brief sets the full path to the solver binary
  */
 void Solver::setBinFullName(){
-
     if (!isImplemented(_solverName))
         _ctrl->errHandler().internalError( _ctrl->printBuffer("Solver '%s' is not supported", _solverName.c_str()) );
 
     _solverBinName=_solverBinNames[_solverName];
     replaceFullBinName();
-
-
-
 }
 
 /**
@@ -272,7 +245,6 @@ void Solver::setBinFullName(){
  * @return
  */
 bool Solver::isImplemented(string solverName){
-
     return (find(_implementedSolvers.begin(), _implementedSolvers.end(), solverName) != _implementedSolvers.end() );
 }
 
@@ -314,15 +286,12 @@ void Solver::deleteTmpFiles() {
 
     if (FileBase::exists(_instanceCmdName))
         remove(_instanceCmdName.c_str());
-
-
 }
 
 /**
  * @brief Neccessary to setting up the binary
  */
 void Solver::replaceFullBinName() {
-
     char dirSepChar = (_ctrl->binFullName() ? FileBase::getDirSepChar(_ctrl->binFullName()->c_str()) : '\0');
 
     string sep;
@@ -342,6 +311,7 @@ int Solver::solve() {
     char buffer[buffSize];
     int ret;
 
+    cout << _solverBinName << endl;
     if (!FileBase::exists(_solverBinName)) {
         _ctrl->errHandler().internalError( _ctrl->printBuffer("Binary for solver %s does not exist: '%s'", _solverName.c_str(), _solverBinName.c_str()) );
     }
@@ -351,6 +321,10 @@ int Solver::solve() {
     }
 
     CmplOutput(cout, "Solving instance using " + _solverName   );
+
+#if defined(_WIN32) || defined(WIN32)
+    _solverCmdLine="\""+_solverCmdLine+"\"";
+#endif
 
     try {
         FILE* pipe = popen(_solverCmdLine.c_str(), "r");
@@ -382,6 +356,19 @@ int Solver::solve() {
     }
 
     return ret;
+}
+
+void Solver::getSolverNamePath(const string& str, string& name, string& path) {
+    size_t pos = str.find_first_of(WHITE_SPACES);
+
+    if (pos==std::string::npos)
+        _ctrl->errHandler().internalError(_ctrl->printBuffer("Internal error in cmpl.opt for entry <'%s'>", str.c_str())  );
+
+    name = str.substr(0,pos);
+    path = str.substr(pos+1);
+
+    name = StringStore::lrTrim(name);
+    path =StringStore::lrTrim(path);
 }
 
 

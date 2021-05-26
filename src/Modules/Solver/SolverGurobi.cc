@@ -144,7 +144,7 @@ void SolverGurobi::generateCmdLine() {
 
     string solPool = ( _solutionPool ? "1" :"0");
 
-    _solverCmdLine=_solverBinName+" "+solPool+" " + StringStore::replaceAll(_instanceFileName," ","%") + " " + StringStore::replaceAll(_instanceSolName," ","%");
+    _solverCmdLine="\""+_solverBinName+"\" "+solPool+" " + StringStore::replaceAll(_instanceFileName," ","%") + " " + StringStore::replaceAll(_instanceSolName," ","%");
 
     for (size_t i=0; i<_solverOpts.size(); i++)
         _solverCmdLine+= " " + _solverOpts[i].key + "=" + _solverOpts[i].value;

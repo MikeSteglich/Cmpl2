@@ -163,11 +163,15 @@ void SolverScip::writeOptFile(){
   */
 void SolverScip::generateCmdLine() {
     writeOptFile();
-    _solverCmdLine=_solverBinName+" -c \"set load " + _instanceCmdName + "\" ";
+    
+    //_solverCmdLine=_solverBinName+" -c \"set load " + _instanceCmdName + "\" ";
+    _solverCmdLine="\""+_solverBinName+"\"";
+    _solverCmdLine+=" -c \"set load " + _instanceCmdName + "\"";
     _solverCmdLine+=" -c \"read "+_instanceFileName+"\"";
     _solverCmdLine+=" -c optimize";
     _solverCmdLine+=" -c \"write solu "+_instanceSolName+"\"";
     _solverCmdLine+=" -c quit  2>&1";
+
 }
 
 

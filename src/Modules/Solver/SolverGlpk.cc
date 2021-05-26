@@ -147,8 +147,7 @@ void SolverGlpk::run()
   * @param sol   pointer to Solution object
   */
 void SolverGlpk::generateCmdLine(Solution* sol) {
-
-    _solverCmdLine=_solverBinName+" --freemps " + " --"+sol->objSense()+ " --write "+_instanceSolName;
+    _solverCmdLine="\""+_solverBinName+"\"  --freemps " + " --"+sol->objSense()+ " --write "+_instanceSolName;
 
     for (size_t i=0; i<_solverOpts.size(); i++)
         _solverCmdLine+= " --" + _solverOpts[i].key + " " + _solverOpts[i].value;
