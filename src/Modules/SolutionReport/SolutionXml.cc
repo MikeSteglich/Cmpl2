@@ -208,42 +208,12 @@ void SolutionXml::writeSolReport(Solution *sol, ostream& ostr) {
     }
     ostr << "</constraintsDisplayOptions>" <<endl;
 
-    /* TODO!!!
-     * if (glvar->args->remoteMode()) {
-        if (glvar->args->cmplSolOut()) {
-            ostr  << "       <cmplSolFile>" ;
-            if ( glvar->args->cmplSolName() == cSolName )
-                ostr << "cmplStandard" ;
-            else
-                ostr << glvar->args->cmplSolName() ;
-            ostr <<  "</cmplSolFile>"  <<endl;
-        }
-
-        if (glvar->args->asciiOut()) {
-            ostr  << "       <asciiSolFile>" ;
-            if (glvar->args->asciiName() ==  (problem+".sol").toStdString() )
-                ostr << "cmplStandard" ;
-            else
-                ostr << glvar->args->asciiName() ;
-            ostr << "</asciiSolFile>" <<endl ;
-        }
-        if (glvar->args->csvOut()) {
-            ostr  << "       <csvSolFile>" ;
-            if (glvar->args->csvName() ==  (problem+".csv").toStdString() )
-                ostr << "cmplStandard" ;
-            else
-                ostr << glvar->args->csvName();
-            ostr  << "</csvSolFile>" <<endl;
-        }
-    } */
     ostr << "   </general>" << endl;
 
 
     for (int i=0; i<sol->nrOfSolutions(); i++) {
 
         ostr << "   <solution idx=\""<< i << "\" status=\""<<  sol->solution(i)->status() << "\" value=\"" <<  sol->solution(i)->value() << "\">" << endl;
-
-
 
 
         if (!_ignoreVars) {
@@ -253,8 +223,7 @@ void SolutionXml::writeSolReport(Solution *sol, ostream& ostr) {
             if (_displayVarList.size()==0) {
                 for (unsigned long j=0; j<sol->nrOfVariables(); j++ ) {
                     if (!(sol->solution(i)->variable(j)->activity()==0.0 && _ignoreZeros) ) {
-                        unsigned long jj=sol->varMpsIdxByIdx(j);
-                        writeVarValues(sol, i,jj, ostr) ;
+                        writeVarValues(sol, i,j, ostr) ;
                     }
                 }
             } else {
@@ -263,13 +232,10 @@ void SolutionXml::writeSolReport(Solution *sol, ostream& ostr) {
                     string tmpStr=_displayVarList[k].substr(0,starPos);
 
                     for (unsigned long j=0; j<sol->nrOfVariables(); j++ ) {
-                        unsigned long jj=sol->varMpsIdxByIdx(j);
-
-                        if ( (starPos>-1 && StringStore::startsWith(  sol->solution(i)->variable(jj)->name() ,tmpStr) ) ||
-                             (starPos==-1 &&  sol->solution(i)->variable(jj)->name()==tmpStr) ) {
-
+                        if ( (starPos>-1 && StringStore::startsWith(  sol->solution(i)->variable(j)->name() ,tmpStr) ) ||
+                             (starPos==-1 &&  sol->solution(i)->variable(j)->name()==tmpStr) ) {
                             if (!(sol->solution(i)->variable(j)->activity()==0.0 && _ignoreZeros) ) {
-                                writeVarValues(sol, i,jj, ostr) ;
+                                writeVarValues(sol, i,j, ostr) ;
                             }
                         }
                     }
