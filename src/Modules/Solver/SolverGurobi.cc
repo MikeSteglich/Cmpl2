@@ -106,14 +106,16 @@ void SolverGurobi::run()
 
 
         if (!om->isLinearModel())
-            _ctrl->errHandler().internalError("Gurobi cannot solve a nonlinear model"  );
+            if (om->modelProp().hasConditions())
+                _ctrl->errHandler().internalError("Gurobi cannot solve a nonlinear model within Cmpl"  );
+
 
         PROTO_OUTL("Start SolverGurobi module " << moduleName());
 
         setBinFullName();
 
         PROTO_OUTL("SolverGurobi: writing instance file " << moduleName());
-        writeInstanceFile("-mps-format gurobi -mps-format-sos cplex");
+        writeInstanceFile("-mps-format gurobi -mps-format-sos cplex -mps-format-qp cplex ");
 
         PROTO_OUTL("SolverGurobi: solving instance" << moduleName());
 
@@ -192,8 +194,13 @@ void SolverGurobi::readSolFile(Solution* sol,  OptModel* om) {
 
     SingleSolution* solution;
 
+    bool isQP = false;
+
+    if ( om->modelProp().modelType() == OptModel::ModelType::modelTypeMIQP || om->modelProp().modelType() == OptModel::ModelType::modelTypeQP )
+        isQP = true;
+
     unsigned long rowCnt = om->rows().size();
-    LinearModel *lm = om->getRowModel();
+    LinearModel *lm = om->getRowModel( isQP );
     const vector<LinearModel::Coefficient> *coeffs = lm->coeffs();
 
     try {

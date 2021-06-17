@@ -311,7 +311,7 @@ int Solver::solve() {
     char buffer[buffSize];
     int ret;
 
-    cout << _solverBinName << endl;
+    //cout << _solverBinName << endl;
     if (!FileBase::exists(_solverBinName)) {
         _ctrl->errHandler().internalError( _ctrl->printBuffer("Binary for solver %s does not exist: '%s'", _solverName.c_str(), _solverBinName.c_str()) );
     }

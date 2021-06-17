@@ -104,7 +104,8 @@ void SolverScip::run()
         _ctrl->errHandler().setExecStep("run");
 
         if (!om->isLinearModel())
-            _ctrl->errHandler().internalError("SCIP cannot solve a nonlinear model"  );
+            if (om->modelProp().hasConditions())
+                _ctrl->errHandler().internalError("SCIP cannot solve a nonlinear model"  );
 
 
         PROTO_OUTL("Start SolverScip module " << moduleName());
@@ -112,7 +113,7 @@ void SolverScip::run()
         setBinFullName();
 
         PROTO_OUTL("SolverScip: writing instance file " << moduleName());
-        writeInstanceFile("-mps-format scip -mps-format-sos cplex");
+        writeInstanceFile("-mps-format scip -mps-format-sos cplex -mps-format-qp cplex");
 
         PROTO_OUTL("SolverScip: solving instance" << moduleName());
 
@@ -192,8 +193,14 @@ void SolverScip::readSolFile(Solution* sol,  OptModel* om) {
 
     SingleSolution solution;
 
+    bool isQP = false;
+
+    if ( om->modelProp().modelType() == OptModel::ModelType::modelTypeMIQP || om->modelProp().modelType() == OptModel::ModelType::modelTypeQP )
+        isQP = true;
+
     unsigned long rowCnt = om->rows().size();
-    LinearModel *lm = om->getRowModel();
+    LinearModel *lm = om->getRowModel( isQP );
+
     const vector<LinearModel::Coefficient> *coeffs = lm->coeffs();
 
     for (unsigned long j=0; j<sol->nrOfVariables(); j++) {
