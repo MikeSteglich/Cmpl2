@@ -35,6 +35,8 @@
 #include "OptModel.hh"
 #include "../Control/MainControl.hh"
 
+#include "../Modules/OutModel/OutModelExtData.hh"
+
 
 
 using namespace std;
@@ -167,6 +169,7 @@ void Solution::prepareSolutionData(string probName, string solver,  bool intRela
     _om = om;
     _solver=solver;
     _hasMarginal=true;
+
 
     bool integerRelaxation = intRelaxation;
 
@@ -320,10 +323,12 @@ void Solution::prepareSolutionData(string probName, string solver,  bool intRela
         }
     }
     if (integerRelaxation) {
-        hasInt = false;
         _hasMarginal=true;
         _nrOfIntegerVariables=0;
     }
+
+    if ( om->modelProp().hasSos() )
+        _hasMarginal=false;
 
 }
 
