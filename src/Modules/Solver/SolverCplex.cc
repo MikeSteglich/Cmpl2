@@ -121,8 +121,6 @@ void SolverCplex::run()
 
         PROTO_OUTL("SolverCplex: solving instance" << moduleName());
 
-        //GET_DATA(Solution,sol);
-        //if (!sol)
         GET_NEW_DATA(Solution,sol);
 
         string probName = StringStore::modelName(string( modp()->data()->cmplFileBase() ))+".cmpl";
@@ -359,7 +357,7 @@ void SolverCplex::readSolFile(Solution* sol,  OptModel* om) {
                         _ctrl->errHandler().internalError("Internal error while reading activity from Cplex solution file" ,NULL);
                     solElem.setActivity(activity);
 
-                    if (sol->hasMarginal()) {
+                    if (sol->hasMarginal() ) {
                         string valStr=readXmlVal(varXmlVals[margPos]);
                         if (!StringStore::toDouble(valStr,marginal))
                             _ctrl->errHandler().internalError("Internal error while reading marginal from Cplex solution file" ,NULL);
@@ -423,7 +421,7 @@ void SolverCplex::readSolFile(Solution* sol,  OptModel* om) {
 
                     solElem.setActivity(activity);
 
-                    if (sol->hasMarginal()) {
+                    if (sol->hasMarginal() ) {
                         string valStr=readXmlVal(conXmlVals[margPos]);
                         if (!StringStore::toDouble(valStr,marginal))
                             _ctrl->errHandler().internalError("Internal error while reading marginal from Cplex solution file" ,NULL);

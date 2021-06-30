@@ -112,14 +112,15 @@ void SolverCbc::run()
         _ctrl->errHandler().setExecStep("run");
 
         if (!om->isLinearModel())
-            _ctrl->errHandler().internalError("CBC cannot solve a nonlinear model"  );
+            if (om->modelProp().hasConditions())
+                _ctrl->errHandler().internalError("CBC cannot solve a nonlinear model"  );
 
         PROTO_OUTL("Start SolverCbc module " << moduleName());
 
         setBinFullName();
 
         PROTO_OUTL("SolverCbc: writing instance file " << moduleName());
-        writeInstanceFile("");
+        writeInstanceFile(" -mps-format-sos cplex ");
 
         PROTO_OUTL("SolverCbc: solving instance" << moduleName());
 

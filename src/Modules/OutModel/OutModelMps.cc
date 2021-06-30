@@ -720,9 +720,8 @@ namespace cmpl
 
         if (_formatSOS == FormatExtensionCplex) {
 
-            //list<OutModelExtDataBase::Info> &lst = _mki[OutModelExtDataSOS1::key];
+
             list<OutModelExtDataBase::Info> &lst = _mki[OutModelExtDataSOS1Key];
-            //list<OutModelExtDataBase::Info> &lst = _mki[OutModelExtDataSOS2::key];
             list<OutModelExtDataBase::Info> &lst2 = _mki[OutModelExtDataSOS2Key];
 
             if (!lst.empty() || !lst2.empty())

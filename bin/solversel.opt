@@ -1,13 +1,11 @@
 []
-# Wenn LP oder MIP, mit beliebigen Erweiterungen und vorhandenen SOS, dann CPLEX verwenden
-# ebenfalls fuer QP
-LP[..., sos!] || MIP[..., sos!] || QP: -solver cplex
-last: GOTO cplex
-
-# Sonst LP oder MIP, dann CBC verwenden
-LP || MIP: -solver CBC
-#else: ERROR solution of non-linear problems not implemented
-
+: -warn-invalid-sos  -native-sos -native-sos2
 
 [cplex]
-: -native-sos -mps-format cplex
+: -warn-invalid-sos  -native-sos -native-sos2 -var-prod-linear 0 -mps-format cplex 
+
+[gurobi]
+: -warn-invalid-sos  -native-sos -native-sos2  -var-prod-linear 0 -mps-format gurobi  
+
+[scip]
+: -warn-invalid-sos  -native-sos -native-sos2  -var-prod-linear 0 -mps-format scip  

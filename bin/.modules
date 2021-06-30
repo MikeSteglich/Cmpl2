@@ -12,6 +12,7 @@ default			run cmpl with default modules
 	inputFunctions
 	classFunctions
 	externDataFile
+	externXlsDataFile
     solverSelect
 	boundRow
 	linearSos -warn-invalid-sos
@@ -32,76 +33,85 @@ default			run cmpl with default modules
     solutionReportCsv
 	solutionReportXml
 
-
-
-cplex			run cmpl with cplex
+woPreComp			run cmpl with default modules
 	compatSymbols
 	mathFunctions
 	inputFunctions
 	classFunctions
 	externDataFile
+	externXlsDataFile
+    solverSelect
 	boundRow
-	linearSos -warn-invalid-sos -native-sos  -native-sos2  
+	linearSos -warn-invalid-sos
+	linearVarProd
+	linearConstantRow
+	linearLogCon
+	#precompile
+	compile -no-warn-insert-eos -compat-linenamepref -compat-cbsymbols -compat-cbh-assign
+    interpret
+    writeMps
+    writeMatrix
+    solverCbc
+    solverGlpk
+    solverCplex
+    solverGurobi
+    solverScip
+    solutionReportAscii -solStdOut
+    solutionReportCsv
+	solutionReportXml
+
+serverWithPreComp			run cmpl on CmplServer with precompiler
+	compatSymbols
+	mathFunctions
+	inputFunctions
+	classFunctions
+	externDataFile
+    externXlsDataFile
+    solverSelect
+	boundRow
+	linearSos -warn-invalid-sos
 	linearVarProd
 	linearConstantRow
 	linearLogCon
 	precompile
 	compile -no-warn-insert-eos -compat-linenamepref -compat-cbsymbols -compat-cbh-assign
     interpret
-    writeMps	-mps-format-sos-native
-    writeMatrix
-    solverCplex -solver cplex
-    solutionReportAscii -solStdOut
-    solutionReportCsv
-	solutionReportXml
+    solverCbc
+    solverGlpk
+    solverCplex
+    solverGurobi
+    solverScip
+    solutionReportXml -solution
 
-gurobi			run cmpl with gurobi
+serverWoPreComp 			run cmpl on CmplServer without precompiler  (default)  
 	compatSymbols
 	mathFunctions
 	inputFunctions
 	classFunctions
 	externDataFile
+    externXlsDataFile
+    solverSelect
 	boundRow
-	linearSos -warn-invalid-sos -native-sos  -native-sos2  
+	linearSos -warn-invalid-sos
 	linearVarProd
 	linearConstantRow
 	linearLogCon
-	precompile
 	compile -no-warn-insert-eos -compat-linenamepref -compat-cbsymbols -compat-cbh-assign
     interpret
-    writeMps -mps-format-sos-native
-    writeMatrix
-    solverGurobi -solver gurobi
-    solutionReportAscii -solStdOut
-    solutionReportCsv
-	solutionReportXml
+    solverCbc
+    solverGlpk
+    solverCplex
+    solverGurobi
+    solverScip
+    solutionReportXml -solution
 
-scip			run cmpl with scip
-	compatSymbols
-	mathFunctions
-	inputFunctions
-	classFunctions
-	externDataFile
-	boundRow
-	linearSos -warn-invalid-sos -native-sos  -native-sos2  
-	linearVarProd
-	linearConstantRow
-	linearLogCon
-	precompile
-	compile -no-warn-insert-eos -compat-linenamepref -compat-cbsymbols -compat-cbh-assign
-    interpret
-    writeMps -mps-format-sos-native
-    writeMatrix
-    solverScip -solver scip
-    solutionReportAscii -solStdOut
-    solutionReportCsv
-	solutionReportXml
 
 
 # checks the syntax of cmpl input, but don't execute it
 check-only		check only syntax of the cmpl input file
 	compatSymbols
 	externDataFile
+	externXlsDataFile
 	precompile
 	compile -no-warn-insert-eos -compat-linenamepref -compat-cbsymbols -compat-cbh-assign -check-only
 
@@ -114,6 +124,7 @@ code			runs only the compiler and outputs the generated code
 	inputFunctions
 	classFunctions
 	externDataFile
+	externXlsDataFile
 	linearSos
 	precompile
 	compile -no-warn-insert-eos -compat-linenamepref -compat-cbsymbols -compat-cbh-assign -o-code
@@ -122,6 +133,9 @@ code			runs only the compiler and outputs the generated code
 precomp			runs only the precompiler and outputs the generated file
 	compatSymbols
 	externDataFile
-	precompile -o-pre 1
+	externXlsDataFile
+	precompile 
+
+
 
 
