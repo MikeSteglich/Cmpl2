@@ -1302,6 +1302,9 @@ namespace cmpl
             else
                 bsn.copyFrom(bsp, true, false);
 
+            if (bsn.isScalarIndex())
+                bsn.t = TP_INDEX_VAL_SET(bsn.t);
+
             if (tpa) {
                 CmplVal bsnn;
                 CmplVal tpav(tpa->t == TP_INT ? TP_ITUPLE_1INT : (tpa->t == TP_STR ? TP_ITUPLE_1STR : tpa->t), tpa->v.i);

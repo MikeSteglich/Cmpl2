@@ -5,4 +5,6 @@ Solution.o Solution.d : Solution.cc Solution.hh ../Control/MainData.hh \
  ../Control/CmdLineOptList.hh ../Control/MainData.hh \
  ../Control/ErrorHandler.hh ../Control/ThreadHandler.hh \
  ../Control/ModuleBase.hh ../Control/FileBase.hh \
- ../Control/ExtensionBase.hh
+ ../Control/ExtensionBase.hh ../Modules/OutModel/OutModelExtData.hh \
+ ../Modules/OutModel/OutModelExtData.hh \
+ ../Modules/OutModel/../../Control/ModuleBase.hh

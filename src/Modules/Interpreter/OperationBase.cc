@@ -3164,6 +3164,25 @@ namespace cmpl
     }
 
     /**
+     * fix the replacement variable by a conditional compare formula
+     * @param ctx           execution context
+     * @param res           store for result value
+     * @param se            syntax element id
+     * @return              replacement variable
+     */
+    OptVar *ValFormulaCondOp::fixNumericVar(ExecContext *ctx, CmplVal *res, unsigned se)
+    {
+        if (_numericVar) {
+            execOperForParts(ctx, res, se, ICS_OPER_EQ, false, &_numericVar, NULL);
+            CmplVal *nv = _numericVar.valFormula()->getPart(1);
+            return nv->optVar();
+        }
+        else {
+            return NULL;
+        }
+    }
+
+    /**
      * convert this conditional value (must be binary) to a logical formula
      * @param ctx           execution context
      * @param res           store for result value

@@ -740,6 +740,15 @@ namespace cmpl
         bool checkCreateNumericVar(ExecContext *ctx, unsigned se, CmplVal *nv = NULL);
 
         /**
+         * fix the replacement variable by a conditional compare formula
+         * @param ctx           execution context
+         * @param res           store for result value
+         * @param se            syntax element id
+         * @return              replacement variable
+         */
+        OptVar *fixNumericVar(ExecContext *ctx, CmplVal *res, unsigned se);
+
+        /**
          * convert this conditional value (must be binary) to a logical formula
          * @param ctx           execution context
          * @param res           store for result value

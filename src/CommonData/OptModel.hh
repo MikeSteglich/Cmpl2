@@ -68,6 +68,33 @@ namespace cmpl
          */
         AddPropOptVarConBase(CmplVal& src): _srcVal(src), _linearized(false)        { }
 
+    public:
+        /**
+         * destructor
+         */
+        virtual ~AddPropOptVarConBase()                                             { }
+
+        /**
+         * get name of this additional property type
+         */
+        virtual const char *name() = 0;
+
+        /**
+         * get source value (typically TP_FORMULA) which has caused the optimization matrix element
+         */
+        CmplVal& srcVal()                       { return _srcVal; }
+
+        /**
+         * get whether necessary linearization is already done
+         */
+        bool linearized()                       { return _linearized; }
+
+        /**
+         * set whether necessary linearization is already done
+         */
+        void setLinearized(bool lin = true)     { _linearized = lin; }
+
+
         //TODO
         //  (insbesondere virtual abstract Funktionen fuer Modelleigenschaften, fuer Linearisierung)
     };
@@ -83,6 +110,16 @@ namespace cmpl
          * @param src       source value, must be TP_FORMULA with ValFormulaCond
          */
         AddPropOptVarConValCond(CmplVal& src): AddPropOptVarConBase(src)            { }
+
+        /**
+         * destructor
+         */
+        virtual ~AddPropOptVarConValCond()                                          { }
+
+        /**
+         * get name of this additional property type
+         */
+        const char *name() override                  { return "ConValCond"; }
 
         //TODO
     };
@@ -243,8 +280,7 @@ namespace cmpl
          * @param stat      current internal iteration status, empty in initializating call
          * @return          first (in initializating call) or next optimization variable, or NULL if iteration ended
          */
-        static OptVar *iterInFormula(CmplVal& fv, stack<pair<ValFormula *, unsigned>>& stat);  // innerer Zustand: Liste/Stack von Tuples<Formula*, Index in formula->getPart> (im untersten Element ist Formel aus fv, sonst rekursiv aus darunterliegender)
-        //TODO
+        static OptVar *iterInFormula(CmplVal& fv, stack<pair<ValFormula *, unsigned>>& stat);
 	};
 
 
