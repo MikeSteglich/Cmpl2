@@ -149,17 +149,20 @@ namespace cmpl
         string sep = StringStore::whiteSpaces() + "[<";
         string l, s;
         streampos p;
-        size_t i;
+        size_t i1, i2;
 
         while (getline(*inStr, l)) {
-            if (!l.empty() && l[0] == '%') {
+            if (!l.empty()) {
                 p = inStr->tellg() - (streamoff)(inStr->gcount());
 
-                i = l.find_first_of(sep);
-                s = (i != string::npos ? l.substr(1, i - 1) : l.substr(1));
-                s = StringStore::lTrim(s);
+                i1 = l.find_first_not_of(StringStore::whiteSpaces());
+                if (i1 != string::npos && l[i1] == '%') {
+                    i2 = l.find_first_of(sep, i1);
+                    s = (i2 != string::npos ? l.substr(i1 + 1, i2 - i1 - 1) : l.substr(i1));
+                    s = StringStore::lTrim(s);
 
-                insertDataSymbol(fh, nm, s, fn, loc, (long)p);
+                    insertDataSymbol(fh, nm, s, fn, loc, (long)p);
+                }
             }
         }
     }
