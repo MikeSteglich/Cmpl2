@@ -122,18 +122,17 @@ void Solution::getVarBounds(OptVar *ov,double &lowerBound, double &upperBound ) 
 
     double lBound;
     double uBound;
+    double diff;
 
-    switch (ov->lowBound().t) {
-    case TP_REAL:
+    if (ov->lowBound().t == TP_REAL )
         lBound = ov->lowBound().v.r;
-        uBound = ov->uppBound().v.r;
-        break;
-
-    default:
+    else
         lBound = ov->lowBound().v.i;
+
+    if (ov->uppBound().t == TP_REAL )
+        uBound = ov->uppBound().v.r;
+    else
         uBound = ov->uppBound().v.i;
-        break;
-    }
 
     if (lb || ub) {
         if (lb)

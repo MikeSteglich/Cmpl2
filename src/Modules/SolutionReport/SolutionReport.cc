@@ -83,18 +83,26 @@ bool SolutionReport::parseOption(int ref, int prio, CmdLineOptList::SingleOption
             else if ( StringStore::startsWith(dispOpt, "VAR") || StringStore::startsWith(dispOpt, "CON")  ) {
 
                 string option=(*opt)[i];
+                vector <string> options;
                 vector <string> optList;
-                StringStore::split(option,optList,"=");
-                if (optList.size()>1)
-                    if ( StringStore::startsWith(dispOpt, "VAR") )
-                        _displayVarList.push_back(optList[1]);
-                    else
-                        _displayConList.push_back(optList[1]);
-                else
+                StringStore::split(option,options,"=");
+
+                if (options.size()>1) {
+                    StringStore::split(options[1],optList,",");
+                    for ( string & o : optList) {
+                        if ( StringStore::startsWith(dispOpt, "VAR") ) {
+                            _displayVarList.push_back(o);
+                        }
+                        else {
+                            _displayConList.push_back(o);
+                        }
+                    }
+                } else {
                     _ctrl->errHandler().error(ERROR_LVL_WARN, _ctrl->printBuffer("Wrong display option %s", option.c_str() )  , opt->loc(true) );
+                }
 
             } else {
-                  _ctrl->errHandler().error(ERROR_LVL_WARN, _ctrl->printBuffer("Wrong display option %s", dispOpt.c_str() )  , opt->loc(true) );
+                _ctrl->errHandler().error(ERROR_LVL_WARN, _ctrl->printBuffer("Wrong display option %s", dispOpt.c_str() )  , opt->loc(true) );
             }
 
 
