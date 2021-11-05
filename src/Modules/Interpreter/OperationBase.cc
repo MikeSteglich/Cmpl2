@@ -312,8 +312,8 @@ namespace cmpl
             }
             else {
                 CmplVal sempty(TP_SET_EMPTY);
-                CmplVal& df1 = (a1->val().t == TP_SET_NULL ? sempty : a1->val().array()->defset());
-                CmplVal& df2 = (a2->val().t == TP_SET_NULL ? sempty : a2->val().array()->defset());
+                CmplVal& df1 = (a1->val().t == TP_NULL ? sempty : a1->val().array()->defset());
+                CmplVal& df2 = (a2->val().t == TP_NULL ? sempty : a2->val().array()->defset());
 
                 if (op == ICS_OPER_MUL) {
                     if (!resultSetMatrixMult(ctx, res, mm, se, a1, a2, df1, df2))
