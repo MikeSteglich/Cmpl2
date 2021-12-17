@@ -1194,6 +1194,7 @@ namespace cmpl
                                 *a = vt.v.i;
                                 ins = i;
                                 a++;
+                                f = true;
                             }
 
                             *a = v;
