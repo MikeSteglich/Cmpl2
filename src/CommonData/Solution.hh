@@ -314,6 +314,9 @@ private:
     vector<ModelElement> _modVariables;
     vector<ModelElement> _modConstraints;
 
+    int _addConForUnusedVar;                ///< add pseudo constraint for otherwise unused variable: 0: no / 1: yes if unused because of deletion of a constraint / 2: yes for all)
+
+
     /**
      * @brief Returns the bounds of a variable
      * @param ov            Pointer to OptVar object
@@ -343,7 +346,7 @@ public:
      * @param md            pointer to main data object
      * @param mb            pointer to ModulBase object
      */
-    void prepareSolutionData(string probName, string solver, bool intRelaxation, MainData *md, ModuleBase *mb);
+    void prepareSolutionData(string probName, string solver, bool intRelaxation, int addConForUnusedVar, MainData *md, ModuleBase *mb);
 
     /**
      * @brief returns the name of the problem
