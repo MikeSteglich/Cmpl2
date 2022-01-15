@@ -629,7 +629,7 @@ namespace cmpl
 #define ARRAY_CAP_MIN           30          /* minimum capacity for array */
 #define ARRAY_CAP_GROW          0.1         /* relative growth for array */
 #define ARR_NEWCAP(oc)          (ARRAY_CAP_MIN >= ARRAY_CAP_GROW * oc ? (unsigned long)(oc + ARRAY_CAP_MIN) : (unsigned long)(oc * (1 + ARRAY_CAP_GROW)))
-#define ARR_REALLOC(p,t,l,c)    { t *__x = p; p = new t[c]; if(__x) { memcpy(p, __x, sizeof(t)*l); delete __x; } }
+#define ARR_REALLOC(p,t,l,c)    { t *__x = p; p = new t[c]; if(__x) { memcpy(p, __x, sizeof(t)*l); delete[] __x; } }
 
 
 #endif // MAINCONTROL_HH

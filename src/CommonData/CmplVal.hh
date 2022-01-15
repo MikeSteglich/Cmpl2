@@ -824,6 +824,7 @@ namespace cmpl
      * if a pointer variable is set, then delete content and set pointer to NULL
      */
     #define DELETE_UNSET(p)             if (p) { delete p; p = NULL; }
+    #define DELETE_ARR_UNSET(p)         if (p) { delete[] p; p = NULL; }
 
 }
 

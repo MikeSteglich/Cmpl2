@@ -992,8 +992,8 @@ namespace cmpl
     void TupleMatching::releaseResult()
     {
         _freePos.clear();
-        DELETE_UNSET(_minRank);
-        DELETE_UNSET(_maxRank);
+        DELETE_ARR_UNSET(_minRank);
+        DELETE_ARR_UNSET(_maxRank);
         DELETE_UNSET(_assInfo);
         DELETE_UNSET(_resIndex);
 
@@ -1184,19 +1184,19 @@ namespace cmpl
         if ((!_infTpl && !_tplCnt) || _minRankSum > _srcMaR) {
             _pat.dispUnset();
             _freePos.clear();
-            DELETE_UNSET(_minRank);
-            DELETE_UNSET(_maxRank);
+            DELETE_ARR_UNSET(_minRank);
+            DELETE_ARR_UNSET(_maxRank);
         }
         else {
             if (_oneRank) {
-                DELETE_UNSET(_maxRank);
+                DELETE_ARR_UNSET(_maxRank);
                 _maxRankSum = _minRankSum;
                 _firstDiffRank = _afterDiffRank = 0;
             }
             else {
                 if (_minRankSum == _srcMaR) {
                     _oneRank = true;
-                    DELETE_UNSET(_maxRank);
+                    DELETE_ARR_UNSET(_maxRank);
                     _maxRankSum = _minRankSum;
                     _firstDiffRank = _afterDiffRank = 0;
                 }

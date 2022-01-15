@@ -805,7 +805,7 @@ namespace cmpl
      */
     CBAssignInfoComplex::~CBAssignInfoComplex()
     {
-        DELETE_UNSET(_cbFetchIDs);
+        DELETE_ARR_UNSET(_cbFetchIDs);
 
         for (oneInfo& oi : _info)
             delete[] oi._rank;
