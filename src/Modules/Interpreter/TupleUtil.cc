@@ -235,7 +235,7 @@ namespace cmpl
 			}
 			else if (sv->val().t == TP_LIST_TUPLE) {
 				StackValue *lt = sv - 1;
-				for (i2 = sv->val().v.i; i2 > 0; lt--) {
+                for (i2 = 0; i2 < sv->val().v.i; lt--, i2++) {
 					tpl->at(--rtr)->copyFrom(lt->val());
 					PROTO_MOD_OUTL(ctx->modp(), "  set tuple elem #" << rtr << " to " << lt->val());
 				}

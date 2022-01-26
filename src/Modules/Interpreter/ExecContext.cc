@@ -917,7 +917,7 @@ namespace cmpl
                 }
 
                 // execute operation
-                if (!OperationBase::execOper(this, _opRes, transp, cd->se, cd->v.c.minor, (bool)(cd->v.c.par & ICPAR_OPER_CMP_FOLLOW), ac, _stack + svNo1, _stack + svNo2)) {
+                if (!OperationBase::execOper(this, _opRes, transp, cd->se, cd->v.c.minor, (bool)(cd->v.c.par & ICPAR_OPER_CMP_FOLLOW), ac, (svNo1 >= 0 ? _stack + svNo1 : NULL), (svNo2 >= 0 ? _stack + svNo2 : NULL))) {
                     //TODO: sonstige Operation, insbesondere vielleicht in Codeblockheader (oder vielleicht doch gar nichts hier?)
                     // (fuer Transpose bei eindimensionalem Arrays hier weiter nichts zu tun, schon durch transp erledigt)
                     pushRes = false;
