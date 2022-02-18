@@ -225,7 +225,7 @@ void SolverScip::readSolFile(Solution* sol,  OptModel* om) {
             if (lineNr==1) {
                 StringStore::split(line,solList,":");
                 solution.setStatus(solList[1]);
-                if (  StringStore::contains(StringStore::lrTrim(solList[1]),"optimal"  )) {
+                if (  StringStore::contains(StringStore::lrTrim(solList[1]),"optimal"  ) or StringStore::contains(StringStore::lrTrim(solList[1]),"limit reached"  )   ) {
                     nrOfSolutions=1;
                 } else {
                     nrOfSolutions=0;
