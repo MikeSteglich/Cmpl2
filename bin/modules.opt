@@ -135,7 +135,7 @@ precomp			runs only the precompiler and outputs the generated file
 	externDataFile
 	externXlsDataFile
 	precompile 
-
+	#precompile -o-pre 1
 
 
 
