@@ -17,6 +17,7 @@ MODULE_CLASS_REG( MODULE_CONF_ORDER_PREP,		   solverSelect,		 "configurable sele
 
 MODULE_CLASS_REG( MODULE_CONF_ORDER_PREP,		   boundRow,	 		 "replace constraints with only one variable by bounds" )
 MODULE_CLASS_REG( MODULE_CONF_ORDER_PREP,		   linearConstantRow,	 "linearize pseudo constraints and objectives without optimization variables" )
+MODULE_CLASS_REG( MODULE_CONF_ORDER_PREP,                  linearConditional,    "linearization of conditional constraints and constraints with conditional parts" )
 MODULE_CLASS_REG( MODULE_CONF_ORDER_PREP,		   linearLogCon,         "linearize constraints connected by logical operations" )
 MODULE_CLASS_REG( MODULE_CONF_ORDER_PREP,		   linearVarProd,        "linearize products of optimization variables" )
 MODULE_CLASS_REG( MODULE_CONF_ORDER_PREP,		   linearSos,            "SOS and SOS2 definitions and possible linearization" )

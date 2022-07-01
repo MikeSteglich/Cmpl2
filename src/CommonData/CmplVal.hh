@@ -602,6 +602,12 @@ namespace cmpl
         inline CmplVal(const CmplVal *v)							{ copyFrom(v, true, false); }
 
         /**
+         * assign operator
+         * @param v			source value
+         */
+        inline CmplVal& operator= (const CmplVal& v)				{ copyFrom(v, true, true); return *this; }
+
+        /**
 		 * move another value to this
 		 * @param v2		value to move
 		 * @param disp		dispose this before move
@@ -721,6 +727,13 @@ namespace cmpl
          * @return          -1 if first value lesser second value / 0 if both are equal / 1 if first value greater second value
          */
         int numCmp(int i2) const                                        { CmplVal v2(TP_INT, (intType)i2); return numCmp(*this, v2); }
+
+        /**
+         * compare numerical values, this is first value (must be TP_INT, TP_BIN, TP_REAL or TP_INFINITE)
+         * @param r2        second value
+         * @return          -1 if first value lesser second value / 0 if both are equal / 1 if first value greater second value
+         */
+        int numCmp(realType r2) const                                   { CmplVal v2(TP_REAL, r2); return numCmp(*this, v2); }
 
 		/**
 		 * try to get this value as a string value

@@ -2981,7 +2981,10 @@ namespace cmpl
     bool VarCondMapping::checkType(CmplVal& res, CmplVal& v, OptCon *&oc)
     {
         if (oc) {
-            if (!v.isOptRow() || v.optCon() != oc) {
+            if (v.isEmpty()) {
+                return true;
+            }
+            else if (!v.isOptRow() || v.optCon() != oc) {
                 _execContext->valueError("constraint must be unique in conditional expression", v, _cbContext->syntaxElem());
                 res.dispSet((oc->objective() ? TP_OPT_OBJ : TP_OPT_CON), oc);
                 return false;

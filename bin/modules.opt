@@ -18,6 +18,7 @@ default			run cmpl with default modules
 	linearSos -warn-invalid-sos
 	linearVarProd
 	linearConstantRow
+	linearConditional
 	linearLogCon
 	precompile
 	compile -no-warn-insert-eos -compat-linenamepref -compat-cbsymbols -compat-cbh-assign
@@ -45,6 +46,7 @@ woPreComp			run cmpl with default modules
 	linearSos -warn-invalid-sos
 	linearVarProd
 	linearConstantRow
+    linearConditional
 	linearLogCon
 	#precompile
 	compile -no-warn-insert-eos -compat-linenamepref -compat-cbsymbols -compat-cbh-assign
@@ -72,6 +74,7 @@ serverWithPreComp			run cmpl on CmplServer with precompiler
 	linearSos -warn-invalid-sos
 	linearVarProd
 	linearConstantRow
+	linearConditional
 	linearLogCon
 	precompile
 	compile -no-warn-insert-eos -compat-linenamepref -compat-cbsymbols -compat-cbh-assign
@@ -95,6 +98,7 @@ serverWoPreComp 			run cmpl on CmplServer without precompiler  (default)
 	linearSos -warn-invalid-sos
 	linearVarProd
 	linearConstantRow
+	linearConditional
 	linearLogCon
 	compile -no-warn-insert-eos -compat-linenamepref -compat-cbsymbols -compat-cbh-assign
     interpret
