@@ -48,6 +48,7 @@ MODULE_CLASS_REG( MODULE_CONF_ORDER_SOLVERGLPK,       solverGlpk,         "execu
 MODULE_CLASS_REG( MODULE_CONF_ORDER_SOLVERCPLEX,      solverCplex,       "executes CPLEX as solver" )
 MODULE_CLASS_REG( MODULE_CONF_ORDER_SOLVERGUROBI,     solverGurobi,       "executes Gurobi as solver" )
 MODULE_CLASS_REG( MODULE_CONF_ORDER_SOLVERSCIP,       solverScip,       "executes Scip as solver" )
+MODULE_CLASS_REG( MODULE_CONF_ORDER_SOLVERHIGHS,       solverHighs,       "executes HiGHS as solver" )
 
 // Solution reports
 MODULE_CLASS_REG( MODULE_CONF_ORDER_SOLUTIONASCII,   solutionReportAscii,     "standard solution report" )
