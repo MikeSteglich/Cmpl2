@@ -113,8 +113,7 @@ void SolverHiGHS::run()
         setBinFullName();
 
         PROTO_OUTL("SolverHighs: writing instance file " << moduleName());
-        //writeInstanceFile("-mps-format-sos cplex");
-        writeInstanceFile("-mps-format highs");
+        writeInstanceFile("-mps-format highs -mps-format-sos cplex -mps-format-qp cplex");
 
 
         PROTO_OUTL("SolverHighs: solving instance" << moduleName());
