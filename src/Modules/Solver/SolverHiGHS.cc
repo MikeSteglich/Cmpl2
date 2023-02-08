@@ -130,7 +130,7 @@ void SolverHiGHS::run()
 
         PROTO_OUTL("SolverHighs: finished solving  and reading solution" << moduleName());
 
-        if (ret==0)
+        //if (ret==0)
             readSolFile(sol);
 
         deleteTmpFiles();
@@ -233,11 +233,12 @@ void SolverHiGHS::readSolFile(Solution* sol) {
                     if (solList.size() == 4 )
                         solStat += " "+solList[3];
 
-                    if (StringStore::contains(solStat,"OPTIMAL")) {
+                    /*if (StringStore::contains(solStat,"OPTIMAL")) {
                         sol->setNrOfSolutions(1);
                     } else {
                         sol->setNrOfSolutions(0);
-                    }
+                    }*/
+                    sol->setNrOfSolutions(1);
                     solution.setStatus(solStat);
                 }
 

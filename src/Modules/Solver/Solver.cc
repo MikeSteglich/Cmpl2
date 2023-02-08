@@ -303,7 +303,7 @@ void Solver::deleteTmpFiles() {
         remove(_instanceFileName.c_str());
 
     if (FileBase::exists(_instanceSolName))
-        remove(_instanceFileName.c_str());
+        remove(_instanceSolName.c_str());
 
     if (FileBase::exists(_instanceCmdName))
         remove(_instanceCmdName.c_str());
