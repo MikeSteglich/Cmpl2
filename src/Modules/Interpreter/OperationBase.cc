@@ -223,6 +223,17 @@ namespace cmpl
                     res.set(TP_BIN, (op != ICS_OPER_EQ2));
                 }
                 else {
+                    // temporary add additional reference to the scalar argument, in order to prevent reusing of its value object within the operation
+                    CmplValAuto rsa;
+                    if (!df1) {
+                        if (a1s->useValP())
+                            rsa.copyFrom(a1s);
+                    }
+                    else if (!df2) {
+                        if (a2s->useValP())
+                            rsa.copyFrom(a2s);
+                    }
+
                     for (unsigned long i = 0; i < arr->size(); i++)
                         execBinaryOper(ctx, arr->at(i), se, op, cmpFollow, (df1 ? a1->val().array()->at(i) : a1s), (df2 ? a2->val().array()->at(i) : a2s));
                 }

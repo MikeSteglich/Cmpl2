@@ -762,7 +762,7 @@ namespace cmpl
                             nbvarid = nfbvar->id();
                             cg.insert(_orBinsCache, nbvarid);
 
-                            bvar.moveFrom(nbvar, true);
+                            bvar.dispSet(TP_OPT_VAR, nfbvar);
                         }
 
                         bneg = false;
