@@ -54,7 +54,7 @@ void Solver::init(MainControl *ctrl, MainData *data, const char *name)
 {
     ModuleBase::init(ctrl, data, name);
 
-    _solverName="CBC";
+    _solverName="HIGHS";
     _solverBinName = "";
 
 #ifdef _WIN32

@@ -152,9 +152,9 @@ void SolverCbc::generateCmdLine(Solution* sol) {
     _solverCmdLine="\""+_solverBinName+"\" "+ _instanceFileName;
 
     for (size_t i=0; i<_solverOpts.size(); i++)
-        _solverCmdLine+= " " + _solverOpts[i].key + " " + _solverOpts[i].value;
+        _solverCmdLine+= " -" + _solverOpts[i].key + " " + _solverOpts[i].value;
 
-    _solverCmdLine+= " " + sol->objSense() + " " +" solve gsolu "+ _instanceSolName + " 2>&1";
+    _solverCmdLine+= " -" + sol->objSense() + " -solve -gsolu "+ _instanceSolName + " 2>&1";
 }
 
 

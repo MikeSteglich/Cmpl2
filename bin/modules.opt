@@ -25,6 +25,7 @@ default			run cmpl with default modules
     interpret
     writeMps
     writeMatrix
+    solverHighs
     solverCbc
     solverGlpk
     solverCplex
@@ -46,13 +47,15 @@ woPreComp			run cmpl with default modules
 	linearSos -warn-invalid-sos
 	linearVarProd
 	linearConstantRow
-    linearConditional
+	linearConditional
 	linearLogCon
 	#precompile
 	compile -no-warn-insert-eos -compat-linenamepref -compat-cbsymbols -compat-cbh-assign
     interpret
     writeMps
     writeMatrix
+    writeMatrix
+    solverHighs
     solverCbc
     solverGlpk
     solverCplex
@@ -79,6 +82,8 @@ serverWithPreComp			run cmpl on CmplServer with precompiler
 	precompile
 	compile -no-warn-insert-eos -compat-linenamepref -compat-cbsymbols -compat-cbh-assign
     interpret
+    writeMatrix
+    solverHighs
     solverCbc
     solverGlpk
     solverCplex
@@ -102,6 +107,8 @@ serverWoPreComp 			run cmpl on CmplServer without precompiler  (default)
 	linearLogCon
 	compile -no-warn-insert-eos -compat-linenamepref -compat-cbsymbols -compat-cbh-assign
     interpret
+    writeMatrix
+    solverHighs
     solverCbc
     solverGlpk
     solverCplex
