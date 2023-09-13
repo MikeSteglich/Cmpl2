@@ -130,7 +130,7 @@ void SolverHiGHS::run()
 
         PROTO_OUTL("SolverHighs: finished solving  and reading solution" << moduleName());
 
-        //if (ret==0)
+        if (ret>=0)
             readSolFile(sol);
 
         deleteTmpFiles();
@@ -149,6 +149,9 @@ void SolverHiGHS::writeOptFile(){
         optFile << "solution_file = \"" << _instanceSolName <<"\"" << endl;
         optFile << "write_solution_style = 2 " << endl;
         optFile << "write_solution_to_file = True " << endl;
+        optFile << "threads = 4 " << endl;
+        optFile << " mip_rel_gap = 0.00001  " << endl;
+        //optFile << "parallel = on " << endl;
 
         for (size_t i=0; i<_solverOpts.size(); i++) {
             optFile << _solverOpts[i].key << " = " << _solverOpts[i].value << endl;
@@ -233,12 +236,15 @@ void SolverHiGHS::readSolFile(Solution* sol) {
                     if (solList.size() == 4 )
                         solStat += " "+solList[3];
 
-                    /*if (StringStore::contains(solStat,"OPTIMAL")) {
-                        sol->setNrOfSolutions(1);
-                    } else {
+                    if ( (StringStore::contains(solStat,"EMPTY")) or
+                         (StringStore::contains(solStat,"INFEASIBLE")) or
+                         (StringStore::contains(solStat,"UNBOUNDED")) or
+                         (StringStore::contains(solStat,"UNDEFINED")) ) {
                         sol->setNrOfSolutions(0);
-                    }*/
-                    sol->setNrOfSolutions(1);
+                    } else {
+                        sol->setNrOfSolutions(1);
+                    }
+
                     solution.setStatus(solStat);
                 }
 
@@ -280,10 +286,7 @@ void SolverHiGHS::readSolFile(Solution* sol) {
                     aPos=3;
                     mPos=4;
 
-                } /* else if (solList.size()==3) {
-                    aPos=1;
-                    mPos=2;
-                }*/
+                }
 
                 if (!StringStore::toDouble(solList[aPos],activity))
                     _ctrl->errHandler().internalError("Internal error while reading activity" ,NULL);

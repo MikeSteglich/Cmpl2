@@ -120,8 +120,9 @@ void SolverScip::run()
         GET_NEW_DATA(Solution,sol);
 
         if (!om->isInteger()){
-             LocationInfo loc(PositionInfo(POSITION_TYPE_DESCR, "(internal)"));
-             _ctrl->errHandler().error(ERROR_LVL_WARN,_ctrl->printBuffer("Warning: Scip runs only (M)ILP problems, marginals are not available in solution") , loc ) ;
+            CmplOutput(cout, "Warning: Scip runs only (M)ILP problems, marginals are not available in solution");
+             //LocationInfo loc(PositionInfo(POSITION_TYPE_DESCR, "(internal)"));
+             //_ctrl->errHandler().error(ERROR_LVL_WARN,_ctrl->printBuffer("Warning: Scip runs only (M)ILP problems, marginals are not available in solution") , loc ) ;
         }
 
         string probName = StringStore::modelName(string( modp()->data()->cmplFileBase() ))+".cmpl";
@@ -251,11 +252,13 @@ void SolverScip::readSolFile(Solution* sol,  OptModel* om) {
                     _ctrl->errHandler().internalError("Internal error while reading var activity value from Scip solution file");
 
                 unsigned long idx=sol->varMpsIdxByName(varName);
-                if (sol->modelVariable(idx)->type()!="C") {
-                    activity=round(activity);
-                 }
+                if (idx!=-1) {
+                    if (sol->modelVariable(idx)->type()!="C") {
+                        activity=round(activity);
+                    }
 
-                solution.variable(idx)->setActivity(activity);
+                    solution.variable(idx)->setActivity(activity);
+                }
             }
         }
 

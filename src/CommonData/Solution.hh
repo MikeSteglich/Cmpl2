@@ -459,7 +459,7 @@ public:
      * @param name      name of the variable
      * @return          index of the variable
      */
-    inline unsigned long varMpsIdxByName(string& name) { return _colNameMap[name];}
+    inline unsigned long varMpsIdxByName(string& name) { return ( (( _colNameMap.find(name) != _colNameMap.end()) ) ? _colNameMap[name] : -1);}
 
     /**
      * @brief Returns the original index of a variable based on its index
@@ -473,7 +473,7 @@ public:
      * @param name      name of the constraint
      * @return          index of the constraint
      */
-    inline unsigned long conMpsIdxByName(string& name) { return _rowNameMap[name];}
+    inline unsigned long conMpsIdxByName(string& name) { return (( ( _rowNameMap.find(name) != _rowNameMap.end()) ) ? _rowNameMap[name] :-1 );}
 
     /**
      * @brief Returns the original index of a constraint based on its index
