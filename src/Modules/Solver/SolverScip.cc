@@ -120,7 +120,7 @@ void SolverScip::run()
         GET_NEW_DATA(Solution,sol);
 
         if (!om->isInteger()){
-            CmplOutput(cout, "Warning: Scip runs only (M)ILP problems, marginals are not available in solution");
+            CmplOutput(cout, "Warning: Scip does not show marginals in solution");
              //LocationInfo loc(PositionInfo(POSITION_TYPE_DESCR, "(internal)"));
              //_ctrl->errHandler().error(ERROR_LVL_WARN,_ctrl->printBuffer("Warning: Scip runs only (M)ILP problems, marginals are not available in solution") , loc ) ;
         }
