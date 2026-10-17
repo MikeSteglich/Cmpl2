@@ -38,11 +38,66 @@
 #include <cstdlib>
 #include <iomanip>
 #include <cstdio>
+#include <vector>
+
+#if defined(_WIN32) || defined(WIN32)
+    #include <windows.h>
+    #include <io.h>
+    #include <fcntl.h>
+#else
+    #include <unistd.h>
+    #include <csignal>
+    #include <sys/wait.h>
+#endif
 
 
 
 namespace cmpl
 {
+
+#if !defined(_WIN32) && !defined(WIN32)
+namespace {
+
+    // pid (== process group id, see solve()) of the currently running solver child process, or 0 if none is running
+    volatile sig_atomic_t g_runningSolverPgid = 0;
+
+    // forwards the signal that just hit this (cmpl) process to the whole process group of the
+    // solver child (covering the shell and anything it may have spawned), then restores the
+    // default disposition and re-raises the signal so this process terminates the normal way
+    void forwardSignalToSolverAndReraise(int sig) {
+        if (g_runningSolverPgid > 0)
+            killpg((pid_t) g_runningSolverPgid, sig);
+
+        signal(sig, SIG_DFL);
+        raise(sig);
+    }
+
+    void installSolverSignalHandlers() {
+        signal(SIGINT, forwardSignalToSolverAndReraise);
+        signal(SIGTERM, forwardSignalToSolverAndReraise);
+        signal(SIGHUP, forwardSignalToSolverAndReraise);
+    }
+
+    void restoreSolverSignalHandlers() {
+        signal(SIGINT, SIG_DFL);
+        signal(SIGTERM, SIG_DFL);
+        signal(SIGHUP, SIG_DFL);
+    }
+
+    // RAII guard: while alive, SIGINT/SIGTERM/SIGHUP hitting this process are forwarded to "pgid"
+    struct SolverSignalGuard {
+        explicit SolverSignalGuard(pid_t pgid) {
+            g_runningSolverPgid = pgid;
+            installSolverSignalHandlers();
+        }
+        ~SolverSignalGuard() {
+            g_runningSolverPgid = 0;
+            restoreSolverSignalHandlers();
+        }
+    };
+
+}
+#endif
 
 /**
  * @brief initialize modul, to call immediately after the constructor.
@@ -348,29 +403,143 @@ int Solver::solve() {
 #endif
 
     try {
-        FILE* pipe = popen(_solverCmdLine.c_str(), "r");
 
-        if (!pipe)
-        {
-            _ctrl->errHandler().internalError(_ctrl->printBuffer("Cannot execute solver '%s'", _solverName.c_str()) );
+#if defined(_WIN32) || defined(WIN32)
+
+        // run the solver via a job object, so that the OS kills it (and anything it may have
+        // spawned) as soon as this cmpl process ends, regardless of how it ends
+
+        SECURITY_ATTRIBUTES saAttr;
+        saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
+        saAttr.bInheritHandle = TRUE;
+        saAttr.lpSecurityDescriptor = NULL;
+
+        HANDLE hReadPipe = NULL, hWritePipe = NULL;
+        if (!CreatePipe(&hReadPipe, &hWritePipe, &saAttr, 0)) {
+            _ctrl->errHandler().internalError(_ctrl->printBuffer("Cannot execute solver '%s'", _solverName.c_str()));
+        }
+        SetHandleInformation(hReadPipe, HANDLE_FLAG_INHERIT, 0);
+
+        STARTUPINFOA si;
+        ZeroMemory(&si, sizeof(si));
+        si.cb = sizeof(si);
+        si.dwFlags |= STARTF_USESTDHANDLES;
+        si.hStdOutput = hWritePipe;
+        si.hStdError = hWritePipe;
+
+        PROCESS_INFORMATION pi;
+        ZeroMemory(&pi, sizeof(pi));
+
+        HANDLE hJob = CreateJobObjectA(NULL, NULL);
+        if (hJob) {
+            JOBOBJECT_EXTENDED_LIMIT_INFORMATION jeli;
+            ZeroMemory(&jeli, sizeof(jeli));
+            jeli.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+            SetInformationJobObject(hJob, JobObjectExtendedLimitInformation, &jeli, sizeof(jeli));
         }
 
-        while (fgets(buffer, 1024, pipe) != NULL) {
+        string winCmdLine = "cmd.exe /c " + _solverCmdLine;
+        vector<char> cmdLineBuf(winCmdLine.begin(), winCmdLine.end());
+        cmdLineBuf.push_back('\0');
+
+        BOOL started = CreateProcessA(NULL, cmdLineBuf.data(), NULL, NULL, TRUE,
+                                       CREATE_NO_WINDOW, NULL, NULL, &si, &pi);
+
+        CloseHandle(hWritePipe);
+
+        if (!started) {
+            CloseHandle(hReadPipe);
+            if (hJob)
+                CloseHandle(hJob);
+            _ctrl->errHandler().internalError(_ctrl->printBuffer("Cannot execute solver '%s'", _solverName.c_str()));
+        }
+
+        // ties the solver process' lifetime to this process: if this process ends for any
+        // reason, Windows closes hJob and (because of KILL_ON_JOB_CLOSE) kills the solver
+        if (hJob)
+            AssignProcessToJobObject(hJob, pi.hProcess);
+
+        FILE* pipe = _fdopen(_open_osfhandle((intptr_t) hReadPipe, _O_RDONLY), "r");
+
+        while (fgets(buffer, buffSize, pipe) != NULL) {
             if (!_isSilent) {
                 cout << buffer ;//<< endl;
                 cout << flush ;
             }
-
         }
 
         if (!_isSilent)
             cout << endl <<endl;;
 
-        ret=pclose(pipe);
+        fclose(pipe); // also closes hReadPipe
 
-        if (ret==-1) {
+        WaitForSingleObject(pi.hProcess, INFINITE);
+
+        DWORD exitCode = 0;
+        GetExitCodeProcess(pi.hProcess, &exitCode);
+        ret = (int) exitCode;
+
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
+        if (hJob)
+            CloseHandle(hJob);
+
+#else
+
+        // run the solver in its own process group, so that a signal hitting this cmpl process
+        // can be forwarded to the whole group (the shell and anything it may have spawned)
+
+        int pipeFd[2];
+        if (pipe(pipeFd) == -1) {
+            _ctrl->errHandler().internalError(_ctrl->printBuffer("Cannot execute solver '%s'", _solverName.c_str()));
+        }
+
+        pid_t pid = fork();
+
+        if (pid < 0) {
+            close(pipeFd[0]);
+            close(pipeFd[1]);
+            _ctrl->errHandler().internalError(_ctrl->printBuffer("Cannot execute solver '%s'", _solverName.c_str()));
+        }
+
+        if (pid == 0) {
+            setpgid(0, 0);
+
+            close(pipeFd[0]);
+            dup2(pipeFd[1], STDOUT_FILENO);
+            close(pipeFd[1]);
+
+            execl("/bin/sh", "sh", "-c", _solverCmdLine.c_str(), (char*) NULL);
+            _exit(127);
+        }
+
+        setpgid(pid, pid); // also called by parent to avoid a race with the child's own setpgid()
+        close(pipeFd[1]);
+
+        SolverSignalGuard solverSignalGuard(pid);
+
+        FILE* pipe = fdopen(pipeFd[0], "r");
+
+        while (fgets(buffer, buffSize, pipe) != NULL) {
+            if (!_isSilent) {
+                cout << buffer ;//<< endl;
+                cout << flush ;
+            }
+        }
+
+        if (!_isSilent)
+            cout << endl <<endl;;
+
+        fclose(pipe);
+
+        int status = 0;
+        if (waitpid(pid, &status, 0) == -1) {
             _ctrl->errHandler().internalError(_ctrl->printBuffer("Solver '%s' finished with failures", _solverName.c_str()));
         }
+
+        ret = WIFEXITED(status) ? WEXITSTATUS(status) : -1;
+
+#endif
 
     } catch (exception const& e) {
         _ctrl->errHandler().internalError(_ctrl->printBuffer("Solver '%s' finished with failures: %s", _solverName.c_str(), e.what()));
