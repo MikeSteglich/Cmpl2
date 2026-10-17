@@ -6,6 +6,25 @@
 
 namespace cmpl
 {
+
+/**
+ * @brief encodes the characters of a string that are not allowed in XML text or a double-quoted attribute
+ *        (names of variables and constraints can contain them, e.g. x[a&b]) - "'" stays as it is
+ */
+static string xmlText(const string& str) {
+    string res;
+    res.reserve(str.size());
+    for (char c : str) {
+        switch (c) {
+            case '&': res += "&amp;"; break;
+            case '<': res += "&lt;"; break;
+            case '>': res += "&gt;"; break;
+            case '"': res += "&quot;"; break;
+            default: res += c;
+        }
+    }
+    return res;
+}
 /*********** module definition **********/
 
 // defines the module "SolveCbc" that is implemented in class "SolveCbc".
@@ -148,17 +167,17 @@ void SolutionXml::writeSolReport(Solution *sol, ostream& ostr) {
     ostr << "<?xml version = \"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>" << endl;
     ostr << "<CmplSolutions version=\"1.1\">" << endl;
     ostr << "   <general>" << endl;
-    ostr << "       <instanceName>" <<  sol->problemName()  << "</instanceName>" << endl;
+    ostr << "       <instanceName>" <<  xmlText(sol->problemName())  << "</instanceName>" << endl;
     ostr << "       <nrOfVariables>" << sol->nrOfVariables() << "</nrOfVariables>" << endl;
     ostr << "       <nrOfConstraints>" << sol->nrOfConstraints() << "</nrOfConstraints>" << endl;
-    ostr << "       <objectiveName>" << sol->objName() << "</objectiveName>" << endl;
+    ostr << "       <objectiveName>" << xmlText(sol->objName()) << "</objectiveName>" << endl;
     ostr << "       <objectiveSense>" << sol->objSense() << "</objectiveSense>" << endl;
     ostr << "       <nrOfSolutions>" << sol->nrOfSolutions()<< "</nrOfSolutions>" <<  endl;
 
     ostr << "       <solverName>" << sol->solver() << "</solverName>" << endl;
 
     //if (nrOfSolutions()==0)
-    ostr << "       <solverMsg>" <<  sol->status() << "</solverMsg>" << endl;
+    ostr << "       <solverMsg>" <<  xmlText(sol->status()) << "</solverMsg>" << endl;
 
     ostr << "       <variablesDisplayOptions>" ;
 
@@ -213,7 +232,7 @@ void SolutionXml::writeSolReport(Solution *sol, ostream& ostr) {
 
     for (int i=0; i<sol->nrOfSolutions(); i++) {
 
-        ostr << "   <solution idx=\""<< i << "\" status=\""<<  sol->solution(i)->status() << "\" value=\"" <<  sol->solution(i)->value() << "\">" << endl;
+        ostr << "   <solution idx=\""<< i << "\" status=\""<<  xmlText(sol->solution(i)->status()) << "\" value=\"" <<  sol->solution(i)->value() << "\">" << endl;
 
 
         if (!_ignoreVars) {
@@ -281,7 +300,7 @@ void SolutionXml::writeVarValues(Solution *sol, unsigned long i, unsigned long j
     if ( !_ignoreGeneratedElements || (_ignoreGeneratedElements && !StringStore::startsWith(sol->solution(i)->variable(j)->name(), "__") ) ) {
 
 
-        ostr << "           <variable idx=\""<< j << "\" name=\""<< sol->solution(i)->variable(j)->name() <<
+        ostr << "           <variable idx=\""<< j << "\" name=\""<< xmlText(sol->solution(i)->variable(j)->name()) <<
                 "\" type=\"" << sol->solution(i)->variable(j)->type() <<
                 "\" activity=\"" << ( sol->solution(i)->variable(j)->type()=="C" ? sol->solution(i)->variable(j)->activity() : round(sol->solution(i)->variable(j)->activity() )) << "\"";
 
@@ -305,7 +324,7 @@ void SolutionXml::writeConValues(Solution *sol, unsigned long i, unsigned long j
     if ( !_ignoreGeneratedElements || (_ignoreGeneratedElements && !StringStore::startsWith(sol->solution(i)->constraint(j)->name(), "__") ) ) {
 
 
-        ostr << "           <constraint idx=\""<< j << "\" name=\""<< sol->solution(i)->constraint(j)->name() <<
+        ostr << "           <constraint idx=\""<< j << "\" name=\""<< xmlText(sol->solution(i)->constraint(j)->name()) <<
                 "\" type=\"" << sol->solution(i)->constraint(j)->type()  <<
                 "\" activity=\"" << sol->solution(i)->constraint(j)->activity() << "\"";
 

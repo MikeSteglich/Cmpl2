@@ -211,7 +211,10 @@ namespace cmpl
                         else
                             *oOut << "\"";
 
-                        *oOut << " location=\"" << *e.loc << "\"";
+                        ostringstream locStr;
+                        locStr << *e.loc;
+                        string loc = locStr.str();
+                        *oOut << " location=\"" << StringStore::encodeXml(loc) << "\"";
 
                         string msgString = e.msg;
                         msgString = StringStore::encodeXml(msgString);
