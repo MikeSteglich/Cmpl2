@@ -251,8 +251,9 @@ void SolverCbc::readSolFile(Solution *sol) {
 
                 if (lineNr>headerLines) {
                     headerSection=false;
-                    varSection=false;
-                    conSection=true;
+                    // without constraints the variables follow directly after the header
+                    conSection=(sol->nrOfConstraints()>0);
+                    varSection=!conSection;
                 }
             }
 
@@ -307,7 +308,8 @@ void SolverCbc::readSolFile(Solution *sol) {
                     varIdx++;
                 }
 
-                if (lineNr>headerLines+sol->nrOfConstraints()-1) {
+                // no "-1" - with 0 constraints it would wrap around (unsigned)
+                if (lineNr>=headerLines+sol->nrOfConstraints()) {
                     headerSection=false;
                     varSection=true;
                     conSection=false;
