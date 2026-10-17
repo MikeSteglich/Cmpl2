@@ -35,6 +35,9 @@
 #include "FileBase.hh"
 #include "ExtensionModule.hh"
 
+#include <iostream>
+#include <iterator>
+
 
 
 namespace cmpl
@@ -329,6 +332,8 @@ namespace cmpl
 
 #define OPTION_SILENT_START         18
 
+#define OPTION_DATA_STDIN           20
+
 	/**
 	 * register command line options for delivery to this module
 	 * @param modOptReg     vector to register in
@@ -344,6 +349,8 @@ namespace cmpl
         REG_CMDL_OPTION( OPTION_OPTS_MARK_USED, "mark-used", 0, -1, CMDL_OPTION_NEG_DELIV, false );
 
         REG_CMDL_OPTION( OPTION_SILENT_START ,"silent-start", 0, 0, CMDL_OPTION_NEG_NO_ARG, false );
+
+        REG_CMDL_OPTION( OPTION_DATA_STDIN, "data-stdin", 0, 1, CMDL_OPTION_NEG_ERROR, true );
     }
 
     /**
@@ -352,7 +359,7 @@ namespace cmpl
      */
     set<string> MainControl::noWriteOptions()
     {
-        set<string> res({ "h", "help", "v", "config", "instance", "o-opt", "i-opt", "warn-unused", "mark-used", "modules" });
+        set<string> res({ "h", "help", "v", "config", "instance", "o-opt", "i-opt", "warn-unused", "mark-used", "modules", "data-stdin" });
         return res;
     }
 
@@ -426,6 +433,18 @@ namespace cmpl
 
         case OPTION_SILENT_START:
             _isSilentStart = !opt->neg();
+            return true;
+
+        // data file content is read from stdin and held in memory instead of reading the file from disk
+        case OPTION_DATA_STDIN:
+            if (!_data->virtualFiles().empty()) {
+                errHandler().error(ERROR_LVL_NORMAL, _ctrl->printBuffer("command line option '%s' can only be used once", opt->opt().c_str()), opt->loc(true));
+            }
+            else {
+                string fn = (opt->size() > 0 ? (*opt)[0] : string(IO_FILE_STANDARD_CDAT));
+                string content((istreambuf_iterator<char>(cin)), istreambuf_iterator<char>());
+                _data->setVirtualFile(fn, content);
+            }
             return true;
         }
 
@@ -765,6 +784,7 @@ namespace cmpl
             s << "  -warn-unused                  output warning if a command line option ist not used (enabled by default)" << endl;
             s << "  -mark-used <opt1> ...         mark command line options given as arguments as used" << endl;
             s << "  -silent-start                 suppresses output of start message" << endl;
+            s << "  -data-stdin [<file>]          read the content of the data file <file> (default " << IO_FILE_STANDARD_CDAT << ") from stdin instead of from disk" << endl;
 
             ModuleBase::usage(s);
 

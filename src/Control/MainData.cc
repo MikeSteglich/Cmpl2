@@ -90,7 +90,8 @@ namespace cmpl
         //  aber auch copyShallowFrom() scheint nicht verwendet
 
 		_cmplFileBase = NULL;
-		
+		_virtualFiles.clear();
+
 		if (delData && _executedModules) {
 			delete _executedModules;
 		}
@@ -128,6 +129,7 @@ namespace cmpl
 	void MainData::copyShallowFrom(MainData& src)
 	{
 		_cmplFileBase = src._cmplFileBase;
+		_virtualFiles = src._virtualFiles;
 		_executedModules = src._executedModules;
 
 		_errorList = src._errorList;

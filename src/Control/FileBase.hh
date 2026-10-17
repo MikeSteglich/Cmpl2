@@ -324,19 +324,20 @@ namespace cmpl
     class FileInput: public FileBase
     {
 	private:
-		istream *_iIn;					///< input stream 
+		istream *_iIn;					///< input stream
 		FILE *_iFp;						///< input file (alternative to <code>_iIn</code>)
+		bool _iVirtual;					///< input file is opened from a virtual file held in MainData
 
 	public:
         /**
          * constructor
          */
-        FileInput(): FileBase()								{ _iIn = NULL; _iFp = NULL; }
+        FileInput(): FileBase()								{ _iIn = NULL; _iFp = NULL; _iVirtual = false; }
 
 		/**
 		 * copy constructor
 		 */
-        FileInput(FileInput& file): FileBase(file)          { _iIn = NULL; _iFp = NULL; }
+        FileInput(FileInput& file): FileBase(file)          { _iIn = NULL; _iFp = NULL; _iVirtual = false; }
 
         /**
          * destructor
@@ -363,6 +364,19 @@ namespace cmpl
 		 * @return				whether if error (filename is already set and not overwrite)
 		 */
 		bool setInputString(MainData *data, const string *fn, const string *input, bool overwrite = false);
+
+		/**
+		 * get the content of the virtual file (held in MainData instead of on disk) matching this input file
+		 * @return				content of the virtual file, or NULL if this input file is not a virtual file
+		 */
+		const string *virtualContent();
+
+		/**
+		 * get whether this input file exists, either as virtual file or on disk
+		 * @param dir			directory to prepend to the file name for the test on disk
+		 * @return				true if the file exists
+		 */
+		bool existsInDir(const string& dir);
 
         /**
          * opens the input file

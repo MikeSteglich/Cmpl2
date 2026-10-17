@@ -444,6 +444,47 @@ namespace cmpl
 
 
 	/**
+	 * get the content of the virtual file (held in MainData instead of on disk) matching this input file
+	 * @return				content of the virtual file, or NULL if this input file is not a virtual file
+	 */
+	const string *FileInput::virtualContent()
+	{
+		if (!_enabled || _mode != IO_MODE_FILE || !_data || _data->virtualFiles().empty())
+			return NULL;
+
+		string fn = fileNameReplaced();
+
+		for (map<string, string>::const_iterator it = _data->virtualFiles().begin(); it != _data->virtualFiles().end(); it++) {
+			string vn = it->first;
+			vn = fileNameReplaced(vn);
+
+			if (fn == vn)
+				return &(it->second);
+
+			// file name can be prefixed with the directory of the cmpl file
+			if (fn.size() > vn.size() && fn.compare(fn.size() - vn.size(), vn.size(), vn) == 0) {
+				char c = fn[fn.size() - vn.size() - 1];
+				if (c == '/' || c == '\\')
+					return &(it->second);
+			}
+		}
+
+		return NULL;
+	}
+
+
+	/**
+	 * get whether this input file exists, either as virtual file or on disk
+	 * @param dir			directory to prepend to the file name for the test on disk
+	 * @return				true if the file exists
+	 */
+	bool FileInput::existsInDir(const string& dir)
+	{
+		return (virtualContent() || FileBase::exists(dir + fileNameReplaced()));
+	}
+
+
+	/**
 	 * opens the input file
 	 * @return		stream for reading from the file
 	 */
@@ -462,11 +503,16 @@ namespace cmpl
 			string orgExc;
 
 			try {
+				const string *vc;
 				if (_mode == IO_MODE_STD_IO) {
 					_iIn = &cin;
 				}
 				else if (_mode == IO_MODE_STRING) {
 					_iIn = new istringstream(_ioString);
+				}
+				else if ((vc = virtualContent())) {
+					_iIn = new istringstream(*vc);
+					_iVirtual = true;
 				}
 				else {
 					_iIn = new ifstream(filename.c_str());
@@ -520,6 +566,11 @@ namespace cmpl
 			else if (_mode == IO_MODE_STD_IO) {
 				_iFp = stdin;
 			}
+			else if (_mode == IO_MODE_FILE && virtualContent()) {
+				_ioString = *virtualContent();
+				*input = &_ioString;
+				_iFp = NULL;
+			}
 			else if (_mode == IO_MODE_FILE) {
 				_iFp = fopen(filename.c_str(), "r");
 				if (!_iFp)
@@ -540,8 +591,9 @@ namespace cmpl
     void FileInput::close()
 	{
 		if (_iIn) {
-			if (_mode == IO_MODE_STRING) {
+			if (_mode == IO_MODE_STRING || _iVirtual) {
 				delete _iIn;
+				_iVirtual = false;
 			}
 			else if (_mode != IO_MODE_STD_IO) {
 				((ifstream *)_iIn)->close();

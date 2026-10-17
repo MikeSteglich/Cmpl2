@@ -211,6 +211,8 @@ namespace cmpl
 
 		const char *_cmplFileBase;					///< base name for deriving default file names, it is the filename without extension of the first cmpl input file
 
+		map<string, string> _virtualFiles;			///< input files held in memory instead of on disk (file name -> content), e.g. data passed via stdin
+
 	public:
 		/**
 		 * constructor
@@ -249,6 +251,18 @@ namespace cmpl
 		 * @return		base filename
 		 */
 		inline const char *cmplFileBase() const				{ return (_cmplFileBase ?: "{}"); }
+
+		/**
+		 * set an input file which is held in memory instead of on disk
+		 * @param name		file name, can contain "{}" for the base file name
+		 * @param content	content of the file
+		 */
+		inline void setVirtualFile(const string& name, const string& content)	{ _virtualFiles[name] = content; }
+
+		/**
+		 * get all input files held in memory (file name -> content)
+		 */
+		inline const map<string, string>& virtualFiles() const	{ return _virtualFiles; }
 
 		/**
 		 * get global string store

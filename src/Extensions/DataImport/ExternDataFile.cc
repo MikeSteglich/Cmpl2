@@ -279,12 +279,8 @@ namespace cmpl
                 bool chgToDataDir = false;
                 DataImportBase::getDataDir(_mod, &dataFile, dataDir, chgToDataDir);
 
-                // try to open file
-                string ffn = dataDir + dataFile.fileNameReplaced();
-                FILE *fp = fopen(ffn.c_str(), "r");
-                if (fp) {
-                    fclose(fp);
-
+                // test whether file exists (on disk or as virtual file given via stdin)
+                if (dataFile.existsInDir(dataDir)) {
                     int res = checkData(true, ocf);
                     if (!_errorInfo)
                         return res;
