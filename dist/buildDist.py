@@ -38,7 +38,7 @@ RESOURCES = DISTDIR / "resources"
 HIGHS_VERSION = "1.15.1"
 HIGHS_URL = "https://github.com/ERGO-Code/HiGHS/releases/download/v{ver}/highs-{ver}-{asset}"
 PYCMPL_REPO = "https://github.com/MikeSteglich/pyCmpl.git"
-PYCMPL_DEFAULT = "v2.1.0"
+PYCMPL_DEFAULT = "v3.0.0"
 
 # Dateien aus Cmpl2/bin, die unveraendert in die Distribution gehen
 BIN_FILES = ["modules.opt", "solversel.opt", "cmplstd.cmpl", "gurobiCmpl.py"]

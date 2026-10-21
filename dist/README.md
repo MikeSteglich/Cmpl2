@@ -70,7 +70,7 @@ Unter **macOS** liegt die ganze Laufzeit in der App (`cmpl_ide.app/Contents/Reso
 | | Default | Option |
 |---|---|---|
 | HiGHS | Release 1.15.1, Variante `static-mit` (macOS: Universal Binary) | `--highs-version`, `--highs BINARY` |
-| pyCmpl | Tag `v2.1.0` aus github.com/MikeSteglich/pyCmpl | `--pycmpl TAG` oder `--pycmpl ../pyCmpl` (lokal) |
+| pyCmpl | Tag `v3.0.0` aus github.com/MikeSteglich/pyCmpl | `--pycmpl TAG` oder `--pycmpl ../pyCmpl` (lokal) |
 | cmplServer | `../pyCmplBin/pyCmpl/lib3/cmplServer` | `--cmplserver DIR` |
 | CmplIde | `../CmplIde` | `--ide-src DIR`, `--ide-bundle PATH`, `--no-ide` |
 | Handbuch | keins | `--manual CMPL.pdf` |
