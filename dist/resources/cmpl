@@ -1,0 +1,79 @@
+#!/bin/bash
+
+#Cmpl 2.0
+#March 2021
+#Mike Steglich
+
+
+oldPath=$PATH
+
+CMPLHOME="`dirname \"$0\"`" 
+
+if [[ $CMPLHOME = "." ]] ; then 
+	CMPLHOME="$PWD/"
+else 
+	if [ ${0:0:1} = "/" ] ; then 
+		CMPLHOME="$CMPLHOME/" 
+	else
+		CMPLHOME="$HOME/$CMPLHOME/" 
+	fi
+fi
+export CMPLHOME
+oldPath=$PATH 
+PATH="$CMPLHOME":$PATH
+
+export PATH
+export PYTHONPATH="$CMPLHOME"pyCmpl/lib3:$PYTHONPATH
+
+# cmplStarter ist mit Nuitka kompiliert (siehe buildCmplStarter.sh), ein
+# mitgeliefertes Python wird nicht mehr gebraucht.
+CMPLSTARTERBIN="$CMPLHOME"bin/cmplStarter.dist/cmplStarter
+
+# Python nur noch als Fallback fuer den Betrieb aus den Quellen und fuer cmplServer
+export PYTHONBIN="${PYTHONBIN:-python3}"
+	
+outAlias="cmpl__${RANDOM}__"
+childPid=""
+
+stopProcessTree() {
+	local pid="$1"
+	local descendant
+	for descendant in $(pgrep -P "$pid" 2>/dev/null); do
+		stopProcessTree "$descendant"
+	done
+	kill -TERM "$pid" 2>/dev/null
+}
+
+stopChild() {
+	if [ -n "$childPid" ] && kill -0 "$childPid" 2>/dev/null; then
+		stopProcessTree "$childPid"
+		wait "$childPid" 2>/dev/null
+	fi
+}
+
+trap 'stopChild; exit 143' TERM INT HUP
+
+if [ $# -eq 0 ]; then 
+	"$CMPLHOME"bin/cmpl &
+	childPid=$!
+	wait "$childPid"
+else 
+	"$CMPLHOME"bin/cmpl "$@" -o-opt "${outAlias}.optcmpl" -o-pre "${outAlias}.precmpl" -o-extern "${outAlias}.extdata" -modules precomp -no-warn-unused &
+	childPid=$!
+	wait "$childPid"
+	if test -f "${outAlias}.optcmpl"; then
+		if [ -x "$CMPLSTARTERBIN" ]; then
+			"$CMPLSTARTERBIN" "$outAlias" &
+		elif [ -f "$CMPLHOME"bin/cmplStarter.py ]; then
+			"$PYTHONBIN" "$CMPLHOME"bin/cmplStarter.py "$outAlias" &
+		else
+			echo "ERROR: cmplStarter not found <$CMPLSTARTERBIN>" >&2
+			exit 1
+		fi
+		childPid=$!
+		wait "$childPid"
+	fi
+fi
+
+PATH=$oldPath 
+export PATH

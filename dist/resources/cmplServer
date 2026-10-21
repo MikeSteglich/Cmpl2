@@ -1,0 +1,115 @@
+#!/bin/bash
+#
+# Startet und steuert CmplServer bzw. CmplGridScheduler.
+# Logs und Problemdateien liegen in ~/CmplServer.
+#
+# cmplServer ist mit Nuitka kompiliert (bin/cmplServer.dist), Python wird nur
+# als Fallback fuer den Betrieb aus den Quellen gebraucht.
+
+CMPLHOME="$(cd "$(dirname "$0")" && pwd)/"
+export CMPLHOME
+export PYTHONPATH="$CMPLHOME"pyCmpl/lib3:$PYTHONPATH
+export PYTHONBIN="${PYTHONBIN:-python3}"
+
+serverOpt="$CMPLHOME"bin/cmplServer.opt
+serverBin="$CMPLHOME"bin/cmplServer.dist/cmplServer
+serverHandler="$CMPLHOME"pyCmpl/lib3/cmplServer/cmplServerHandler.py
+serverDir="$HOME/CmplServer"
+
+usage()
+{
+	echo "Usage: cmplServer <command> [<port>] [-showLog]"
+	echo "command:"
+	echo "   -start           - starts as single CMPLServer"
+	echo "   -startInGrid     - starts CMPLServer and connects to CMPLGrid"
+	echo "   -startScheduler  - starts as CMPLGridScheduler"
+	echo "   -stop            - stops CMPLServer or CMPLGridScheduler"
+	echo "   -status          - returns the status of the CMPLServer or CMPLGridScheduler"
+	echo "port                - defines CMPLServer's or CMPLGridScheduler's port (default in cmplServer.opt: $cmplPort)"
+	echo "-showLog            - shows the CMPLServer or CMPLGridScheduler log file"
+	exit 1
+}
+
+runHandler()
+{
+	if [ -x "$serverBin" ]; then
+		"$serverBin" "$@"
+	elif [ -f "$serverHandler" ]; then
+		"$PYTHONBIN" "$serverHandler" "$@"
+	else
+		echo "ERROR: cmplServer not found <$serverBin>" >&2
+		exit 1
+	fi
+}
+
+startInBackground()
+{
+	mkdir -p "$serverDir"
+	rm -f "$serverDir/cmplServer.out"
+	nohup "$0" -run "$@" &>"$serverDir/cmplServer.out" &
+	sleep 2
+	cat "$serverDir/cmplServer.out"
+}
+
+if [ ! -f "$serverOpt" ]; then
+	echo "CmplServer option file not found! <$serverOpt>"
+	exit 1
+fi
+
+cmplPort=$(awk -F= 'tolower($1) ~ /^[ \t]*cmplserverport[ \t]*$/ { gsub(/[ \t]/, "", $2); print $2 }' "$serverOpt")
+
+# intern: Aufruf aus startInBackground
+if [ "$1" == "-run" ]; then
+	shift
+	runHandler "$@"
+	exit $?
+fi
+
+if [ $# -eq 0 ] || [ $# -gt 3 ] || [ "${1:0:1}" != "-" ] || [ "$1" == "-showLog" ]; then
+	usage
+fi
+
+command=$1
+isLog=0
+if [ $# -gt 1 ] && [ "$2" != "-showLog" ]; then
+	cmplPort=$2
+	[ "$3" == "-showLog" ] && isLog=1
+elif [ "$2" == "-showLog" ]; then
+	isLog=1
+fi
+
+logFile="$serverDir/cmplServer.log"
+
+case "$command" in
+	-start)
+		echo "Starting CmplServer ..."
+		startInBackground -start $cmplPort
+		;;
+	-startInGrid)
+		echo "Starting CmplServer and connecting to CmplGrid ..."
+		startInBackground -startInGrid $cmplPort
+		;;
+	-startScheduler)
+		echo "Starting CmplGridScheduler ..."
+		startInBackground -startScheduler $cmplPort
+		logFile="$serverDir/cmplGridScheduler.log"
+		;;
+	-stop)
+		runHandler -stop $cmplPort
+		exit $?
+		;;
+	-status)
+		runHandler -status $cmplPort
+		exit $?
+		;;
+	*)
+		usage
+		;;
+esac
+
+if [ $isLog -eq 1 ]; then
+	echo "Quit logging with ^C."
+	tail -f "$logFile"
+fi
+
+exit 0

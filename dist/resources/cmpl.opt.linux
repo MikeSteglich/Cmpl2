@@ -1,0 +1,6 @@
+HIGHS   ../Thirdparty/Highs/highs
+SCIP    ../Thirdparty/Scip/scip
+CBC     ../Thirdparty/CBC/cbc
+GLPK    ../Thirdparty/GLPK/glpsol
+CPLEX   /opt/ibm/ILOG/CPLEX_Studio2211/cplex/bin/x86-64_linux/cplex
+GUROBI  gurobiCmpl

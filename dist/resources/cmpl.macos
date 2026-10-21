@@ -1,0 +1,8 @@
+#!/bin/bash
+#
+# @SCRIPT@ fuer die Kommandozeile unter macOS.
+# Die CMPL-Laufzeit liegt in der CmplIde-App (Contents/Resources/cmpl),
+# dieses Skript ruft nur das dortige Startskript auf.
+
+DISTDIR="$(cd "$(dirname "$0")" && pwd)"
+exec "$DISTDIR/@IDE_APP@/Contents/Resources/cmpl/@SCRIPT@" "$@"

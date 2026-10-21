@@ -1,0 +1,6 @@
+HIGHS   ..\Thirdparty\Highs\highs.exe
+SCIP    ..\Thirdparty\Scip\scip.exe
+CBC     ..\Thirdparty\CBC\cbc.exe
+GLPK    ..\Thirdparty\GLPK\glpsol.exe
+CPLEX   C:\Program Files\IBM\ILOG\CPLEX_Studio2211\cplex\bin\x64_win64\cplex.exe
+GUROBI  gurobiCmpl.bat

@@ -1,0 +1,6 @@
+HIGHS   ../Thirdparty/Highs/highs
+SCIP    ../Thirdparty/Scip/scip
+CBC     ../Thirdparty/CBC/cbc
+GLPK    ../Thirdparty/GLPK/glpsol
+CPLEX   /Applications/CPLEX_Studio2211/cplex/bin/arm64_osx/cplex
+GUROBI  gurobiCmpl

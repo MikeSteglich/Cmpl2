@@ -25,3 +25,8 @@ bin/cmpl
 *.d
 *.d
 *.d
+
+# Distribution (dist/buildDist.py)
+dist/build/
+dist/cache/
+dist/out/
