@@ -63,7 +63,23 @@ Der CmplServer laeuft unter Unix mit `cmplServer -start [<port>]` im Hintergrund
 
 Die IDE sucht `cmpl` bzw. `cmpl.bat` im Verzeichnis ueber ihrem Programm, also in `Cmpl2/`.
 
-Unter **macOS** liegt die ganze Laufzeit in der App (`cmpl_ide.app/Contents/Resources/cmpl/`). So funktioniert sie auch nach App Translocation, also wenn sie direkt aus dem Download-Ordner gestartet wird. `Cmpl2/cmpl` und `Cmpl2/cmplServer` sind kleine Wrapper fuer die Kommandozeile. Nach dem Einbetten wird die App neu signiert: ohne weitere Angabe ad hoc, mit `--sign "Developer ID Application: ..."` oder `$CMPL_CODESIGN_IDENTITY` mit einer Identitaet (dann mit Hardened Runtime). Die Notarisierung ist nicht Teil des Skripts.
+Unter **macOS** liegt die ganze Laufzeit in der App (`cmpl_ide.app/Contents/Resources/cmpl/`). So funktioniert sie auch nach App Translocation, also wenn sie direkt aus dem Download-Ordner gestartet wird. `Cmpl2/cmpl` und `Cmpl2/cmplServer` sind kleine Wrapper fuer die Kommandozeile. Nach dem Einbetten wird die App neu signiert: ohne weitere Angabe ad hoc, mit `--sign "Developer ID Application: ..."` oder `$CMPL_CODESIGN_IDENTITY` mit einer Identitaet (dann mit Hardened Runtime).
+
+### macOS: Signieren, Notarisieren, `.dmg`
+
+```bash
+xcrun notarytool store-credentials cmpl --apple-id ... --team-id ...      # einmalig
+python3 dist/buildDist.py --sign "Developer ID Application: ... (TEAMID)" --notarize cmpl
+```
+
+- **Signieren mit App:** Die App mit ihrer eingebetteten Laufzeit wird signiert, ohne Angabe ad hoc.
+- **Signieren ohne App** (`--no-ide`, `--core`): Signiert wird nur mit `--sign`. Dann bekommt jede Mach-O-Datei eine Signatur (cmpl, highs, cmplStarter, cmplServer und ihre `*.so`), mit Hardened Runtime, Zeitstempel und `resources/entitlements.plist`. Der Test läuft danach mit den signierten Dateien.
+- **`--notarize`:**
+  1. Die App wird notarisiert und bekommt das Ticket angeheftet (`stapler staple`), so läuft sie auch nach dem Kopieren aus dem `.dmg` ohne Netz.
+  2. Danach entsteht `Cmpl-….dmg`. Es wird signiert, notarisiert und bekommt ebenfalls das Ticket.
+  3. Bei einer Ablehnung zeigt das Tool das Protokoll von `notarytool log`.
+- **Zip:** Ein Zip bekommt kein Ticket, Gatekeeper prüft dann online.
+- **`--dmg` ohne `--notarize`:** baut nur das Image.
 
 ## Quellen und Optionen
 

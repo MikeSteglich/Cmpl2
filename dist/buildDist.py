@@ -502,6 +502,67 @@ def codesign_app(app, args):
     run(["codesign", "--verify", "--deep", "--strict", app])
 
 
+def signing_identity(args):
+    return args.sign or os.environ.get("CMPL_CODESIGN_IDENTITY")
+
+
+def codesign_all(stage, identity):
+    """Ohne App: jede Mach-O-Datei (cmpl, highs, cmplStarter, cmplServer, *.so, *.dylib) mit
+    Hardened Runtime und Zeitstempel signieren - Voraussetzung fuer die Notarisierung."""
+    log(f"Signieren (Identitaet: {identity})")
+    run(["xattr", "-cr", stage])
+    opts = ["--force", "--options", "runtime", "--timestamp",
+            "--entitlements", RESOURCES / "entitlements.plist"]
+    files = [f for f in sorted(stage.rglob("*")) if f.is_file() and not f.is_symlink() and is_macho(f)]
+    for f in files:
+        codesign_file(opts, identity, f)
+    print(f"    {len(files)} Dateien signiert")
+
+
+def notarize(path, profile):
+    """Schickt path (.zip, .dmg) an den Notarisierungsdienst von Apple und wartet auf das Ergebnis."""
+    log(f"Notarisieren: {path.name} (Profil {profile})")
+    out = run(["xcrun", "notarytool", "submit", path, "--keychain-profile", profile, "--wait"], capture=True)
+    print("    " + "\n    ".join(out.strip().splitlines()[-4:]))
+    if not re.search(r"status:\s*Accepted", out):
+        m = re.search(r"id:\s*([0-9a-f-]{36})", out)
+        details = ""
+        if m:
+            details = subprocess.run(["xcrun", "notarytool", "log", m.group(1), "--keychain-profile", profile],
+                                     capture_output=True, text=True).stdout
+        raise BuildError(f"Notarisierung abgelehnt: {path.name}\n{out}\n{details}")
+
+
+def staple(path):
+    """Heftet das Ticket an (.app, .dmg) - Gatekeeper braucht dann kein Netz."""
+    run(["xcrun", "stapler", "staple", path], capture=True)
+    run(["xcrun", "stapler", "validate", path], capture=True)
+    print(f"    Ticket angeheftet: {path.name}")
+
+
+def notarize_app(app, work, profile):
+    """Die App einzeln notarisieren und das Ticket an die .app heften - so laeuft sie auch nach dem
+    Kopieren aus dem .dmg ohne Online-Pruefung."""
+    tmp = work / f"{app.stem}-notarize.zip"
+    if tmp.exists():
+        tmp.unlink()
+    run(["ditto", "-c", "-k", "--sequesterRsrc", "--keepParent", app, tmp])
+    notarize(tmp, profile)
+    staple(app)
+    tmp.unlink()
+
+
+def make_dmg(stage, dmg, identity):
+    """Disk-Image (LZMA, ab macOS 10.15) mit dem Verzeichnis der Distribution, signiert mit identity."""
+    if dmg.exists():
+        dmg.unlink()
+    run(["hdiutil", "create", "-volname", stage.name, "-srcfolder", stage, "-ov", "-format", "ULMO", dmg],
+        capture=True)
+    if identity:
+        codesign_file(["--force", "--timestamp"], identity, dmg)
+    return dmg
+
+
 def assemble(t, stage, cmpl_bin, highs, pycmpl, starter, server, ide, args):
     log(f"Distribution zusammenstellen: {stage}")
     if stage.exists():
@@ -589,7 +650,7 @@ def smoke_test(t, runtime_root, work, port):
             subprocess.run([sys.executable, "-c", "import time; time.sleep(1)"])
         else:
             raise BuildError("CmplServer meldet sich nicht")
-        # -solver ausdruecklich: pyCmpl schickt sonst cbc als Default an den Server
+        # -solver ausdruecklich: vor pyCmpl 3.0.0 ging sonst immer cbc an den Server
         out = run(cmpl + ["smoke.cmpl", "-url", url, "-solver", "highs"], cwd=tdir, capture=True)
         check_smoke_result(out, "CmplServer")
     finally:
@@ -601,24 +662,35 @@ def smoke_test(t, runtime_root, work, port):
             proc.kill()
 
 
-def pack(t, stage, name):
+def pack(t, stage, name, args):
     outdir = DISTDIR / "out"
     outdir.mkdir(exist_ok=True)
     log("Archiv packen")
+    archives = []
     if t.is_linux:
         archive = outdir / f"{name}.tar.gz"
         with tarfile.open(archive, "w:gz") as tf:
             tf.add(stage, arcname=stage.name)
+        archives.append(archive)
     elif t.is_mac:
-        # ditto erhaelt Rechte, Symlinks und Signaturen
+        # ditto erhaelt Rechte, Symlinks und Signaturen; an ein Zip laesst sich kein Ticket
+        # heften - Gatekeeper prueft dann online, die Notarisierung des .dmg gilt auch fuer den Inhalt
         archive = outdir / f"{name}.zip"
         if archive.exists():
             archive.unlink()
         run(["ditto", "-c", "-k", "--sequesterRsrc", "--keepParent", stage, archive])
+        archives.append(archive)
+        if args.dmg:
+            dmg = make_dmg(stage, outdir / f"{name}.dmg", signing_identity(args))
+            if args.notarize:
+                notarize(dmg, args.notarize)
+                staple(dmg)
+            archives.append(dmg)
     else:
-        archive = Path(shutil.make_archive(str(outdir / name), "zip", stage.parent, stage.name))
-    print(f"    {archive}  ({archive.stat().st_size / 1e6:.1f} MB)")
-    return archive
+        archives.append(Path(shutil.make_archive(str(outdir / name), "zip", stage.parent, stage.name)))
+    for a in archives:
+        print(f"    {a}  ({a.stat().st_size / 1e6:.1f} MB)")
+    return archives
 
 
 # ---------------------------------------------------------------- main
@@ -661,10 +733,19 @@ def main():
     ap.add_argument("--flutter", metavar="FLUTTER", help="flutter-Programm (Default: aus PATH)")
     ap.add_argument("--manual", metavar="PDF", help="Handbuch als doc/CMPL.pdf beilegen")
     ap.add_argument("--sign", metavar="IDENTITY",
-                    help="macOS: Signatur-Identitaet (Default: $CMPL_CODESIGN_IDENTITY oder ad hoc)")
+                    help="macOS: Signatur-Identitaet, z.B. 'Developer ID Application: ...' (Default: "
+                         "$CMPL_CODESIGN_IDENTITY; die App wird sonst ad hoc signiert, ohne App wird nicht signiert)")
+    ap.add_argument("--dmg", action="store_true", help="macOS: zusaetzlich ein .dmg (signiert mit --sign)")
+    ap.add_argument("--notarize", metavar="PROFILE",
+                    help="macOS: App und .dmg mit notarytool notarisieren und die Tickets anheften "
+                         "(Keychain-Profil von notarytool store-credentials, braucht --sign, setzt --dmg)")
     ap.add_argument("--no-test", action="store_true", help="Test-Modell nicht loesen")
     ap.add_argument("--no-archive", action="store_true", help="nur dist/build/.../Cmpl2 anlegen")
     args = ap.parse_args()
+    if args.notarize:
+        if not signing_identity(args) or signing_identity(args) == "-":
+            ap.error("--notarize braucht --sign (Developer ID)")
+        args.dmg = True
 
     t = Target()
     version = cmpl_version()
@@ -678,10 +759,12 @@ def main():
     if args.core:
         stage = Path(args.stage).resolve() if args.stage else work / "cmpl-core"
         assemble_core(t, stage, cmpl_bin, highs)
+        if t.is_mac and signing_identity(args):
+            codesign_all(stage, signing_identity(args))
         if not args.no_test:
             smoke_test_core(t, stage, work)
         if not args.no_archive:
-            pack(t, stage, f"Cmpl-core-{version}-{t}")
+            pack(t, stage, f"Cmpl-core-{version}-{t}", args)
         log(f"Fertig: {stage}")
         return
 
@@ -693,10 +776,14 @@ def main():
     ide = None if args.no_ide else build_ide(t, args)
 
     runtime_root = assemble(t, stage, cmpl_bin, highs, pycmpl, starter, server, ide, args)
+    if t.is_mac and not ide and signing_identity(args):
+        codesign_all(stage, signing_identity(args))      # mit App signiert codesign_app in assemble()
     if not args.no_test:
         smoke_test(t, runtime_root, work, args.test_port)
+    if t.is_mac and ide and args.notarize:
+        notarize_app(stage / ide.name, work, args.notarize)
     if not args.no_archive:
-        pack(t, stage, name)
+        pack(t, stage, name, args)
     log(f"Fertig: {stage}")
 
 
