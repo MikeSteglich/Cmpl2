@@ -27,8 +27,7 @@ Der **Kern** (`--core`) ist fuer Anwendungen gedacht, die pyCmpl mit `CMPLHOME` 
 | | alle Systeme | Windows | Linux | macOS |
 |---|---|---|---|---|
 | cmpl | `make`, C++14-Compiler | MSYS2 mit MinGW-w64 (`g++`, `make` im PATH) | `g++`, `make` | Xcode Command Line Tools |
-| cmplStarter | Python mit `nuitka` (und `xlwings` fuer CmplXlsData) | | | |
-| cmplServer | `../pyCmplBin/pyCmpl/lib3/cmplServer` | `--cmplserver DIR` |
+| cmplStarter, cmplServer | Python mit `nuitka` (und `xlwings` fuer CmplXlsData) | | | |
 | CmplIde | Flutter, IDE-Quellen unter `../CmplIde` | Visual Studio mit C++-Workload | GTK-3-Entwicklungspakete, `clang`, `cmake`, `ninja` | Xcode |
 | sonst | `git` (pyCmpl-Tag klonen), Internet (HiGHS-Download) | | | |
 
