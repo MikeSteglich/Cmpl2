@@ -33,6 +33,7 @@
 #define LINEARLOGCON_HH
 
 
+#include <cstdint>
 #include "RemodelBase.hh"
 
 
@@ -250,7 +251,7 @@ namespace cmpl
          * hash for OrConnectedBinVars
          */
         struct OrConnectedBinVarsHash {
-            size_t operator() (OrConnectedBinVars const& p) const noexcept { return (hash<unsigned long>{}((p.bins.size() > 0 ? (unsigned long)(p.bins[0].first) + p.bins[0].second : 0UL) + 3*p.bins.size())); }
+            size_t operator() (OrConnectedBinVars const& p) const noexcept { return (hash<unsigned long>{}((p.bins.size() > 0 ? (uintptr_t)(p.bins[0].first) + p.bins[0].second : 0UL) + 3*p.bins.size())); }
         };
 
         /**

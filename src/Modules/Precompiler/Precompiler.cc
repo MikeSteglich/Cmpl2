@@ -28,6 +28,7 @@
  *
  ***********************************************************************/
 
+#include <cstdint>
 #include <ctype.h>
 #include <unistd.h>
 
@@ -472,7 +473,7 @@ namespace cmpl
 
         LocationInfo& inLoc = f->locSrc();
 		int locNr = outDefLoc(&inLoc, true); 
-		HeaderMode hm = (HeaderMode)(long)(f->extra());
+		HeaderMode hm = (HeaderMode)(intptr_t)(f->extra());
 
 		PROTO_OUTL("  iterTo: '" << fn << "' (" << hm << ") from: " << inLoc);
 

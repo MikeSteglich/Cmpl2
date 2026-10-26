@@ -33,6 +33,7 @@
 #define VALFORMULA_HH
 
 
+#include <cstdint>
 #include "CmplVal.hh"
 #include "OptModel.hh"
 
@@ -110,7 +111,7 @@ namespace cmpl
         /**
          * get hash for formula
          */
-        virtual size_t formulahash()                { return hash<unsigned long>{}((unsigned long)this); }
+        virtual size_t formulahash()                { return hash<uintptr_t>{}((uintptr_t)this); }
 
     public:
         /************** functions for model properties **********/

@@ -28,6 +28,7 @@
  ***********************************************************************/
 
 
+#include <cstdint>
 #include "MainControl.hh"
 #include "ModulesConf.hh"
 #include "ModuleBase.hh"
@@ -1048,7 +1049,7 @@ namespace cmpl
 	{
         unsigned cnt = 0;
 		const char *n = mod->moduleName();
-		PROTO_OUTL("run all extensions:  " << n << " (" << (unsigned long)n << ") " << step);
+		PROTO_OUTL("run all extensions:  " << n << " (" << (uintptr_t)n << ") " << step);
 
         // run first with module name and second without
         for (int intStep = 0; intStep < 2; intStep++) {
@@ -1083,7 +1084,7 @@ namespace cmpl
 	unsigned MainControl::runExtension(ModuleBase *mod, int step, int id, void *par)
 	{
 		const char *n = mod->moduleName();
-		PROTO_OUTL("run one extension:  " << n << " (" << (unsigned long)n << ") " << step << " " << id);
+		PROTO_OUTL("run one extension:  " << n << " (" << (uintptr_t)n << ") " << step << " " << id);
 
         ExtensionBase *ext = getExtension(n, step, id);
         if (!ext)
@@ -1107,7 +1108,7 @@ namespace cmpl
     bool MainControl::runExtension(ModuleBase *mod, int step, int id, int ref, int prio, CmdLineOptList::SingleOption *opt, void *par)
     {
         const char *n = mod->moduleName();
-        PROTO_OUTL("run one extension:  " << n << " (" << (unsigned long)n << ") " << step << " " << id << " for command line option " << opt->opt() << " (" << ref << ", " << prio << ")");
+        PROTO_OUTL("run one extension:  " << n << " (" << (uintptr_t)n << ") " << step << " " << id << " for command line option " << opt->opt() << " (" << ref << ", " << prio << ")");
 
         ExtensionBase *ext = getExtension(n, step, id);
         if (!ext)
@@ -1183,7 +1184,7 @@ namespace cmpl
         const char *name;
         if (n && *n) {
             name = _modConf->testModuleName(n);
-            PROTO_OUTL("register extension:  " << ext->extName() << ": " << name << " (" << (unsigned long)name << ") " << step << " " << id << " (" << cnt << ')');
+            PROTO_OUTL("register extension:  " << ext->extName() << ": " << name << " (" << (uintptr_t)name << ") " << step << " " << id << " (" << cnt << ')');
         }
         else {
             name = NULL;
