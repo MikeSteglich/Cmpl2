@@ -84,7 +84,7 @@ python3 dist/buildDist.py --sign "Developer ID Application: ... (TEAMID)" --nota
 
 | | Default | Option |
 |---|---|---|
-| HiGHS | Release 1.15.1, Variante `static-mit` (macOS: Universal Binary) | `--highs-version`, `--highs BINARY` |
+| HiGHS | Release 1.15.1, Variante `static-mit`; macOS: aus den Quellen mit cmake gebaut (Universal Binary, ab macOS 14 – die Release-Binaries verlangen macOS 26), Ergebnis in `dist/cache` | `--highs-version`, `--highs BINARY` |
 | pyCmpl | Tag `v3.0.0` aus github.com/MikeSteglich/pyCmpl | `--pycmpl TAG` oder `--pycmpl ../pyCmpl` (lokal) |
 | cmplServer | `../pyCmplBin/pyCmpl/lib3/cmplServer` | `--cmplserver DIR` |
 | CmplIde | `../CmplIde` | `--ide-src DIR`, `--ide-bundle PATH`, `--no-ide` |

@@ -37,6 +37,9 @@ RESOURCES = DISTDIR / "resources"
 
 HIGHS_VERSION = "1.15.1"
 HIGHS_URL = "https://github.com/ERGO-Code/HiGHS/releases/download/v{ver}/highs-{ver}-{asset}"
+# macOS: HiGHS built from its sources - the binaries of the release need the macOS they were built on (26)
+HIGHS_SOURCE_URL = "https://github.com/ERGO-Code/HiGHS/archive/refs/tags/v{ver}.tar.gz"
+MACOS_MIN = "14.0"                                    # as numpy in the computing core of LogisticsLab
 PYCMPL_REPO = "https://github.com/MikeSteglich/pyCmpl.git"
 PYCMPL_DEFAULT = "v3.0.0"
 
@@ -194,6 +197,9 @@ def fetch_highs(t, work, args):
                 shutil.copy2(src.parent / f, dest / f)
         return dest
 
+    if t.is_mac:
+        return build_highs_mac(dest, args.highs_version)
+
     asset = highs_asset(t)
     url = HIGHS_URL.format(ver=args.highs_version, asset=asset)
     cache = DISTDIR / "cache" / f"highs-{args.highs_version}-{asset}"
@@ -234,6 +240,56 @@ def fetch_highs(t, work, args):
         raise BuildError(f"bin/highs{t.exe} nicht in {cache.name}")
     if not t.is_win:
         make_executable(dest / "highs")
+    return dest
+
+
+def build_highs_mac(dest, version):
+    """macOS: HiGHS from its sources with cmake - universal (arm64 + x86_64), static, for macOS MACOS_MIN and newer;
+    the result in dist/cache (built once per version)."""
+    cache = DISTDIR / "cache" / f"highs-{version}-macos{MACOS_MIN}-universal"
+    if not (cache / "highs").exists():
+        if shutil.which("cmake") is None:
+            raise BuildError("cmake fehlt (HiGHS fuer macOS aus den Quellen) - z. B. brew install cmake")
+        log(f"HiGHS {version} aus den Quellen bauen (macOS ab {MACOS_MIN}, arm64 + x86_64)")
+        archive = DISTDIR / "cache" / f"highs-{version}-source.tar.gz"
+        if not archive.exists():
+            archive.parent.mkdir(parents=True, exist_ok=True)
+            url = HIGHS_SOURCE_URL.format(ver=version)
+            tmp = archive.with_suffix(".part")
+            try:
+                with urllib.request.urlopen(url) as r, open(tmp, "wb") as f:
+                    shutil.copyfileobj(r, f)
+            except OSError as e:
+                raise BuildError(f"Download fehlgeschlagen: {url}: {e}")
+            tmp.rename(archive)
+        work = cache.with_name(cache.name + ".work")
+        if work.exists():
+            shutil.rmtree(work)
+        work.mkdir(parents=True)
+        with tarfile.open(archive) as tf:
+            tf.extractall(work, filter="data")
+        src = next(p for p in work.iterdir() if p.is_dir())
+        build = work / "build"
+        run(["cmake", "-S", src, "-B", build, "-DCMAKE_BUILD_TYPE=Release", "-DBUILD_SHARED_LIBS=OFF",
+             "-DBUILD_TESTING=OFF", f"-DCMAKE_OSX_DEPLOYMENT_TARGET={MACOS_MIN}",
+             "-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64"])
+        run(["cmake", "--build", build, "--target", "highs-bin", "--parallel", str(os.cpu_count() or 4)])
+        # the program (target highs-bin, output name highs) - the target highs is the library
+        binary = next((p for p in build.rglob("highs") if p.is_file() and os.access(p, os.X_OK)), None)
+        if binary is None:
+            raise BuildError("highs-Binary nicht entstanden")
+        cache.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(binary, cache / "highs")
+        run(["strip", "-x", cache / "highs"])
+        for f in ("LICENSE.txt", "THIRD_PARTY_NOTICES.md", "README.md", "AUTHORS"):
+            if (src / f).exists():
+                shutil.copy2(src / f, cache / f)
+        shutil.rmtree(work)
+    else:
+        log(f"HiGHS {version} (macOS ab {MACOS_MIN}) aus dem Cache: {cache.name}")
+    for f in cache.iterdir():
+        shutil.copy2(f, dest / f.name)
+    make_executable(dest / "highs")
     return dest
 
 
