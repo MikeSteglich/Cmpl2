@@ -46,7 +46,7 @@ The source code is available on Github:
  * [Cmpl official realeases] (https://github.com/coin-or/Cmpl)  
  * [Cmpl working git] (https://github.com/MikeSteglich/Cmpl2)
  * [Coliop] (https://github.com/MikeSteglich/Coliop)
- * [pyCmpl] (https://github.com/MikeSteglich/pyCmpl3)
+ * [pyCmpl] (https://github.com/MikeSteglich/pyCmpl)
  * [jCmpl] (https://github.com/MikeSteglich/jCmpl)
 
 
